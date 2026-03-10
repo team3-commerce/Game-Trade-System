@@ -1,18 +1,17 @@
 package com.example.tradedemo.domain.pending.entity;
 
 import com.example.tradedemo.common.entity.BaseEntity;
+import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.members.entity.Members;
 import com.example.tradedemo.domain.order.entity.Orders;
-import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.pending.enums.PendingType;
 import com.example.tradedemo.domain.pending.enums.Type;
 import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 /**
  * 수령 대기 엔티티
@@ -23,20 +22,21 @@ import java.time.LocalDateTime;
 @Table(name = "pending_asset")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PendingAsset extends BaseEntity {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     /**
      * 수령 대기 타입
      */
     @Enumerated(EnumType.STRING)
-    private PendingType pendingType;    // 기본 : SALE_SUCCESS 판매중
+    private PendingType pendingType; // 기본 : SALE_SUCCESS 판매중
     /**
      * 대기중인 물품의 타입
      * 돈이냐, 아이템이냐
      */
     @Enumerated(EnumType.STRING)
-    private Type type;                  // 기본 : ITEM 아이템
+    private Type type; // 기본 : ITEM 아이템
 
     /**
      * 수령할 돈
@@ -96,8 +96,7 @@ public class PendingAsset extends BaseEntity {
             LocalDateTime expiredAt,
             MarketListing marketListing,
             Orders order,
-            Members member
-    ) {
+            Members member) {
         PendingAsset asset = new PendingAsset();
         asset.pendingType = pendingType;
         asset.type = type;

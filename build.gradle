@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '4.0.3'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'com.diffplug.spotless' version '6.23.0'
 }
 
 group = 'com.example'
@@ -22,6 +23,20 @@ configurations {
 
 repositories {
     mavenCentral()
+}
+
+// formatter 설정
+spotless {
+    java {
+        // windows는 다른 운영체제들과 다르게 줄바꿈 문자열을 다른 형식으로 저장합니다.
+        // 이 설정은 이를 통합해 줍니다.
+        // https://myonee.hashnode.dev/cr-lf
+        lineEndings='UNIX'
+        // 안쓰는 java import문 제거
+        removeUnusedImports()
+        // 포매터 양식
+        palantirJavaFormat()
+    }
 }
 
 dependencies {

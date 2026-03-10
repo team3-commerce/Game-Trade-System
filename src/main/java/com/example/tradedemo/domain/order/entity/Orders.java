@@ -4,11 +4,10 @@ import com.example.tradedemo.common.entity.BaseEntity;
 import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.members.entity.Members;
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
 
 /**
  * 주문 엔티티
@@ -18,8 +17,9 @@ import java.math.BigDecimal;
 @Getter
 @Table(name = "orders")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Orders extends BaseEntity{
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class Orders extends BaseEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     /**
@@ -71,8 +71,7 @@ public class Orders extends BaseEntity{
             Members seller,
             Members buyer,
             MarketListing marketListing,
-            MarketListing itemId
-    ) {
+            MarketListing itemId) {
         Orders orders = new Orders();
         orders.transactionMoney = transactionMoney;
         orders.transactionStock = transactionStock;

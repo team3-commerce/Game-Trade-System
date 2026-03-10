@@ -3,12 +3,10 @@ package com.example.tradedemo.domain.wallet.entity;
 import com.example.tradedemo.common.entity.BaseEntity;
 import com.example.tradedemo.domain.members.entity.Members;
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
-
 
 /**
  * 지갑 엔티티
@@ -19,7 +17,8 @@ import java.math.BigDecimal;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "wallets")
 public class Wallet extends BaseEntity {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     /**
@@ -35,10 +34,7 @@ public class Wallet extends BaseEntity {
     @JoinColumn(name = "member_id", nullable = false)
     private Members member;
 
-    public static Wallet create(
-            Members member,
-            BigDecimal balance
-    ) {
+    public static Wallet create(Members member, BigDecimal balance) {
         Wallet wallet = new Wallet();
         wallet.balance = balance;
         wallet.member = member;

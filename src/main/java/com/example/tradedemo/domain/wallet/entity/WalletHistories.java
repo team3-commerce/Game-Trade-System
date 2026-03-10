@@ -6,11 +6,10 @@ import com.example.tradedemo.domain.members.entity.Members;
 import com.example.tradedemo.domain.order.entity.Orders;
 import com.example.tradedemo.domain.wallet.enums.WalletStatus;
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
 
 /**
  * 지갑 이력 엔티티
@@ -21,7 +20,8 @@ import java.math.BigDecimal;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "wallet_histories")
 public class WalletHistories extends BaseEntity {
-    @Id @GeneratedValue(strategy = GenerationType.AUTO)
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     /**
@@ -78,8 +78,7 @@ public class WalletHistories extends BaseEntity {
             Wallet wallet,
             CouponHistory couponHistory,
             Members member,
-            Orders order
-    ) {
+            Orders order) {
         WalletHistories history = new WalletHistories();
         history.amount = amount;
         history.type = type;

@@ -9,5 +9,4 @@ public class TradeDemoApplication {
     public static void main(String[] args) {
         SpringApplication.run(TradeDemoApplication.class, args);
     }
-
 }
