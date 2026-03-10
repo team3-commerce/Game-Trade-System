@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: trade-demo
+  profiles:
+    active: local
