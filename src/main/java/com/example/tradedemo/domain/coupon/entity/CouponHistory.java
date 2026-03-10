@@ -1,13 +1,13 @@
 package com.example.tradedemo.domain.coupon.entity;
 
 import com.example.tradedemo.common.entity.Base;
+import com.example.tradedemo.domain.members.entity.Member;
 import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Getter
 @Entity
@@ -35,5 +35,4 @@ public class CouponHistory extends Base {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_coupons_id", nullable = false)
     private MemberCoupon memberCoupon;
-
 }

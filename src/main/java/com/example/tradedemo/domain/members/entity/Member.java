@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @Table(name = "members")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Members {
+public class Member {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;

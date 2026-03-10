@@ -1,16 +1,15 @@
 package com.example.tradedemo.domain.wallet.entity;
 
-import com.example.tradedemo.common.entity.BaseEntity;
+import com.example.tradedemo.common.entity.Base;
 import com.example.tradedemo.domain.coupon.entity.CouponHistory;
-import com.example.tradedemo.domain.members.entity.Members;
-import com.example.tradedemo.domain.order.entity.Orders;
+import com.example.tradedemo.domain.members.entity.Member;
+import com.example.tradedemo.domain.order.entity.Order;
 import com.example.tradedemo.domain.wallet.enums.WalletStatus;
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
 
 /**
  * 지갑 이력 엔티티
@@ -20,8 +19,9 @@ import java.math.BigDecimal;
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "wallet_histories")
-public class WalletHistories extends BaseEntity {
-    @Id @GeneratedValue(strategy = GenerationType.AUTO)
+public class WalletHistories extends Base {
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     /**
@@ -60,14 +60,14 @@ public class WalletHistories extends BaseEntity {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")
-    private Orders order;
+    private Order order;
 
     /**
      * 지갑 테이블 ID
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
-    private Members member;
+    private Member member;
 
     private Long couponHistoryId;
 
@@ -77,9 +77,8 @@ public class WalletHistories extends BaseEntity {
             BigDecimal balanceSnapshot,
             Wallet wallet,
             CouponHistory couponHistory,
-            Members member,
-            Orders order
-    ) {
+            Member member,
+            Order order) {
         WalletHistories history = new WalletHistories();
         history.amount = amount;
         history.type = type;
