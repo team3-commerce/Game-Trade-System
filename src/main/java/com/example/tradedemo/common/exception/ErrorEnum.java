@@ -19,7 +19,12 @@ public enum ErrorEnum {
     ERR_AUTH_INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, ErrorMessage.MSG_AUTH_INVALID_PASSWORD),
 
     // Member
-    ERR_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_MEMBER_NOT_FOUND);
+    ERR_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_MEMBER_NOT_FOUND),
+
+    // Coupon
+    ERR_COUPON_POLICY_DUPLICATE_NAME(HttpStatus.CONFLICT, ErrorMessage.MSG_COUPON_POLICY_DUPLICATE_NAME),
+    ERR_COUPON_POLICY_FIRST_COME_QUANTITY_REQUIRED(
+            HttpStatus.BAD_REQUEST, ErrorMessage.MSG_COUPON_POLICY_FIRST_COME_QUANTITY_REQUIRED);
 
     private final HttpStatus httpStatus;
     private final String errorMessage;
