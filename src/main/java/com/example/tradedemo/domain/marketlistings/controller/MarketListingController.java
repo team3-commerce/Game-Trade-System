@@ -3,6 +3,7 @@ package com.example.tradedemo.domain.marketlistings.controller;
 import com.example.tradedemo.common.dto.ApiResponse;
 import com.example.tradedemo.domain.marketlistings.dto.request.CreateMarketListingRequest;
 import com.example.tradedemo.domain.marketlistings.dto.response.SearchAllMarketListingResponse;
+import com.example.tradedemo.domain.marketlistings.dto.response.SearchMarketListingResponse;
 import com.example.tradedemo.domain.marketlistings.service.MarketListingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -48,5 +49,15 @@ public class MarketListingController {
         return ResponseEntity.ok(ApiResponse.success(
                 String.valueOf(HttpStatus.OK.value()),
                 marketListingService.getAllMarketListing(keyword, sortTotalPrice, sortSaleEndAt, pageable)));
+    }
+
+    /**
+     * 마켓 상품 단건 조회
+     */
+    @GetMapping("/api/v1/market-listings/{marketListingId}")
+    public ResponseEntity<ApiResponse<SearchMarketListingResponse>> getMarketListing(
+            @PathVariable Long marketListingId) {
+        return ResponseEntity.ok(ApiResponse.success(
+                String.valueOf(HttpStatus.OK), marketListingService.getMarketListing(marketListingId)));
     }
 }

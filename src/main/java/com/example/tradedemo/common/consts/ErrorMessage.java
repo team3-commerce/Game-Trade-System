@@ -17,6 +17,7 @@ public final class ErrorMessage {
     public static final String MSG_INVENTORYITEM_NOT_FOUND = "아이템은 가지고 있는 것보다 많이 등록될 수 없습니다";
 
     // MarketListing
+    public static final String MSG_MARKET_LISTING_NOT_FOUND = "찾는 거래 매물 정보가 존재하지 않습니다";
     public static final String MSG_MEMBERITEM_NOT_FOUND = "인벤토리 내 아이템 정보가 존재하지 않습니다";
     public static final String MSG_MEMBERITEM_EQUAL_NOT_FOUND = "아이템 소유자와 등록자가 다릅니다";
 
