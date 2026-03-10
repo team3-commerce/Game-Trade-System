@@ -20,14 +20,20 @@ public class MarketListingController {
 
     /**
      *  마켓 상품 전체 조회
+     *  sortTotalPrice, sortSaleEndAt 값을 asc/desc 로 전달하여 정렬 조건 추가 가능
+     *  asc/desc 가 아닌 값 전달 시 정렬 조건에서 무시 (예외 처리 x)
      */
     @GetMapping("/api/v1/market-listings")
     public ResponseEntity<ApiResponse<Page<SearchAllMarketListingResponse>>> getAllMarketListing(
-            @RequestParam(required = false) String keyword, @RequestParam(defaultValue = "0") int page) {
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String sortTotalPrice,
+            @RequestParam(required = false) String sortSaleEndAt,
+            @RequestParam(defaultValue = "0") int page) {
 
         Pageable pageable = PageRequest.of(page, 10);
 
         return ResponseEntity.ok(ApiResponse.success(
-                String.valueOf(HttpStatus.OK.value()), marketListingService.getAllMarketListing(keyword, pageable)));
+                String.valueOf(HttpStatus.OK.value()),
+                marketListingService.getAllMarketListing(keyword, sortTotalPrice, sortSaleEndAt, pageable)));
     }
 }
