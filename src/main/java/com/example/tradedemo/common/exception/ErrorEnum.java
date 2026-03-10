@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 @Getter
 @AllArgsConstructor
 public enum ErrorEnum {
+    // Item
+    ERR_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_ITEM_NOT_FOUND),
 
     // Auth
     ERR_AUTH_INVALID_TOKEN(HttpStatus.UNAUTHORIZED, ErrorMessage.MSG_AUTH_INVALID_TOKEN),
