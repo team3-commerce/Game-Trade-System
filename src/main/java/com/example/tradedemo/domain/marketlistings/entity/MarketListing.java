@@ -25,6 +25,9 @@ public class MarketListing extends Base {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(length = 64, name = "item_name", nullable = false)
+    private String itemName;
+
     @Column(name = "totla_price", nullable = false)
     private BigDecimal totalPrice;
 
@@ -50,6 +53,7 @@ public class MarketListing extends Base {
     private Member member;
 
     public static MarketListing create(
+            String itemName,
             BigDecimal totalPrice,
             BigDecimal unitPrice,
             Long quantity,
@@ -57,6 +61,8 @@ public class MarketListing extends Base {
             MemberItem memberItem,
             Member member) {
         MarketListing marketListing = new MarketListing();
+
+        marketListing.itemName = itemName;
         marketListing.totalPrice = totalPrice;
         marketListing.unitPrice = unitPrice;
         marketListing.quantity = quantity;
