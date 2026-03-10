@@ -17,7 +17,8 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) {
-        return memberRepository.findByEmail(email)
+        return memberRepository
+                .findByEmail(email)
                 .map(PrincipalDetails::new)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
     }
