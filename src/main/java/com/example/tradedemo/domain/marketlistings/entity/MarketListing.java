@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
  */
 @Entity
 @Getter
-@Table(name = "members")
+@Table(name = "market_listings")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MarketListing {
     @Id

@@ -59,7 +59,7 @@ public class Order extends Base {
      * 거래 매물 ID : item_id
      */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "market_listing_id", nullable = false)
+    @JoinColumn(name = "item_id", nullable = false)
     private MarketListing itemId;
 
     /**

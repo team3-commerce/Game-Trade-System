@@ -14,11 +14,9 @@ public class Base {
 
     @CreatedDate
     @Column(updatable = false, name = "created_at")
-    @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
     @Column(name = "modified_at")
-    @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime modifiedAt;
 }

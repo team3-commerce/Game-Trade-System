@@ -69,6 +69,7 @@ public class WalletHistories extends Base {
     @JoinColumn(name = "member_id")
     private Member member;
 
+
     public static WalletHistories create(
             BigDecimal amount,
             WalletStatus type,
