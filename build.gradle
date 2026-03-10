@@ -36,6 +36,20 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+// formatter 설정
+spotless {
+    java {
+        // windows는 다른 운영체제들과 다르게 줄바꿈 문자열을 다른 형식으로 저장합니다.
+        // 이 설정은 이를 통합해 줍니다.
+        // https://myonee.hashnode.dev/cr-lf
+        lineEndings='UNIX'
+        // 안쓰는 java import문 제거
+        removeUnusedImports()
+        // 포매터 양식
+        palantirJavaFormat()
+    }
+}
+
 tasks.named('test') {
     useJUnitPlatform()
 }

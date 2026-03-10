@@ -1,14 +1,13 @@
 package com.example.tradedemo.domain.order.entity;
 
-import com.example.tradedemo.common.entity.BaseEntity;
+import com.example.tradedemo.common.entity.Base;
 import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
-import com.example.tradedemo.domain.members.entity.Members;
+import com.example.tradedemo.domain.members.entity.Member;
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
 
 /**
  * 주문 엔티티
@@ -18,8 +17,9 @@ import java.math.BigDecimal;
 @Getter
 @Table(name = "orders")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Orders extends BaseEntity{
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class Order extends Base {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     /**
@@ -39,14 +39,14 @@ public class Orders extends BaseEntity{
      */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "seller_id", nullable = false)
-    private Members seller;
+    private Member seller;
 
     /**
      * 구매자 ID : buyer_id
      */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "buyer_id", nullable = false)
-    private Members buyer;
+    private Member buyer;
 
     /**
      * 거래 매물 : market_listings_id
@@ -65,22 +65,21 @@ public class Orders extends BaseEntity{
     /**
      * 정적 팩토리 메서드
      */
-    public static Orders create(
+    public static Order create(
             BigDecimal transactionMoney,
             Long transactionStock,
-            Members seller,
-            Members buyer,
+            Member seller,
+            Member buyer,
             MarketListing marketListing,
-            MarketListing itemId
-    ) {
-        Orders orders = new Orders();
-        orders.transactionMoney = transactionMoney;
-        orders.transactionStock = transactionStock;
-        orders.seller = seller;
-        orders.buyer = buyer;
-        orders.marketListing = marketListing;
-        orders.itemId = itemId;
+            MarketListing itemId) {
+        Order order = new Order();
+        order.transactionMoney = transactionMoney;
+        order.transactionStock = transactionStock;
+        order.seller = seller;
+        order.buyer = buyer;
+        order.marketListing = marketListing;
+        order.itemId = itemId;
 
-        return orders;
+        return order;
     }
 }

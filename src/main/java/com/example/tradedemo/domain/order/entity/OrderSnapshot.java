@@ -1,12 +1,11 @@
 package com.example.tradedemo.domain.order.entity;
 
-import com.example.tradedemo.common.entity.BaseEntity;
+import com.example.tradedemo.common.entity.Base;
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
 
 /**
  * 주문 시점의 상품 정보를 보관하는 스냅샷 엔티티
@@ -15,9 +14,10 @@ import java.math.BigDecimal;
 @Getter
 @Table(name = "order_snapshots")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class OrderSnapshot extends BaseEntity {
+public class OrderSnapshot extends Base {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     /**
@@ -43,17 +43,12 @@ public class OrderSnapshot extends BaseEntity {
      */
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "order_id", nullable = false)
-    private Orders ordersId;
+    private Order ordersId;
 
     /**
      * 정적 팩토리 메서드
      */
-    public static OrderSnapshot create(
-            BigDecimal price,
-            String productName,
-            Long productQuantity,
-            Orders order
-    ) {
+    public static OrderSnapshot create(BigDecimal price, String productName, Long productQuantity, Order order) {
         OrderSnapshot orderSnapshot = new OrderSnapshot();
         orderSnapshot.price = price;
         orderSnapshot.productName = productName;
