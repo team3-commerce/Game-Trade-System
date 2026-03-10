@@ -11,6 +11,9 @@ public enum ErrorEnum {
     // Item
     ERR_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_ITEM_NOT_FOUND),
 
+    // MarketListing
+    ERR_MARKET_LISTING_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_MARKET_LISTING_NOT_FOUND),
+
     // Auth
     ERR_AUTH_INVALID_TOKEN(HttpStatus.UNAUTHORIZED, ErrorMessage.MSG_AUTH_INVALID_TOKEN),
     ERR_AUTH_EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, ErrorMessage.MSG_AUTH_EXPIRED_TOKEN),

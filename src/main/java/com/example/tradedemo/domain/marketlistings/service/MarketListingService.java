@@ -1,6 +1,9 @@
 package com.example.tradedemo.domain.marketlistings.service;
 
 import com.example.tradedemo.domain.marketlistings.dto.response.SearchAllMarketListingResponse;
+import com.example.tradedemo.domain.marketlistings.dto.response.SearchMarketListingResponse;
+import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
+import com.example.tradedemo.domain.marketlistings.exception.MarketListingNotFoundException;
 import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,5 +21,13 @@ public class MarketListingService {
             String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
 
         return marketListingRepository.getAllMarketListingWithKeyword(keyword, sortTotalPrice, sortSaleEndAt, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public SearchMarketListingResponse getMarketListing(Long marketListingId) {
+        MarketListing marketListing =
+                marketListingRepository.findById(marketListingId).orElseThrow(MarketListingNotFoundException::new);
+
+        return SearchMarketListingResponse.of(marketListing);
     }
 }
