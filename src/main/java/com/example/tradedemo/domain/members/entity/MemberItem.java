@@ -3,11 +3,10 @@ package com.example.tradedemo.domain.members.entity;
 import com.example.tradedemo.common.entity.Base;
 import com.example.tradedemo.domain.item.entity.Item;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Entity
