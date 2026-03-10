@@ -5,7 +5,6 @@ import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepos
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -15,8 +14,8 @@ public class MarketListingService {
     private MarketListingRepository marketListingRepository;
 
     @Transactional
-    public Page<SearchAllMarketListingResponse> getAllMarketListing(String keyword) {
-        Pageable pageable = PageRequest.of(0, 10);
+    public Page<SearchAllMarketListingResponse> getAllMarketListing(String keyword, Pageable pageable) {
+
         return null;
     }
 }
