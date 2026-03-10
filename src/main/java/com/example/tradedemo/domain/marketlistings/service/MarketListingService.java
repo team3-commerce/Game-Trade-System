@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class MarketListingService {
-    private MarketListingRepository marketListingRepository;
+    private final MarketListingRepository marketListingRepository;
 
     @Transactional(readOnly = true)
     public Page<SearchAllMarketListingResponse> getAllMarketListing(
