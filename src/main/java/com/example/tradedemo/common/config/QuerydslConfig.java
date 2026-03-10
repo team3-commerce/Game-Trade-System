@@ -1,4 +1,4 @@
-package com.example.tradedemo.common;
+package com.example.tradedemo.common.config;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
