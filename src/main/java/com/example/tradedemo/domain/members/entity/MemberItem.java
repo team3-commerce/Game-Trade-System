@@ -1,7 +1,9 @@
 package com.example.tradedemo.domain.members.entity;
 
 import com.example.tradedemo.common.entity.Base;
+import com.example.tradedemo.domain.item.entity.Item;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,4 +17,31 @@ public class MemberItem extends Base {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false)
+    private Long quantity;
+
+    /**
+     * 멤버가 아이템을 회득한 시간
+     */
+    @Column(name = "acquired_at", nullable = false)
+    private LocalDateTime acquiredAt;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "member_id", nullable = false)
+    private Member member;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "item_id", nullable = false)
+    private Item item;
+
+    public static MemberItem create(Member member, Item item, Long quantity, LocalDateTime acquiredAt) {
+        MemberItem memberItem = new MemberItem();
+        memberItem.member = member;
+        memberItem.item = item;
+        memberItem.acquiredAt = acquiredAt;
+        memberItem.quantity = quantity;
+
+        return memberItem;
+    }
 }
