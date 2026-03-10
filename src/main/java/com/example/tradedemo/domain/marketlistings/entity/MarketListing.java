@@ -5,13 +5,12 @@ import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.entity.MemberItem;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * 거래 매물 엔티티
@@ -43,14 +42,20 @@ public class MarketListing extends Base {
     private LocalDateTime saleEndAt;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "member_items_id",  nullable = false)
+    @JoinColumn(name = "member_items_id", nullable = false)
     private MemberItem memberItem;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "member_id",  nullable = false)
+    @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    public static MarketListing create(BigDecimal totalPrice, BigDecimal unitPrice, Long quantity, Duration saleDuration, MemberItem memberItem, Member member) {
+    public static MarketListing create(
+            BigDecimal totalPrice,
+            BigDecimal unitPrice,
+            Long quantity,
+            Duration saleDuration,
+            MemberItem memberItem,
+            Member member) {
         MarketListing marketListing = new MarketListing();
         marketListing.totalPrice = totalPrice;
         marketListing.unitPrice = unitPrice;

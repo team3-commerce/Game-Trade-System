@@ -4,7 +4,6 @@ import com.example.tradedemo.domain.marketlistings.dto.response.SearchAllMarketL
 import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

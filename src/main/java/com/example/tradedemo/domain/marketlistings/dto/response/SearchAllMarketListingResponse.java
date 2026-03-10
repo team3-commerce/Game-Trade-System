@@ -1,10 +1,9 @@
 package com.example.tradedemo.domain.marketlistings.dto.response;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
@@ -16,5 +15,4 @@ public class SearchAllMarketListingResponse {
     private final LocalDateTime saleEndAt;
     private final LocalDateTime createdAt;
     private final LocalDateTime modifiedAt;
-
 }
