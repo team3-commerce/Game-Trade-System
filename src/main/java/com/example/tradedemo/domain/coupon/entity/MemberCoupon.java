@@ -1,6 +1,7 @@
 package com.example.tradedemo.domain.coupon.entity;
 
 import com.example.tradedemo.common.entity.Base;
+import com.example.tradedemo.domain.coupon.enums.CouponStatus;
 import com.example.tradedemo.domain.members.entity.Member;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
