@@ -2,11 +2,10 @@ package com.example.tradedemo.domain.coupon.entity;
 
 import com.example.tradedemo.common.entity.Base;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Entity
@@ -37,17 +36,13 @@ public class MemberCoupon extends Base {
     private LocalDateTime expiredAt;
 
     public static MemberCoupon create(
-            Member member,
-            CouponPolicy couponPolicy,
-            LocalDateTime issuedAt,
-            LocalDateTime expiredAt
-    ) {
-        MemberCoupon memberCoupon      = new MemberCoupon();
-        memberCoupon.member            = member;
-        memberCoupon.couponPolicy      = couponPolicy;
-        memberCoupon.status            = CouponStatus.UNUSED;
-        memberCoupon.issuedAt          = issuedAt;
-        memberCoupon.expiredAt         = expiredAt;
+            Member member, CouponPolicy couponPolicy, LocalDateTime issuedAt, LocalDateTime expiredAt) {
+        MemberCoupon memberCoupon = new MemberCoupon();
+        memberCoupon.member = member;
+        memberCoupon.couponPolicy = couponPolicy;
+        memberCoupon.status = CouponStatus.UNUSED;
+        memberCoupon.issuedAt = issuedAt;
+        memberCoupon.expiredAt = expiredAt;
         return memberCoupon;
     }
 }
