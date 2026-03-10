@@ -16,10 +16,7 @@ public class WalletController {
      * 내 지갑 조회
      */
     @GetMapping("/wallet")
-    public WalletResponse getMyWallet(
-            @RequestParam Long memberId
-    ){
+    public WalletResponse getMyWallet(@RequestParam Long memberId) {
         return walletService.getMyWallet(memberId);
     }
-
 }

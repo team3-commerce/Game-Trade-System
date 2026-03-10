@@ -1,10 +1,9 @@
 package com.example.tradedemo.domain.order.dto.response;
 
 import com.example.tradedemo.domain.order.entity.Order;
-import lombok.Getter;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import lombok.Getter;
 
 @Getter
 public class TransactionResponse {
@@ -20,8 +19,7 @@ public class TransactionResponse {
             BigDecimal transactionMoney,
             Long transactionStock,
             Long marketListingId,
-            LocalDateTime createdAt
-    ){
+            LocalDateTime createdAt) {
         this.orderId = orderId;
         this.transactionMoney = transactionMoney;
         this.transactionStock = transactionStock;
@@ -29,13 +27,12 @@ public class TransactionResponse {
         this.createdAt = createdAt;
     }
 
-    public static TransactionResponse of(Order order){
+    public static TransactionResponse of(Order order) {
         return new TransactionResponse(
                 order.getId(),
                 order.getTransactionMoney(),
                 order.getTransactionStock(),
                 order.getMarketListing().getId(),
-                order.getCreatedAt()
-        );
+                order.getCreatedAt());
     }
 }

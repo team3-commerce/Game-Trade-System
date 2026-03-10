@@ -2,10 +2,9 @@ package com.example.tradedemo.domain.order.controller;
 
 import com.example.tradedemo.domain.order.dto.response.*;
 import com.example.tradedemo.domain.order.service.OrderService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -18,10 +17,7 @@ public class OrderController {
      * 상품 구매
      */
     @PostMapping("/market-listings/{marketListingId}")
-    public void purchase(
-            @PathVariable Long marketListingId,
-            @RequestParam Long memberId
-    ){
+    public void purchase(@PathVariable Long marketListingId, @RequestParam Long memberId) {
         orderService.purchase(memberId, marketListingId);
     }
 
@@ -29,9 +25,7 @@ public class OrderController {
      * 내 구매 내역 조회
      */
     @GetMapping("/me/purchases")
-    public List<TransactionResponse> getMyBuyer(
-            @RequestParam Long memberId
-    ){
+    public List<TransactionResponse> getMyBuyer(@RequestParam Long memberId) {
         return orderService.getMyBuyer(memberId);
     }
 
@@ -39,10 +33,7 @@ public class OrderController {
      * 내 판매 내역 조회
      */
     @GetMapping("/me/sales")
-    public List<TransactionResponse> getMySeller(
-            @RequestParam Long memberId
-    ){
+    public List<TransactionResponse> getMySeller(@RequestParam Long memberId) {
         return orderService.getMySeller(memberId);
     }
-
 }
