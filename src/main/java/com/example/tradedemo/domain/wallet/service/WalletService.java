@@ -17,12 +17,10 @@ public class WalletService {
      * 내 지갑 조회
      */
     @Transactional(readOnly = true)
-    public WalletResponse getMyWallet(Long memberId){
+    public WalletResponse getMyWallet(Long memberId) {
 
-        Wallet wallet = walletRepository.findByMemberId(memberId)
-                .orElseThrow();
+        Wallet wallet = walletRepository.findByMemberId(memberId).orElseThrow();
 
         return WalletResponse.of(wallet);
     }
-
 }
