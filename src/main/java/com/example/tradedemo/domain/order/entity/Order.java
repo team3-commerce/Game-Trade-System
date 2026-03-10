@@ -1,6 +1,7 @@
 package com.example.tradedemo.domain.order.entity;
 
 import com.example.tradedemo.common.entity.Base;
+import com.example.tradedemo.domain.item.entity.Item;
 import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.members.entity.Member;
 import jakarta.persistence.*;
@@ -57,10 +58,11 @@ public class Order extends Base {
 
     /**
      * 거래 매물 ID : item_id
+     * 아이템의 아이디나 이름을 사용할 수 있다.
      */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "item_id", nullable = false)
-    private MarketListing itemId;
+    private Item item;
 
     /**
      * 정적 팩토리 메서드
@@ -71,14 +73,14 @@ public class Order extends Base {
             Member seller,
             Member buyer,
             MarketListing marketListing,
-            MarketListing itemId) {
+            Item item) {
         Order order = new Order();
         order.transactionMoney = transactionMoney;
         order.transactionStock = transactionStock;
         order.seller = seller;
         order.buyer = buyer;
         order.marketListing = marketListing;
-        order.itemId = itemId;
+        order.item = item;
 
         return order;
     }
