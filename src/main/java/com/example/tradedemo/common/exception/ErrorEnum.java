@@ -9,6 +9,13 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum ErrorEnum {
 
+    // Auth
+    ERR_AUTH_INVALID_TOKEN(HttpStatus.UNAUTHORIZED, ErrorMessage.MSG_AUTH_INVALID_TOKEN),
+    ERR_AUTH_EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, ErrorMessage.MSG_AUTH_EXPIRED_TOKEN),
+    ERR_AUTH_DUPLICATE_EMAIL(HttpStatus.CONFLICT, ErrorMessage.MSG_AUTH_DUPLICATE_EMAIL),
+    ERR_AUTH_MEMBER_NOT_FOUND(HttpStatus.UNAUTHORIZED, ErrorMessage.MSG_AUTH_MEMBER_NOT_FOUND),
+    ERR_AUTH_INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, ErrorMessage.MSG_AUTH_INVALID_PASSWORD),
+
     // Member
     ERR_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_MEMBER_NOT_FOUND);
 
