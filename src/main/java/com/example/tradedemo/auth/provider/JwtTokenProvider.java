@@ -1,7 +1,10 @@
 package com.example.tradedemo.auth.provider;
 
 import com.example.tradedemo.auth.config.JwtProperties;
+import com.example.tradedemo.common.exception.ErrorEnum;
+import com.example.tradedemo.common.exception.ServiceException;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -68,8 +71,10 @@ public class JwtTokenProvider {
         try {
             Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
             return true;
+        } catch (ExpiredJwtException e) {
+            throw new ServiceException(ErrorEnum.ERR_AUTH_EXPIRED_TOKEN);
         } catch (JwtException | IllegalArgumentException e) {
-            return false;
+            throw new ServiceException(ErrorEnum.ERR_AUTH_INVALID_TOKEN);
         }
     }
 }
