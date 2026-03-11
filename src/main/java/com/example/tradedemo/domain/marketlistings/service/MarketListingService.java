@@ -6,6 +6,7 @@ import com.example.tradedemo.domain.marketlistings.dto.response.GetMarketListing
 import com.example.tradedemo.domain.marketlistings.dto.response.SearchAllMarketListingResponse;
 import com.example.tradedemo.domain.marketlistings.dto.response.SearchMarketListingResponse;
 import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
+import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import com.example.tradedemo.domain.marketlistings.exception.MarketListingNotFoundException;
 import com.example.tradedemo.domain.marketlistings.exception.MarketListingOverSellingException;
 import com.example.tradedemo.domain.marketlistings.exception.MarketListingOwnerMismatchException;
@@ -75,7 +76,7 @@ public class MarketListingService {
             String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
 
         return marketListingRepository.getAllMarketListingWithKeyword(
-                null, keyword, sortTotalPrice, sortSaleEndAt, pageable);
+                null, keyword, MarketListingStatus.SELLING, sortTotalPrice, sortSaleEndAt, pageable);
     }
 
     /**
@@ -86,7 +87,7 @@ public class MarketListingService {
             Long memberId, String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
 
         return marketListingRepository.getAllMarketListingWithKeyword(
-                memberId, keyword, sortTotalPrice, sortSaleEndAt, pageable);
+                memberId, keyword, null, sortTotalPrice, sortSaleEndAt, pageable);
     }
 
     @Transactional(readOnly = true)
