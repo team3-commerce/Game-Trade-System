@@ -18,6 +18,8 @@ public final class ErrorMessage {
 
     // MarketListing
     public static final String MSG_MARKET_LISTING_NOT_FOUND = "찾는 거래 매물 정보가 존재하지 않습니다";
+    public static final String MSG_MARKET_LISTING_OWNER_MISMATCH = "아이템 상품 등록은 본인 아이템만 할 수 있습니다";
+    public static final String MSG_MARKET_LISTING_OVER_SELLING = "가지고 있는 아이템 보다 더 많이 팔 수는 없습니다";
 
     // Order
 

@@ -21,7 +21,7 @@ public class MarketListingCustomRepositoryImpl implements MarketListingCustomRep
 
     @Override
     public Page<SearchAllMarketListingResponse> getAllMarketListingWithKeyword(
-            String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
+            Long memberId, String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
 
         BooleanBuilder builder = new BooleanBuilder();
 
@@ -30,6 +30,10 @@ public class MarketListingCustomRepositoryImpl implements MarketListingCustomRep
          */
         if (keyword != null && !keyword.isBlank()) {
             builder.and(marketListing.itemName.startsWithIgnoreCase(keyword));
+        }
+
+        if (memberId != null) {
+            builder.and(marketListing.member.id.eq(memberId));
         }
 
         /**

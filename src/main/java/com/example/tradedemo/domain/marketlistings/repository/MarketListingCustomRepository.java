@@ -7,5 +7,5 @@ import org.springframework.data.domain.Pageable;
 public interface MarketListingCustomRepository {
 
     Page<SearchAllMarketListingResponse> getAllMarketListingWithKeyword(
-            String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable);
+            Long memberId, String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable);
 }
