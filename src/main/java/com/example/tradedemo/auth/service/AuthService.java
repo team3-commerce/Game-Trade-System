@@ -49,6 +49,9 @@ public class AuthService {
         couponService.autoSignupCoupon(member);
     }
 
+    /**
+     * 로그인
+     */
     @Transactional
     public TokenResponse login(LoginRequest request) {
         // 사용자 확인
@@ -61,15 +64,34 @@ public class AuthService {
             throw new ServiceException(ErrorEnum.ERR_AUTH_INVALID_PASSWORD);
         }
 
+        // 계정 상태별 처리
+        switch (member.getStatus()) {
+            case WITHDRAWN -> throw new ServiceException(ErrorEnum.ERR_AUTH_WITHDRAWN_MEMBER);
+
+            case INACTIVE_SUSPENDED -> throw new ServiceException(
+                    ErrorEnum.ERR_AUTH_SUSPENDED_MEMBER, member.getStatusReason());
+
+            case INACTIVE_DORMANT -> member.activate();
+
+            case ACTIVE -> {
+            }
+        }
+
+        // 로그인 처리
         String accessToken = jwtTokenProvider.createAccessToken(
                 member.getEmail(), member.getRole().name());
+
         String refreshToken = jwtTokenProvider.createRefreshToken();
 
         member.updateRefreshToken(refreshToken);
+        member.updateLastLoginAt();
 
         return new TokenResponse(accessToken, refreshToken);
     }
 
+    /**
+     * 로그아웃
+     */
     @Transactional
     public void logout(String email) {
         Member member = memberRepository

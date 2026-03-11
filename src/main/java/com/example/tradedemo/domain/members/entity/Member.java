@@ -44,6 +44,8 @@ public class Member extends Base {
 
     private String statusReason;
 
+    private LocalDateTime lastLoginAt;
+
     private Member(String email, String password, String nickname, MemberRole role) {
         this.email = email;
         this.password = password;
@@ -58,6 +60,11 @@ public class Member extends Base {
         return new Member(email, password, nickname, role);
     }
 
+    // 로그인 시 시간 업데이트
+    public void updateLastLoginAt() {
+        this.lastLoginAt = LocalDateTime.now();
+    }
+
     // 회원 탈퇴 (소프트 삭제)
     public void withdraw() {
         this.status = MemberStatus.WITHDRAWN;
@@ -65,11 +72,25 @@ public class Member extends Base {
         this.statusReason = "사용자 요청에 의한 회원 탈퇴";
     }
 
-    // 비활성화 처리
-    public void deactivate(String reason) {
-        this.status = MemberStatus.INACTIVE;
+    // 휴면 처리
+    public void makeDormant() {
+        this.status = MemberStatus.INACTIVE_DORMANT;
+        this.statusChangedAt = LocalDateTime.now();
+        this.statusReason = "30일 이상 미접속으로 인한 휴면 전환";
+    }
+
+    // 관리자에 의한 계정 정지
+    public void suspend(String reason) {
+        this.status = MemberStatus.INACTIVE_SUSPENDED;
         this.statusChangedAt = LocalDateTime.now();
         this.statusReason = reason;
+    }
+
+    // 계정 복구 (휴면 해제)
+    public void activate() {
+        this.status = MemberStatus.ACTIVE;
+        this.statusChangedAt = LocalDateTime.now();
+        this.statusReason = "계정 활동 재개";
     }
 
     // Refresh Token 업데이트
