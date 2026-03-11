@@ -34,15 +34,19 @@ public class AuthService {
             throw new ServiceException(ErrorEnum.ERR_AUTH_DUPLICATE_EMAIL);
         }
 
+        if (memberRepository.existsByNickname(request.nickname())) {
+            throw new ServiceException(ErrorEnum.ERR_AUTH_DUPLICATE_EMAIL);
+        }
+
         // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(request.password());
 
-        Member member = Member.create(request.email(), encodedPassword, request.role());
+        Member member = Member.create(request.email(), encodedPassword, request.nickname(), request.role());
 
         memberRepository.save(member);
 
         // 회원가입 쿠폰 자동 발급
-//        couponService.autoSignupCoupon(member);
+        couponService.autoSignupCoupon(member);
     }
 
     @Transactional

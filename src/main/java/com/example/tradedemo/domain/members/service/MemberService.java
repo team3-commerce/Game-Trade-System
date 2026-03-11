@@ -42,6 +42,11 @@ public class MemberService {
             throw new ServiceException(ErrorEnum.ERR_AUTH_INVALID_PASSWORD);
         }
 
+        // 새 닉네임 업데이트
+        if (request.nickname() != null) {
+            member.updateNickname(request.nickname());
+        }
+
         // 새 비밀번호 업데이트
         String encodedNewPassword = passwordEncoder.encode(request.newPassword());
         member.updatePassword(encodedNewPassword);

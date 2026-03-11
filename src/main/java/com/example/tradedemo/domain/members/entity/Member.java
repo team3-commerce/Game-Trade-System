@@ -24,20 +24,24 @@ public class Member {
     @Column(nullable = false)
     private String password;
 
+    @Column(unique = true, nullable = false)
+    private String nickname;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MemberRole role;
 
     private String refreshToken;
 
-    private Member(String email, String password, MemberRole role) {
+    private Member(String email, String password, String nickname, MemberRole role) {
         this.email = email;
         this.password = password;
+        this.nickname = nickname;
         this.role = role;
     }
 
-    public static Member create(String email, String password, MemberRole role) {
-        return new Member(email, password, role);
+    public static Member create(String email, String password, String nickname, MemberRole role) {
+        return new Member(email, password, nickname, role);
     }
 
     // Refresh Token 업데이트
@@ -53,5 +57,10 @@ public class Member {
     // 비밀번호 변경
     public void updatePassword(String encodedPassword) {
         this.password = encodedPassword;
+    }
+
+    // 닉네임 변경
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
     }
 }
