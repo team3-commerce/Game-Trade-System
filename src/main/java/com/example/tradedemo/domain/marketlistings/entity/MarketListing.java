@@ -28,7 +28,7 @@ public class MarketListing extends Base {
     @Column(length = 64, name = "item_name", nullable = false)
     private String itemName;
 
-    @Column(name = "totla_price", nullable = false)
+    @Column(name = "total_price", nullable = false)
     private BigDecimal totalPrice;
 
     @Column(name = "unit_price", nullable = false)

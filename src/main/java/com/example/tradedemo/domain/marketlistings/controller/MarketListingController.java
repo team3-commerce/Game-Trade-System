@@ -1,6 +1,7 @@
 package com.example.tradedemo.domain.marketlistings.controller;
 
 import com.example.tradedemo.common.dto.ApiResponse;
+import com.example.tradedemo.domain.marketlistings.dto.request.CreateMarketListingRequest;
 import com.example.tradedemo.domain.marketlistings.dto.response.SearchAllMarketListingResponse;
 import com.example.tradedemo.domain.marketlistings.service.MarketListingService;
 import lombok.RequiredArgsConstructor;
@@ -9,15 +10,27 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
 public class MarketListingController {
     private final MarketListingService marketListingService;
 
+    /**
+     * 상품 등록
+     */
+    @PostMapping("/api/v1/market-listings")
+    public ResponseEntity<ApiResponse<Long>> createMarketListing(
+            @RequestParam Long memberId,
+            @RequestBody CreateMarketListingRequest request) {
+
+        Long listingId = marketListingService.create(memberId, request);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(String.valueOf(HttpStatus.OK.value()), listingId)
+        );
+    }
     /**
      *  마켓 상품 전체 조회
      *  sortTotalPrice, sortSaleEndAt 값을 asc/desc 로 전달하여 정렬 조건 추가 가능

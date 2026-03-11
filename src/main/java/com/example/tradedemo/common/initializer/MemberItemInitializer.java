@@ -42,10 +42,10 @@ public class MemberItemInitializer implements ApplicationRunner {
          * 인벤토리 생성, 획득 시간은 생성시간으로 설정했음
          */
         memberItemRepository.save(
-                MemberItem.create(member, sword, 10L, LocalDateTime.now())
+                MemberItem.create(member, sword, LocalDateTime.now(), 10L)
         );
         memberItemRepository.save(
-                MemberItem.create(member, armor, 5L, LocalDateTime.now())
+                MemberItem.create(member, armor, LocalDateTime.now(),  5L)
         );
     }
 }
