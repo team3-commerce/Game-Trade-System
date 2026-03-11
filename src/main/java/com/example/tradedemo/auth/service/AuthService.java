@@ -6,6 +6,7 @@ import com.example.tradedemo.auth.dto.TokenResponse;
 import com.example.tradedemo.auth.provider.JwtTokenProvider;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
+import com.example.tradedemo.domain.coupon.service.CouponService;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class AuthService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final CouponService couponService;
 
     /**
      * 회원가입
@@ -38,6 +40,9 @@ public class AuthService {
         Member member = Member.create(request.email(), encodedPassword, request.role());
 
         memberRepository.save(member);
+
+        // 회원가입 쿠폰 자동 발급
+        couponService.autoSignupCoupon(member);
     }
 
     public TokenResponse login(LoginRequest request) {
