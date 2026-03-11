@@ -3,6 +3,7 @@ package com.example.tradedemo.domain.marketlistings.repository;
 import static com.example.tradedemo.domain.marketlistings.entity.QMarketListing.marketListing;
 
 import com.example.tradedemo.domain.marketlistings.dto.response.SearchAllMarketListingResponse;
+import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
@@ -21,7 +22,12 @@ public class MarketListingCustomRepositoryImpl implements MarketListingCustomRep
 
     @Override
     public Page<SearchAllMarketListingResponse> getAllMarketListingWithKeyword(
-            String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
+            Long memberId,
+            String keyword,
+            MarketListingStatus listingStatus,
+            String sortTotalPrice,
+            String sortSaleEndAt,
+            Pageable pageable) {
 
         BooleanBuilder builder = new BooleanBuilder();
 
@@ -30,6 +36,14 @@ public class MarketListingCustomRepositoryImpl implements MarketListingCustomRep
          */
         if (keyword != null && !keyword.isBlank()) {
             builder.and(marketListing.itemName.startsWithIgnoreCase(keyword));
+        }
+
+        if (memberId != null) {
+            builder.and(marketListing.member.id.eq(memberId));
+        }
+
+        if (listingStatus != null) {
+            builder.and(marketListing.status.eq(listingStatus));
         }
 
         /**
@@ -41,8 +55,10 @@ public class MarketListingCustomRepositoryImpl implements MarketListingCustomRep
                 .select(Projections.constructor(
                         SearchAllMarketListingResponse.class,
                         marketListing.id,
+                        marketListing.itemName,
                         marketListing.totalPrice,
                         marketListing.quantity,
+                        marketListing.status,
                         marketListing.saleEndAt,
                         marketListing.createdAt,
                         marketListing.modifiedAt))
