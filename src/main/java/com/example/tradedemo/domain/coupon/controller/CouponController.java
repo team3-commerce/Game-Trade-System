@@ -3,6 +3,7 @@ package com.example.tradedemo.domain.coupon.controller;
 import com.example.tradedemo.auth.dto.PrincipalDetails;
 import com.example.tradedemo.common.dto.ApiResponse;
 import com.example.tradedemo.common.dto.PageResponse;
+import com.example.tradedemo.domain.coupon.constants.CouponMessage;
 import com.example.tradedemo.domain.coupon.dto.CreateCouponPolicyRequest;
 import com.example.tradedemo.domain.coupon.dto.CreateCouponPolicyResponse;
 import com.example.tradedemo.domain.coupon.dto.SearchAllCouponPolicyResponse;
@@ -94,7 +95,8 @@ public class CouponController {
         Member member = principalDetails.getMember();
         couponService.issueFirstComeCoupon(couponPolicyId, member);
 
-        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), "쿠폰이 발급되었습니다"));
+        return ResponseEntity.ok(
+                ApiResponse.success(String.valueOf(HttpStatus.OK.value()), CouponMessage.COUPON_ISSUED));
     }
 
     /**
@@ -108,6 +110,6 @@ public class CouponController {
         Member member = principalDetails.getMember();
         couponService.useCoupon(memberId, memberCouponId, member);
 
-        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), "쿠폰이 사용되었습니다"));
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), CouponMessage.COUPON_USED));
     }
 }
