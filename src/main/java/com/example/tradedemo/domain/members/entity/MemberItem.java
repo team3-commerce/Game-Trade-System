@@ -2,6 +2,7 @@ package com.example.tradedemo.domain.members.entity;
 
 import com.example.tradedemo.common.entity.Base;
 import com.example.tradedemo.domain.item.entity.Item;
+import com.example.tradedemo.domain.members.exception.InventoryItemNotFoundException;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
@@ -35,7 +36,7 @@ public class MemberItem extends Base {
     @JoinColumn(name = "item_id", nullable = false)
     private Item item;
 
-    public static MemberItem create(Member member, Item item, Long quantity, LocalDateTime acquiredAt) {
+    public static MemberItem create(Member member, Item item, LocalDateTime acquiredAt, Long quantity) {
         MemberItem memberItem = new MemberItem();
         memberItem.member = member;
         memberItem.item = item;
@@ -43,5 +44,15 @@ public class MemberItem extends Base {
         memberItem.quantity = quantity;
 
         return memberItem;
+    }
+
+    /**
+     * 아이템 등록 시 아이템 차감
+     */
+    public void decrease(Long quantity) {
+        if (this.quantity < quantity) {
+            throw new InventoryItemNotFoundException();
+        }
+        this.quantity -= quantity;
     }
 }
