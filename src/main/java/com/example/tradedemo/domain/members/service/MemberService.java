@@ -84,7 +84,8 @@ public class MemberService {
      */
     @Transactional
     public void suspendMember(MemberSuspendRequest request) {
-        Member member = memberRepository.findByEmail(request.email())
+        Member member = memberRepository
+                .findByEmail(request.email())
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
 
         if (member.getStatus() == MemberStatus.WITHDRAWN) {

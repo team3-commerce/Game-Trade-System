@@ -35,7 +35,7 @@ public class AuthService {
         }
 
         if (memberRepository.existsByNickname(request.nickname())) {
-            throw new ServiceException(ErrorEnum.ERR_AUTH_DUPLICATE_EMAIL);
+            throw new ServiceException(ErrorEnum.ERR_AUTH_DUPLICATE_NICKNAME);
         }
 
         // 비밀번호 암호화
@@ -73,8 +73,7 @@ public class AuthService {
 
             case INACTIVE_DORMANT -> member.activate();
 
-            case ACTIVE -> {
-            }
+            case ACTIVE -> {}
         }
 
         // 로그인 처리

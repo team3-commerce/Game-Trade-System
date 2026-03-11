@@ -65,8 +65,7 @@ public class MemberController {
      */
     @PatchMapping("/admin/suspend")
     public ResponseEntity<ApiResponse<Void>> suspend(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody @Valid MemberSuspendRequest request) {
+            @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid MemberSuspendRequest request) {
 
         memberService.suspendMember(request);
         return ResponseEntity.ok(ApiResponse.success("200", null));
