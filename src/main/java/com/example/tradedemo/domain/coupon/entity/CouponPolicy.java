@@ -81,4 +81,11 @@ public class CouponPolicy extends Base {
     public void increaseExpendQuantity() {
         this.expendQuantity++;
     }
+
+    public boolean isIssuable() {
+        if (issueType == IssueType.AUTO_SIGNUP) {
+            return true;
+        }
+        return totalQuantity != null && expendQuantity < totalQuantity;
+    }
 }

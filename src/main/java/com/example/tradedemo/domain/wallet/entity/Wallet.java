@@ -41,4 +41,8 @@ public class Wallet extends Base {
 
         return wallet;
     }
+
+    public void addBalance(BigDecimal amount) {
+        this.balance = this.balance.add(amount);
+    }
 }
