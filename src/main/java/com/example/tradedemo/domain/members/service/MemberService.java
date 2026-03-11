@@ -3,9 +3,11 @@ package com.example.tradedemo.domain.members.service;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.members.dto.MemberResponse;
+import com.example.tradedemo.domain.members.dto.MemberSuspendRequest;
 import com.example.tradedemo.domain.members.dto.NicknameUpdateRequest;
 import com.example.tradedemo.domain.members.dto.PasswordUpdateRequest;
 import com.example.tradedemo.domain.members.entity.Member;
+import com.example.tradedemo.domain.members.entity.MemberStatus;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -75,5 +77,20 @@ public class MemberService {
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
 
         member.withdraw();
+    }
+
+    /**
+     * 회원 정지(관리자)
+     */
+    @Transactional
+    public void suspendMember(MemberSuspendRequest request) {
+        Member member = memberRepository.findByEmail(request.email())
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
+
+        if (member.getStatus() == MemberStatus.WITHDRAWN) {
+            throw new ServiceException(ErrorEnum.ERR_AUTH_WITHDRAWN_MEMBER);
+        }
+
+        member.suspend(request.reason());
     }
 }
