@@ -31,7 +31,8 @@ public enum ErrorEnum {
             HttpStatus.BAD_REQUEST, ErrorMessage.MSG_COUPON_POLICY_FIRST_COME_QUANTITY_REQUIRED),
     ERR_COUPON_POLICY_AUTO_SIGNUP_ALREADY_EXISTS(
             HttpStatus.CONFLICT, ErrorMessage.MSG_COUPON_POLICY_AUTO_SIGNUP_ALREADY_EXISTS),
-    ERR_COUPON_ALREADY_ISSUED(HttpStatus.CONFLICT, ErrorMessage.MSG_COUPON_ALREADY_ISSUED);
+    ERR_COUPON_ALREADY_ISSUED(HttpStatus.CONFLICT, ErrorMessage.MSG_COUPON_ALREADY_ISSUED),
+    ERR_MEMBER_COUPON_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_MEMBER_COUPON_NOT_FOUND);
 
     private final HttpStatus httpStatus;
     private final String errorMessage;
