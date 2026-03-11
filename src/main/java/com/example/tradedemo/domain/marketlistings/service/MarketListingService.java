@@ -5,6 +5,8 @@ import com.example.tradedemo.domain.marketlistings.dto.response.SearchAllMarketL
 import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.marketlistings.exception.CreateMarketListingNotFoundException;
 import com.example.tradedemo.domain.marketlistings.exception.MemberItemEqualsNotFoundException;
+import com.example.tradedemo.domain.marketlistings.dto.response.SearchMarketListingResponse;
+import com.example.tradedemo.domain.marketlistings.exception.MarketListingNotFoundException;
 import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepository;
 import com.example.tradedemo.domain.members.entity.MemberItem;
 import com.example.tradedemo.domain.members.repository.MemberItemRepository;
@@ -84,5 +86,13 @@ public class MarketListingService {
             String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
 
         return marketListingRepository.getAllMarketListingWithKeyword(keyword, sortTotalPrice, sortSaleEndAt, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public SearchMarketListingResponse getMarketListing(Long marketListingId) {
+        MarketListing marketListing =
+                marketListingRepository.findById(marketListingId).orElseThrow(MarketListingNotFoundException::new);
+
+        return SearchMarketListingResponse.of(marketListing);
     }
 }
