@@ -1,30 +1,17 @@
 package com.example.tradedemo.domain.marketlistings.dto.request;
 
+import com.example.tradedemo.domain.marketlistings.enums.SalesDurations;
 import java.math.BigDecimal;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class CreateMarketListingRequest {
-
     private Long memberItemId;
     private BigDecimal totalPrice;
     private Long quantity;
-    private Long saleDurationHours; // 12 / 24 / 48
-
-
-    public CreateMarketListingRequest() {}
-
-    public Long getMemberItemId() {
-        return memberItemId;
-    }
-
-    public BigDecimal getTotalPrice() {
-        return totalPrice;
-    }
-
-    public Long getQuantity() {
-        return quantity;
-    }
-
-    public Long getSaleDurationHours() {
-        return saleDurationHours;
-    }
+    private SalesDurations salesDuration;
 }

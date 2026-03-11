@@ -1,51 +1,56 @@
 package com.example.tradedemo.domain.marketlistings.service;
 
 import com.example.tradedemo.domain.marketlistings.dto.request.CreateMarketListingRequest;
+import com.example.tradedemo.domain.marketlistings.dto.response.GetMarketListingResponse;
 import com.example.tradedemo.domain.marketlistings.dto.response.SearchAllMarketListingResponse;
-import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
-import com.example.tradedemo.domain.marketlistings.exception.CreateMarketListingNotFoundException;
-import com.example.tradedemo.domain.marketlistings.exception.MemberItemEqualsNotFoundException;
 import com.example.tradedemo.domain.marketlistings.dto.response.SearchMarketListingResponse;
+import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.marketlistings.exception.MarketListingNotFoundException;
+import com.example.tradedemo.domain.marketlistings.exception.MarketListingOverSellingException;
+import com.example.tradedemo.domain.marketlistings.exception.MarketListingOwnerMismatchException;
 import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepository;
+import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.entity.MemberItem;
+import com.example.tradedemo.domain.members.exception.MemberItemNotFoundException;
+import com.example.tradedemo.domain.members.exception.MemberNotFoundException;
 import com.example.tradedemo.domain.members.repository.MemberItemRepository;
+import com.example.tradedemo.domain.members.repository.MemberRepository;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.Duration;
-
 @Service
 @RequiredArgsConstructor
 public class MarketListingService {
     private final MarketListingRepository marketListingRepository;
     private final MemberItemRepository memberItemRepository;
-
+    private final MemberRepository memberRepository;
     /**
      * 상품 등록
      */
     @Transactional
-    public Long create(Long memberId, CreateMarketListingRequest request) {
+    public GetMarketListingResponse create(Long memberId, CreateMarketListingRequest request) {
+        Member member = memberRepository.findById(memberId).orElseThrow(MemberNotFoundException::new);
 
-        MemberItem memberItem = memberItemRepository.findById(request.getMemberItemId())
-                .orElseThrow(CreateMarketListingNotFoundException::new);
+        MemberItem memberItem =
+                memberItemRepository.findById(request.getMemberItemId()).orElseThrow(MemberItemNotFoundException::new);
         /**
          * 판매자 검증
          * 아이템 소유자와 등록자가 동일한지 확인
          */
-        if (!memberItem.getMember().getId().equals(memberId)) {
-            throw new MemberItemEqualsNotFoundException();
+        if (!memberItem.getMember().getId().equals(member.getId())) {
+            throw new MarketListingOwnerMismatchException();
         }
         /**
-          * 수량 검증
-          */
+         * 수량 검증
+         * 가지고 있는 아이템보다 더 많이 팔려고 하는 경우
+         */
         if (memberItem.getQuantity() < request.getQuantity()) {
-            throw new CreateMarketListingNotFoundException();
+            throw new MarketListingOverSellingException();
         }
 
         /**
@@ -60,27 +65,23 @@ public class MarketListingService {
         BigDecimal unitPrice = request.getTotalPrice()
                 .divide(BigDecimal.valueOf(request.getQuantity()), 0, RoundingMode.DOWN); // 0 방향으로 반내림
 
-        Duration duration = Duration.ofHours(request.getSaleDurationHours());
-
-        MarketListing listing = MarketListing.create(
+        MarketListing marketListing = MarketListing.create(
                 memberItem.getItem().getName(),
                 request.getTotalPrice(),
                 unitPrice,
                 request.getQuantity(),
-                duration,
+                request.getSalesDuration().getDuration(),
                 memberItem,
-                memberItem.getMember()
-        );
+                member);
 
+        marketListingRepository.saveAndFlush(marketListing);
 
-        marketListingRepository.save(listing);
-
-        return listing.getId();
+        return GetMarketListingResponse.create(marketListing, memberItem.getItem());
     }
 
     /**
-    * 마켓 상품 전체 조회
-    */
+     * 마켓 상품 전체 조회
+     */
     @Transactional(readOnly = true)
     public Page<SearchAllMarketListingResponse> getAllMarketListing(
             String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
