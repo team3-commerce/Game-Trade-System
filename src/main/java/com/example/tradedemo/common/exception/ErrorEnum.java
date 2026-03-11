@@ -24,7 +24,11 @@ public enum ErrorEnum {
     // Coupon
     ERR_COUPON_POLICY_DUPLICATE_NAME(HttpStatus.CONFLICT, ErrorMessage.MSG_COUPON_POLICY_DUPLICATE_NAME),
     ERR_COUPON_POLICY_FIRST_COME_QUANTITY_REQUIRED(
-            HttpStatus.BAD_REQUEST, ErrorMessage.MSG_COUPON_POLICY_FIRST_COME_QUANTITY_REQUIRED);
+            HttpStatus.BAD_REQUEST, ErrorMessage.MSG_COUPON_POLICY_FIRST_COME_QUANTITY_REQUIRED),
+
+    // MarketListing
+    ERR_MEMBERITEM_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_MEMBERITEM_NOT_FOUND);
+
 
     private final HttpStatus httpStatus;
     private final String errorMessage;

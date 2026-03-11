@@ -16,6 +16,7 @@ public final class ErrorMessage {
     public static final String MSG_ITEM_NOT_FOUND = "찾는 아이템 정보가 존재하지 않습니다";
 
     // MarketListing
+    public static final String MSG_MEMBERITEM_NOT_FOUND = "인벤토리 내 아이템 정보가 존재하지 않습니다";
 
     // Order
 
