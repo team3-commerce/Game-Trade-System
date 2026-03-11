@@ -27,6 +27,7 @@ public enum ErrorEnum {
 
     // Member
     ERR_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_MEMBER_NOT_FOUND),
+    ERR_MEMBER_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_MEMBER_ITEM_NOT_FOUND),
 
     // Coupon
     ERR_COUPON_POLICY_DUPLICATE_NAME(HttpStatus.CONFLICT, ErrorMessage.MSG_COUPON_POLICY_DUPLICATE_NAME),
