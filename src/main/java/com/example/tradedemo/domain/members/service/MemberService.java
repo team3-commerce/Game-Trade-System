@@ -3,7 +3,8 @@ package com.example.tradedemo.domain.members.service;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.members.dto.MemberResponse;
-import com.example.tradedemo.domain.members.dto.MemberUpdateRequest;
+import com.example.tradedemo.domain.members.dto.NicknameUpdateRequest;
+import com.example.tradedemo.domain.members.dto.PasswordUpdateRequest;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,27 +30,39 @@ public class MemberService {
     }
 
     /**
-     * 내 정보 업데이트
+     * 내 닉네임 수정
      */
     @Transactional
-    public void updateMyInfo(String email, MemberUpdateRequest request) {
+    public void updateNickname(String email, NicknameUpdateRequest request) {
         Member member = memberRepository
                 .findByEmail(email)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
 
-        // 기존 비밀번호 확인
+        // 닉네임 중복 체크
+        if (memberRepository.existsByNickname(request.nickname())) {
+            throw new ServiceException(ErrorEnum.ERR_AUTH_DUPLICATE_NICKNAME);
+        }
+
+        // 새 닉네임 업데이트
+        member.updateNickname(request.nickname());
+    }
+
+    /**
+     * 내 비밀번호 수정
+     */
+    @Transactional
+    public void updatePassword(String email, PasswordUpdateRequest request) {
+        Member member = memberRepository
+                .findByEmail(email)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
+
+        // 현재 비밀번호 일치 확인
         if (!passwordEncoder.matches(request.currentPassword(), member.getPassword())) {
             throw new ServiceException(ErrorEnum.ERR_AUTH_INVALID_PASSWORD);
         }
 
-        // 새 닉네임 업데이트
-        if (request.nickname() != null) {
-            member.updateNickname(request.nickname());
-        }
-
         // 새 비밀번호 업데이트
-        String encodedNewPassword = passwordEncoder.encode(request.newPassword());
-        member.updatePassword(encodedNewPassword);
+        member.updatePassword(passwordEncoder.encode(request.newPassword()));
     }
 
     /**

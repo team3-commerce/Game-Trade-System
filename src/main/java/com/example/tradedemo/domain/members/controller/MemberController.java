@@ -2,8 +2,10 @@ package com.example.tradedemo.domain.members.controller;
 
 import com.example.tradedemo.common.dto.ApiResponse;
 import com.example.tradedemo.domain.members.dto.MemberResponse;
-import com.example.tradedemo.domain.members.dto.MemberUpdateRequest;
+import com.example.tradedemo.domain.members.dto.NicknameUpdateRequest;
+import com.example.tradedemo.domain.members.dto.PasswordUpdateRequest;
 import com.example.tradedemo.domain.members.service.MemberService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -11,7 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/members")
 @RequiredArgsConstructor
 public class MemberController {
 
@@ -27,12 +29,24 @@ public class MemberController {
     }
 
     /**
-     * 내 정보 수정
+     * 내 닉네임 수정
      */
-    @PatchMapping("/me")
-    public ResponseEntity<ApiResponse<Void>> updateMyinfo(
-            @AuthenticationPrincipal UserDetails userDetails, @RequestBody MemberUpdateRequest request) {
-        memberService.updateMyInfo(userDetails.getUsername(), request);
+    @PatchMapping("/me/nickname")
+    public ResponseEntity<ApiResponse<Void>> updateNickname(
+            @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid NicknameUpdateRequest request) {
+
+        memberService.updateNickname(userDetails.getUsername(), request);
+        return ResponseEntity.ok(ApiResponse.success("200", null));
+    }
+
+    /**
+     * 내 비밀번호 수정
+     */
+    @PatchMapping("/me/password")
+    public ResponseEntity<ApiResponse<Void>> updatePassword(
+            @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid PasswordUpdateRequest request) {
+
+        memberService.updatePassword(userDetails.getUsername(), request);
         return ResponseEntity.ok(ApiResponse.success("200", null));
     }
 
