@@ -26,7 +26,7 @@ public class MarketListingService {
         if (keyword != null && !keyword.isBlank()) {
             marketListingCacheService.cacheSearchKeyword(keyword);
         }
-    
+
         return marketListingRepository.getAllMarketListingWithKeyword(
                 null, keyword, MarketListingStatus.SELLING, sortTotalPrice, sortSaleEndAt, pageable);
     }
