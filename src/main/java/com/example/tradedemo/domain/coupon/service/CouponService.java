@@ -6,6 +6,7 @@ import com.example.tradedemo.domain.coupon.constants.CouponDuration;
 import com.example.tradedemo.domain.coupon.dto.CreateCouponPolicyRequest;
 import com.example.tradedemo.domain.coupon.dto.CreateCouponPolicyResponse;
 import com.example.tradedemo.domain.coupon.dto.SearchAllCouponPolicyResponse;
+import com.example.tradedemo.domain.coupon.dto.SearchAllMemberCouponResponse;
 import com.example.tradedemo.domain.coupon.entity.CouponPolicy;
 import com.example.tradedemo.domain.coupon.entity.MemberCoupon;
 import com.example.tradedemo.domain.coupon.enums.IssueType;
@@ -106,5 +107,17 @@ public class CouponService {
     public Page<SearchAllCouponPolicyResponse> searchAllCouponPolicies(
             String sortCreatedAt, String issueType, Pageable pageable) {
         return couponPolicyRepository.getAllCouponPolicy(sortCreatedAt, issueType, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<SearchAllMemberCouponResponse> getAllMemberCoupon(Long memberId, String status, Pageable pageable) {
+        return memberCouponRepository.findAllMemberCouponByMemberId(memberId, status, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public SearchAllMemberCouponResponse getMemberCoupon(Long memberId, Long couponId) {
+        return memberCouponRepository
+                .findMemberCouponByMemberIdAndMemberCouponId(memberId, couponId)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_COUPON_NOT_FOUND));
     }
 }
