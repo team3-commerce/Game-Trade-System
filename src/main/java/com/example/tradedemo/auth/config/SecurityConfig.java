@@ -19,6 +19,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -26,18 +29,25 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtTokenProvider jwtTokenProvider) throws Exception {
-        http.csrf(csrf -> csrf.disable()) // csrf 보안
-                .formLogin(AbstractHttpConfigurer::disable) // 기본 로그인 폼
-                .httpBasic(AbstractHttpConfigurer::disable) // Http Basic 인증
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션
-                .authorizeHttpRequests(auth -> auth.requestMatchers("/api/v1/auth/**")
-                        .permitAll()
-                        .requestMatchers("/api/v1/admin/**")
-                        .hasRole("ADMIN")
-                        .anyRequest()
-                        .authenticated())
+        http.csrf(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(
+                        auth -> auth.requestMatchers("/api/v1/auth/**")
+                                .permitAll() // 화이트리스트
+                                .requestMatchers("/api/v1/admin/**")
+                                .hasRole("ADMIN") // 관리자 전용
+                                .anyRequest()
+                                .authenticated() // 나머지는 인증 필요
+                        )
                 .addFilterBefore(
-                        new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+                        new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(
+                        exception -> exception
+                                .authenticationEntryPoint(customAuthenticationEntryPoint) // 401 처리 등록
+                                .accessDeniedHandler(customAccessDeniedHandler) // 403 처리 등록
+                        );
 
         return http.build();
     }
