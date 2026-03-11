@@ -42,9 +42,10 @@ public class AuthService {
         memberRepository.save(member);
 
         // 회원가입 쿠폰 자동 발급
-        couponService.autoSignupCoupon(member);
+//        couponService.autoSignupCoupon(member);
     }
 
+    @Transactional
     public TokenResponse login(LoginRequest request) {
         // 사용자 확인
         Member member = memberRepository
@@ -65,6 +66,7 @@ public class AuthService {
         return new TokenResponse(accessToken, refreshToken);
     }
 
+    @Transactional
     public void logout(String email) {
         Member member = memberRepository
                 .findByEmail(email)
