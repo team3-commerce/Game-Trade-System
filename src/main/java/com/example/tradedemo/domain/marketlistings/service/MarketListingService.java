@@ -8,6 +8,10 @@ import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.marketlistings.exception.MarketListingNotFoundException;
 import com.example.tradedemo.domain.marketlistings.exception.MarketListingOverSellingException;
 import com.example.tradedemo.domain.marketlistings.exception.MarketListingOwnerMismatchException;
+import com.example.tradedemo.domain.marketlistings.exception.CreateMarketListingNotFoundException;
+import com.example.tradedemo.domain.marketlistings.exception.MemberItemEqualsNotFoundException;
+import com.example.tradedemo.domain.marketlistings.dto.response.SearchMarketListingResponse;
+import com.example.tradedemo.domain.marketlistings.exception.MarketListingNotFoundException;
 import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepository;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.entity.MemberItem;
@@ -22,6 +26,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Duration;
 
 @Service
 @RequiredArgsConstructor
