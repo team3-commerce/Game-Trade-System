@@ -2,11 +2,11 @@ package com.example.tradedemo.domain.marketlistings.dto.response;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 @Getter
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class SearchAllMarketListingResponse {
     private final Long marketListingId;
     private final String itemName;

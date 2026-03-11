@@ -41,6 +41,7 @@ public class MarketListingCustomRepositoryImpl implements MarketListingCustomRep
                 .select(Projections.constructor(
                         SearchAllMarketListingResponse.class,
                         marketListing.id,
+                        marketListing.itemName,
                         marketListing.totalPrice,
                         marketListing.quantity,
                         marketListing.saleEndAt,
