@@ -13,7 +13,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse> handleServiceException(ServiceException e) {
 
         HttpStatus httpStatus = e.getErrorEnum().getHttpStatus();
-        String error = e.getErrorEnum().getErrorMessage();
+        String error = e.getMessage();
 
         return ResponseEntity.status(httpStatus).body(ApiResponse.fail(String.valueOf(httpStatus.value()), error));
     }
