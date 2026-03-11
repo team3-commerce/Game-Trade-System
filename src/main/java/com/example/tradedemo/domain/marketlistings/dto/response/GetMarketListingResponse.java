@@ -13,27 +13,27 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GetMarketListingResponse {
     private final Long marketListingId;
-        private final BigDecimal totalPrice;
-        private final BigDecimal unitPrice;
-        private final MarketListingStatus marketListingStatus;
-        private final Long quantity;
-        private final LocalDateTime saleEndAt;
+    private final BigDecimal totalPrice;
+    private final BigDecimal unitPrice;
+    private final MarketListingStatus marketListingStatus;
+    private final Long quantity;
+    private final LocalDateTime saleEndAt;
 
-        private final GetItemResponse item;
+    private final GetItemResponse item;
 
-        private final LocalDateTime createdAt;
-        private final LocalDateTime modifiedAt;
+    private final LocalDateTime createdAt;
+    private final LocalDateTime modifiedAt;
 
-        public static GetMarketListingResponse create(MarketListing listing, Item item) {
-            return new GetMarketListingResponse(
-                    listing.getId(),
-                    listing.getTotalPrice(),
-                    listing.getUnitPrice(),
-                    listing.getStatus(),
-                    listing.getQuantity(),
-                    listing.getSaleEndAt(),
-                    GetItemResponse.of(item),
-                    listing.getCreatedAt(),
-                    listing.getModifiedAt());
-        }
+    public static GetMarketListingResponse create(MarketListing listing, Item item) {
+        return new GetMarketListingResponse(
+                listing.getId(),
+                listing.getTotalPrice(),
+                listing.getUnitPrice(),
+                listing.getStatus(),
+                listing.getQuantity(),
+                listing.getSaleEndAt(),
+                GetItemResponse.of(item),
+                listing.getCreatedAt(),
+                listing.getModifiedAt());
+    }
 }
