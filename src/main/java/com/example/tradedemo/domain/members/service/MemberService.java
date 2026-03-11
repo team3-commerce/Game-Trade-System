@@ -72,7 +72,8 @@ public class MemberService {
     public void withdraw(String email) {
         Member member = memberRepository
                 .findByEmail(email)
-                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
-        memberRepository.delete(member);
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
+
+        member.withdraw();
     }
 }
