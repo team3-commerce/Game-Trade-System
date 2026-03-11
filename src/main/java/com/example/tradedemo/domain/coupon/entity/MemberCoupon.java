@@ -47,4 +47,20 @@ public class MemberCoupon extends Base {
         memberCoupon.expiredAt = expiredAt;
         return memberCoupon;
     }
+
+    // 쿠폰 사용 가능 여부 체크
+    public boolean isUsable() {
+        if (status != CouponStatus.UNUSED) {
+            return false;
+        }
+        if (expiredAt != null && expiredAt.isBefore(LocalDateTime.now())) {
+            return false;
+        }
+        return true;
+    }
+
+    // 쿠폰 사용 처리
+    public void use() {
+        this.status = CouponStatus.USED;
+    }
 }

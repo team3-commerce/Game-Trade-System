@@ -9,6 +9,9 @@ import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.coupon.service.CouponService;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
+import com.example.tradedemo.domain.wallet.entity.Wallet;
+import com.example.tradedemo.domain.wallet.repository.WalletRepository;
+import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final CouponService couponService;
+    private final WalletRepository walletRepository;
 
     /**
      * 회원가입
@@ -44,6 +48,9 @@ public class AuthService {
         Member member = Member.create(request.email(), encodedPassword, request.nickname(), request.role());
 
         memberRepository.save(member);
+
+        // 지갑 생성
+        walletRepository.save(Wallet.create(member, BigDecimal.ZERO));
 
         // 회원가입 쿠폰 자동 발급
         couponService.autoSignupCoupon(member);

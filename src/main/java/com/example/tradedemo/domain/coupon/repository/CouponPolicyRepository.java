@@ -14,4 +14,7 @@ public interface CouponPolicyRepository extends JpaRepository<CouponPolicy, Long
 
     // AUTO_SIGNUP 중복 생성 방지용
     boolean existsByIssueType(IssueType issueType);
+
+    // FIRST_COME 단건 조회
+    Optional<CouponPolicy> findByIdAndIssueType(Long id, IssueType issueType);
 }

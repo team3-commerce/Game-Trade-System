@@ -36,4 +36,14 @@ public class CouponHistory extends Base {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_coupons_id", nullable = false)
     private MemberCoupon memberCoupon;
+
+    public static CouponHistory create(Member member, MemberCoupon memberCoupon) {
+        CouponHistory history = new CouponHistory();
+        history.moneyAmount = memberCoupon.getCouponPolicy().getMoneyAmount();
+        history.usedAt = LocalDateTime.now();
+        history.status = CouponHistoryStatus.USED;
+        history.member = member;
+        history.memberCoupon = memberCoupon;
+        return history;
+    }
 }
