@@ -77,4 +77,8 @@ public class CouponPolicy extends Base {
         policy.couponDuration = couponDuration;
         return policy;
     }
+
+    public void increaseExpendQuantity() {
+        this.expendQuantity++;
+    }
 }
