@@ -96,4 +96,18 @@ public class CouponController {
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), "쿠폰이 발급되었습니다"));
     }
+
+    /**
+     * 내 쿠폰 사용
+     */
+    @PostMapping("/api/v1/me/coupons/{memberCouponId}/use")
+    public ResponseEntity<ApiResponse<String>> useCoupon(
+            @PathVariable Long memberCouponId, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+
+        Long memberId = principalDetails.getMember().getId();
+        Member member = principalDetails.getMember();
+        couponService.useCoupon(memberId, memberCouponId, member);
+
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), "쿠폰이 사용되었습니다"));
+    }
 }

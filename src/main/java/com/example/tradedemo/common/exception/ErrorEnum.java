@@ -34,7 +34,11 @@ public enum ErrorEnum {
     ERR_COUPON_ALREADY_ISSUED(HttpStatus.CONFLICT, ErrorMessage.MSG_COUPON_ALREADY_ISSUED),
     ERR_MEMBER_COUPON_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_MEMBER_COUPON_NOT_FOUND),
     ERR_COUPON_POLICY_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_COUPON_POLICY_NOT_FOUND),
-    ERR_COUPON_POLICY_SOLD_OUT(HttpStatus.CONFLICT, ErrorMessage.MSG_COUPON_POLICY_SOLD_OUT);
+    ERR_COUPON_POLICY_SOLD_OUT(HttpStatus.CONFLICT, ErrorMessage.MSG_COUPON_POLICY_SOLD_OUT),
+    ERR_COUPON_NOT_USABLE(HttpStatus.CONFLICT, ErrorMessage.MSG_COUPON_NOT_USABLE),
+
+    // Wallet
+    ERR_WALLET_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_WALLET_NOT_FOUND);
 
     private final HttpStatus httpStatus;
     private final String errorMessage;
