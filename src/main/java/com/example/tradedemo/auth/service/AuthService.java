@@ -56,9 +56,19 @@ public class AuthService {
             throw new ServiceException(ErrorEnum.ERR_AUTH_INVALID_PASSWORD);
         }
 
-        String accessToken =
-                jwtTokenProvider.createToken(member.getEmail(), member.getRole().name());
+        String accessToken = jwtTokenProvider.createAccessToken(
+                member.getEmail(), member.getRole().name());
+        String refreshToken = jwtTokenProvider.createRefreshToken();
 
-        return new TokenResponse(accessToken, "Bearer");
+        member.updateRefreshToken(refreshToken);
+
+        return new TokenResponse(accessToken, refreshToken);
+    }
+
+    public void logout(String email) {
+        Member member = memberRepository
+                .findByEmail(email)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
+        member.clearRefreshToken();
     }
 }
