@@ -1,11 +1,13 @@
 package com.example.tradedemo.domain.coupon.controller;
 
+import com.example.tradedemo.auth.dto.PrincipalDetails;
 import com.example.tradedemo.common.dto.ApiResponse;
 import com.example.tradedemo.common.dto.PageResponse;
 import com.example.tradedemo.domain.coupon.constants.CouponMessage;
 import com.example.tradedemo.domain.coupon.dto.CreateCouponPolicyRequest;
 import com.example.tradedemo.domain.coupon.dto.CreateCouponPolicyResponse;
 import com.example.tradedemo.domain.coupon.dto.SearchAllCouponPolicyResponse;
+import com.example.tradedemo.domain.coupon.dto.SearchAllMemberCouponResponse;
 import com.example.tradedemo.domain.coupon.service.CouponService;
 import com.example.tradedemo.domain.members.entity.Member;
 import jakarta.validation.Valid;
@@ -14,6 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
