@@ -25,7 +25,8 @@ public class MarketListingCacheService {
         }
 
         /**
-         *  인기 검색어 카운트용 키, prefix 검색용 키 두 종류 필요
+         *  prefix 검색을 redis sorted cache 에서 하기 위해서는 score 값이 0으로 동일해야함
+         *  따라서 인기 검색어 카운트용 키, prefix 검색용 키 두 종류 필요
          */
         String key = getTrendingKey();
         String prefixKey = getPrefixKey();
@@ -37,6 +38,10 @@ public class MarketListingCacheService {
          */
         String normalizedKeyword = keyword.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
 
+        /**
+         *  똑같은 keyword를 서로 다른 키에 저장
+         *  하나는 인기 검색어 검색 횟수 카운트용, 하나는 prefix 검색어 조회용
+         */
         redisTemplate.opsForZSet().incrementScore(key, normalizedKeyword, 1);
         redisTemplate.opsForZSet().add(prefixKey, normalizedKeyword, 0);
 
