@@ -179,7 +179,7 @@ public class CouponService {
 
         CouponHistory couponHistory = couponHistoryRepository.save(CouponHistory.create(member, memberCoupon));
 
-        wallet.updateBalance(memberCoupon.getCouponPolicy().getMoneyAmount());
+        wallet.addBalance(memberCoupon.getCouponPolicy().getMoneyAmount());
 
         walletHistoryRepository.save(WalletHistories.create(
                 memberCoupon.getCouponPolicy().getMoneyAmount(),
