@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 public enum ErrorEnum {
     // Item
     ERR_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_ITEM_NOT_FOUND),
+    ERR_INVENTORYITEM_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_INVENTORYITEM_NOT_FOUND),
+
 
     // Auth
     ERR_AUTH_INVALID_TOKEN(HttpStatus.UNAUTHORIZED, ErrorMessage.MSG_AUTH_INVALID_TOKEN),
@@ -27,7 +29,8 @@ public enum ErrorEnum {
             HttpStatus.BAD_REQUEST, ErrorMessage.MSG_COUPON_POLICY_FIRST_COME_QUANTITY_REQUIRED),
 
     // MarketListing
-    ERR_MEMBERITEM_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_MEMBERITEM_NOT_FOUND);
+    ERR_MEMBERITEM_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_MEMBERITEM_NOT_FOUND),
+    ERR_MEMBERITEM_EQUAL_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_MEMBERITEM_EQUAL_NOT_FOUND);
 
 
     private final HttpStatus httpStatus;
