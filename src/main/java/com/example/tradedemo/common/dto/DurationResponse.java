@@ -1,4 +1,4 @@
-package com.example.tradedemo.domain.coupon.dto;
+package com.example.tradedemo.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import java.time.Duration;

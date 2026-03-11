@@ -1,4 +1,4 @@
-package com.example.tradedemo.domain.coupon.dto;
+package com.example.tradedemo.common.dto;
 
 import java.util.List;
 import lombok.Getter;

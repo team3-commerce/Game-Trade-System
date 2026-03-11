@@ -75,9 +75,14 @@ public class CouponService {
     @Transactional
     public void autoSignupCoupon(Member member) {
 
-        CouponPolicy couponPolicy = couponPolicyRepository
-                .findByIssueType(IssueType.AUTO_SIGNUP)
-                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_COUPON_POLICY_AUTO_SIGNUP_NOT_FOUND));
+        // AUTO_SIGNUP 정책 없으면 회원가입 시 쿠폰 미발급
+        // AUTO_SIGNUP 정책 있으면 회원가입 시 쿠폰 발급
+        CouponPolicy couponPolicy =
+                couponPolicyRepository.findByIssueType(IssueType.AUTO_SIGNUP).orElse(null);
+
+        if (couponPolicy == null) {
+            return;
+        }
 
         // 중복 발급 방지
         if (memberCouponRepository.existsByMemberAndCouponPolicy(member, couponPolicy)) {

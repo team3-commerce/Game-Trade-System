@@ -1,5 +1,6 @@
 package com.example.tradedemo.domain.coupon.dto;
 
+import com.example.tradedemo.common.dto.DurationResponse;
 import com.example.tradedemo.domain.coupon.entity.CouponPolicy;
 import com.example.tradedemo.domain.coupon.enums.IssueType;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;

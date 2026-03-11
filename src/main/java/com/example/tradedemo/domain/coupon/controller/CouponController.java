@@ -1,9 +1,9 @@
 package com.example.tradedemo.domain.coupon.controller;
 
 import com.example.tradedemo.common.dto.ApiResponse;
+import com.example.tradedemo.common.dto.PageResponse;
 import com.example.tradedemo.domain.coupon.dto.CreateCouponPolicyRequest;
 import com.example.tradedemo.domain.coupon.dto.CreateCouponPolicyResponse;
-import com.example.tradedemo.domain.coupon.dto.PageResponse;
 import com.example.tradedemo.domain.coupon.dto.SearchAllCouponPolicyResponse;
 import com.example.tradedemo.domain.coupon.service.CouponService;
 import jakarta.validation.Valid;
