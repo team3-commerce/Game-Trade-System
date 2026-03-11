@@ -14,6 +14,7 @@ public final class ErrorMessage {
 
     // Member
     public static final String MSG_MEMBER_NOT_FOUND = "찾는 유저 정보가 존재하지 않습니다";
+    public static final String MSG_MEMBER_ITEM_NOT_FOUND = "찾는 유저 아이템 정보가 존재하지 않습니다";
 
     // Item
     public static final String MSG_ITEM_NOT_FOUND = "찾는 아이템 정보가 존재하지 않습니다";
@@ -29,6 +30,5 @@ public final class ErrorMessage {
     public static final String MSG_COUPON_POLICY_DUPLICATE_NAME = "이미 존재하는 쿠폰 정책 이름입니다";
     public static final String MSG_COUPON_POLICY_FIRST_COME_QUANTITY_REQUIRED = "선착순 쿠폰은 총 수량이 필수입니다";
     public static final String MSG_COUPON_POLICY_AUTO_SIGNUP_ALREADY_EXISTS = "회원가입 자동 발급 쿠폰 정책은 하나만 존재할 수 있습니다";
-    public static final String MSG_COUPON_POLICY_AUTO_SIGNUP_NOT_FOUND = "회원가입 자동 발급 쿠폰 정책이 존재하지 않습니다";
     public static final String MSG_COUPON_ALREADY_ISSUED = "이미 발급된 쿠폰입니다";
 }

@@ -5,7 +5,7 @@ import com.example.tradedemo.domain.coupon.enums.IssueType;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface CouponPolicyRepository extends JpaRepository<CouponPolicy, Long> {
+public interface CouponPolicyRepository extends JpaRepository<CouponPolicy, Long>, CouponPolicyCustomRepository {
 
     boolean existsByName(String name);
 

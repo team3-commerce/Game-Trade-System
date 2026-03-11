@@ -5,6 +5,7 @@ import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.coupon.constants.CouponDuration;
 import com.example.tradedemo.domain.coupon.dto.CreateCouponPolicyRequest;
 import com.example.tradedemo.domain.coupon.dto.CreateCouponPolicyResponse;
+import com.example.tradedemo.domain.coupon.dto.SearchAllCouponPolicyResponse;
 import com.example.tradedemo.domain.coupon.entity.CouponPolicy;
 import com.example.tradedemo.domain.coupon.entity.MemberCoupon;
 import com.example.tradedemo.domain.coupon.enums.IssueType;
@@ -12,12 +13,14 @@ import com.example.tradedemo.domain.coupon.repository.CouponHistoryRepository;
 import com.example.tradedemo.domain.coupon.repository.CouponPolicyRepository;
 import com.example.tradedemo.domain.coupon.repository.MemberCouponRepository;
 import com.example.tradedemo.domain.members.entity.Member;
-import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -72,9 +75,14 @@ public class CouponService {
     @Transactional
     public void autoSignupCoupon(Member member) {
 
-        CouponPolicy couponPolicy = couponPolicyRepository
-                .findByIssueType(IssueType.AUTO_SIGNUP)
-                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_COUPON_POLICY_AUTO_SIGNUP_NOT_FOUND));
+        // AUTO_SIGNUP 정책 없으면 회원가입 시 쿠폰 미발급
+        // AUTO_SIGNUP 정책 있으면 회원가입 시 쿠폰 발급
+        CouponPolicy couponPolicy =
+                couponPolicyRepository.findByIssueType(IssueType.AUTO_SIGNUP).orElse(null);
+
+        if (couponPolicy == null) {
+            return;
+        }
 
         // 중복 발급 방지
         if (memberCouponRepository.existsByMemberAndCouponPolicy(member, couponPolicy)) {
@@ -90,5 +98,13 @@ public class CouponService {
 
         MemberCoupon memberCoupon = MemberCoupon.create(member, couponPolicy, issuedAt, expiredAt);
         memberCouponRepository.save(memberCoupon);
+
+        couponPolicy.increaseExpendQuantity();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<SearchAllCouponPolicyResponse> searchAllCouponPolicies(
+            String sortCreatedAt, String issueType, Pageable pageable) {
+        return couponPolicyRepository.getAllCouponPolicy(sortCreatedAt, issueType, pageable);
     }
 }
