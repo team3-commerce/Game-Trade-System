@@ -29,4 +29,6 @@ public final class ErrorMessage {
     public static final String MSG_COUPON_POLICY_AUTO_SIGNUP_ALREADY_EXISTS = "회원가입 자동 발급 쿠폰 정책은 하나만 존재할 수 있습니다";
     public static final String MSG_COUPON_ALREADY_ISSUED = "이미 발급된 쿠폰입니다";
     public static final String MSG_MEMBER_COUPON_NOT_FOUND = "찾는 쿠폰의 정보가 존재하지 않습니다";
+    public static final String MSG_COUPON_POLICY_NOT_FOUND = "쿠폰 정책을 찾을 수 없습니다";
+    public static final String MSG_COUPON_POLICY_SOLD_OUT = "선착순 쿠폰이 마감되었습니다";
 }

@@ -8,6 +8,7 @@ import com.example.tradedemo.domain.coupon.dto.CreateCouponPolicyResponse;
 import com.example.tradedemo.domain.coupon.dto.SearchAllCouponPolicyResponse;
 import com.example.tradedemo.domain.coupon.dto.SearchAllMemberCouponResponse;
 import com.example.tradedemo.domain.coupon.service.CouponService;
+import com.example.tradedemo.domain.members.entity.Member;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -50,7 +51,11 @@ public class CouponController {
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
     }
 
-    // 내 쿠폰 전체 조회 (페이징)
+    /**
+     * 내 쿠폰 전체 조회
+     * status 값을 전달하여 정렬 조건 추가 가능
+     * status UNUSED/USED/EXPIRED 외 다른 값 입력 시 무시 -> 조건 추가 X
+     */
     @GetMapping("/api/v1/me/coupons")
     public ResponseEntity<ApiResponse<PageResponse<SearchAllMemberCouponResponse>>> getAllMemberCoupon(
             @RequestParam(defaultValue = "0") int page,
@@ -65,6 +70,9 @@ public class CouponController {
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
     }
 
+    /**
+     * 내 쿠폰 단건 조회
+     */
     @GetMapping("/api/v1/me/coupons/{couponId}")
     public ResponseEntity<ApiResponse<SearchAllMemberCouponResponse>> getMemberCoupon(
             @PathVariable Long couponId, @AuthenticationPrincipal PrincipalDetails principalDetails) {
@@ -74,5 +82,18 @@ public class CouponController {
         SearchAllMemberCouponResponse response = couponService.getMemberCoupon(memberId, couponId);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
+    }
+
+    /**
+     * 선착순 쿠폰 발급 신청
+     */
+    @PostMapping("/api/v1/coupon-policies/{couponPolicyId}/issue")
+    public ResponseEntity<ApiResponse<String>> issueFirstComeCoupon(
+            @PathVariable Long couponPolicyId, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+
+        Member member = principalDetails.getMember();
+        couponService.issueFirstComeCoupon(couponPolicyId, member);
+
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), "쿠폰이 발급되었습니다"));
     }
 }

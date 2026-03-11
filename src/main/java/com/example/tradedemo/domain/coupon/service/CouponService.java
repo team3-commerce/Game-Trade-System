@@ -120,4 +120,33 @@ public class CouponService {
                 .findMemberCouponByMemberIdAndMemberCouponId(memberId, couponId)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_COUPON_NOT_FOUND));
     }
+
+    @Transactional
+    public void issueFirstComeCoupon(Long couponPolicyId, Member member) {
+        // FIRST_COME 정책 조회 (존재하지 않거나 issueType이 다르면 예외)
+        CouponPolicy couponPolicy = couponPolicyRepository
+                .findByIdAndIssueType(couponPolicyId, IssueType.FIRST_COME)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_COUPON_POLICY_NOT_FOUND));
+
+        // 발급 가능 여부 체크 (매진 여부)
+        if (!couponPolicy.isIssuable()) {
+            throw new ServiceException(ErrorEnum.ERR_COUPON_POLICY_SOLD_OUT);
+        }
+
+        // 중복 발급 방지
+        if (memberCouponRepository.existsByMemberAndCouponPolicy(member, couponPolicy)) {
+            throw new ServiceException(ErrorEnum.ERR_COUPON_ALREADY_ISSUED);
+        }
+
+        // 발급 시점
+        LocalDateTime issuedAt = LocalDateTime.now();
+
+        // 쿠폰 만료일 = 발급 시점 + couponDuration
+        LocalDateTime expiredAt = issuedAt.plus(couponPolicy.getCouponDuration());
+
+        memberCouponRepository.save(MemberCoupon.create(member, couponPolicy, issuedAt, expiredAt));
+
+        // 발급 수량 증가
+        couponPolicy.increaseExpendQuantity();
+    }
 }
