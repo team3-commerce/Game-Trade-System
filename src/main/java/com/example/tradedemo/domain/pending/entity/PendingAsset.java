@@ -109,8 +109,6 @@ public class PendingAsset extends Base {
         asset.marketListing = marketListing;
         asset.order = order;
         asset.member = member;
-        asset.expiredAt = expiredAt;
-        asset.isClaimed = false;
 
         return asset;
     }
