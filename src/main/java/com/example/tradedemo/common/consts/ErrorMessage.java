@@ -26,6 +26,7 @@ public final class ErrorMessage {
     public static final String MSG_MARKET_LISTING_OVER_SELLING = "인벤토리 내 아이템 정보가 존재하지 않습니다";
 
     // Order
+    public static final String MSG_WALLET_INSUFFICIENT_BALANCE_BAD_REQUEST = "잔액이 부족합니다.";
 
     // Wallet
     public static final String MSG_WALLET_NOT_FOUND = "지갑을 찾을 수 없습니다";
