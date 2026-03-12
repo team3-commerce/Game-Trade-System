@@ -41,12 +41,12 @@ public class MemberCouponCustomRepositoryImpl implements MemberCouponCustomRepos
         // UNUSED, USED, EXPIRED 순서로 정렬
         NumberExpression<Integer> statusOrder = new CaseBuilder()
                 .when(memberCoupon.status.eq(CouponStatus.UNUSED))
-                .then(0)
+                .then(CouponStatus.UNUSED.getOrder())
                 .when(memberCoupon.status.eq(CouponStatus.USED))
-                .then(1)
+                .then(CouponStatus.USED.getOrder())
                 .when(memberCoupon.status.eq(CouponStatus.EXPIRED))
-                .then(2)
-                .otherwise(3);
+                .then(CouponStatus.EXPIRED.getOrder())
+                .otherwise(CouponStatus.values().length);
 
         List<MemberCoupon> content = queryFactory
                 .selectFrom(memberCoupon)
