@@ -43,4 +43,5 @@ public final class ErrorMessage {
     public static final String MSG_COUPON_POLICY_NOT_FOUND = "쿠폰 정책을 찾을 수 없습니다";
     public static final String MSG_COUPON_POLICY_SOLD_OUT = "선착순 쿠폰이 마감되었습니다";
     public static final String MSG_COUPON_NOT_USABLE = "사용할 수 없는 쿠폰입니다";
+    public static final String MSG_COUPON_EXPIRED = "만료된 쿠폰입니다";
 }
