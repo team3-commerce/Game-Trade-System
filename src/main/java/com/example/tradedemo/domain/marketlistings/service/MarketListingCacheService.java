@@ -1,6 +1,6 @@
 package com.example.tradedemo.domain.marketlistings.service;
 
-import com.example.tradedemo.domain.marketlistings.consts.MarketListingConsts;
+import com.example.tradedemo.common.consts.RedisConsts;
 import com.example.tradedemo.domain.marketlistings.dto.response.SearchTrendingKeywordResponse;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 public class MarketListingCacheService {
     private final RedisTemplate<String, String> redisTemplate;
 
-    public void cacheSearchKeyword(Long memberId, String keyword) {
+    public void cacheSearchKeyword(String keyword) {
 
         if (keyword == null || keyword.isBlank()) {
             return;
@@ -39,21 +39,6 @@ public class MarketListingCacheService {
         String normalizedKeyword = keyword.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
 
         /**
-         * 동일 검색어 어뷰징 방지용
-         */
-        String dupCheckKey = MarketListingConsts.MARKET_LISTING + memberId + ":" + normalizedKeyword;
-        Boolean firstSearch = redisTemplate
-                .opsForValue()
-                .setIfAbsent(
-                        dupCheckKey,
-                        normalizedKeyword,
-                        Duration.ofMinutes(MarketListingConsts.SEARCH_DUPLICATE_PREVENT_MINUTES));
-
-        if (!firstSearch) {
-            return;
-        }
-
-        /**
          *  똑같은 keyword를 서로 다른 키에 저장
          *  하나는 인기 검색어 검색 횟수 카운트용, 하나는 prefix 검색어 조회용
          */
@@ -64,20 +49,19 @@ public class MarketListingCacheService {
         Long prefixTtl = redisTemplate.getExpire(prefixKey);
 
         if (ttl == null || ttl <= 0) {
-            redisTemplate.expire(key, Duration.ofDays(MarketListingConsts.TRENDING_KEYWORD_TIME_LIMIT));
+            redisTemplate.expire(key, Duration.ofDays(RedisConsts.TRENDING_KEYWORD_TIME_LIMIT));
         }
 
         if (prefixTtl == null || prefixTtl <= 0) {
-            redisTemplate.expire(prefixKey, Duration.ofDays(MarketListingConsts.TRENDING_KEYWORD_TIME_LIMIT));
+            redisTemplate.expire(prefixKey, Duration.ofDays(RedisConsts.TRENDING_KEYWORD_TIME_LIMIT));
         }
     }
 
     public List<SearchTrendingKeywordResponse> getTrendingKeywordList() {
         String key = getTrendingKey();
 
-        Set<ZSetOperations.TypedTuple<String>> trendingKeywords = redisTemplate
-                .opsForZSet()
-                .reverseRangeWithScores(key, 0, MarketListingConsts.TRENDING_SEARCH_LIMIT - 1);
+        Set<ZSetOperations.TypedTuple<String>> trendingKeywords =
+                redisTemplate.opsForZSet().reverseRangeWithScores(key, 0, RedisConsts.TRENDING_SEARCH_LIMIT - 1);
 
         return trendingKeywords.stream()
                 .map(t -> SearchTrendingKeywordResponse.create(
@@ -111,19 +95,19 @@ public class MarketListingCacheService {
                 })
                 .sorted(Comparator.comparing(SearchTrendingKeywordResponse::getSearchCount)
                         .reversed())
-                .limit(MarketListingConsts.TRENDING_SEARCH_LIMIT)
+                .limit(RedisConsts.TRENDING_SEARCH_LIMIT)
                 .toList();
     }
 
     private String getTrendingKey() {
-        return MarketListingConsts.MARKET_LISTING
-                + MarketListingConsts.TRENDING_SEARCH
-                + LocalDate.now().format(MarketListingConsts.TRENDING_SEARCH_FORMATTER);
+        return RedisConsts.MARKET_LISTING
+                + RedisConsts.TRENDING_SEARCH
+                + LocalDate.now().format(RedisConsts.TRENDING_SEARCH_FORMATTER);
     }
 
     private String getPrefixKey() {
-        return MarketListingConsts.MARKET_LISTING
-                + MarketListingConsts.TRENDING_PREFIX_KEYWORD
-                + LocalDate.now().format(MarketListingConsts.TRENDING_SEARCH_FORMATTER);
+        return RedisConsts.MARKET_LISTING
+                + RedisConsts.TRENDING_PREFIX_KEYWORD
+                + LocalDate.now().format(RedisConsts.TRENDING_SEARCH_FORMATTER);
     }
 }
