@@ -75,8 +75,9 @@ public class MarketListingCacheService {
     public List<SearchTrendingKeywordResponse> getTrendingKeywordList() {
         String key = getTrendingKey();
 
-        Set<ZSetOperations.TypedTuple<String>> trendingKeywords =
-                redisTemplate.opsForZSet().reverseRangeWithScores(key, 0, MarketListingConsts.TRENDING_SEARCH_LIMIT - 1);
+        Set<ZSetOperations.TypedTuple<String>> trendingKeywords = redisTemplate
+                .opsForZSet()
+                .reverseRangeWithScores(key, 0, MarketListingConsts.TRENDING_SEARCH_LIMIT - 1);
 
         return trendingKeywords.stream()
                 .map(t -> SearchTrendingKeywordResponse.create(
