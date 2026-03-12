@@ -1,9 +1,8 @@
-package com.example.tradedemo.common.consts;
+package com.example.tradedemo.domain.marketlistings.consts;
 
 import java.time.format.DateTimeFormatter;
 
-public final class RedisConsts {
-
+public final class MarketListingConsts {
     // domain
     public static final String MARKET_LISTING = "listing:";
 
