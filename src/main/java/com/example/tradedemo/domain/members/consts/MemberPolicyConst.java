@@ -1,6 +1,6 @@
-package com.example.tradedemo.common.consts;
+package com.example.tradedemo.domain.members.consts;
 
-public final class MemberPolicy {
+public final class MemberPolicyConst {
     // 휴면 전환
     public static final int DORMANT_THRESHOLD_DAYS = 30;
 

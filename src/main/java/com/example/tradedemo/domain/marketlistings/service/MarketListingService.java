@@ -1,5 +1,8 @@
 package com.example.tradedemo.domain.marketlistings.service;
 
+import com.example.tradedemo.auth.dto.PrincipalDetails;
+import com.example.tradedemo.common.exception.ErrorEnum;
+import com.example.tradedemo.domain.marketlistings.consts.MarketListingConsts;
 import com.example.tradedemo.domain.marketlistings.dto.request.CreateMarketListingRequest;
 import com.example.tradedemo.domain.marketlistings.dto.response.GetMarketListingResponse;
 import com.example.tradedemo.domain.marketlistings.dto.response.SearchAllMarketListingResponse;
@@ -7,18 +10,25 @@ import com.example.tradedemo.domain.marketlistings.dto.response.SearchMarketList
 import com.example.tradedemo.domain.marketlistings.dto.response.SearchTrendingKeywordResponse;
 import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
+import com.example.tradedemo.domain.marketlistings.exception.MarketListingCancelException;
 import com.example.tradedemo.domain.marketlistings.exception.MarketListingNotFoundException;
 import com.example.tradedemo.domain.marketlistings.exception.MarketListingOverSellingException;
 import com.example.tradedemo.domain.marketlistings.exception.MarketListingOwnerMismatchException;
 import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepository;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.entity.MemberItem;
+import com.example.tradedemo.domain.members.entity.MemberRole;
 import com.example.tradedemo.domain.members.exception.MemberItemNotFoundException;
 import com.example.tradedemo.domain.members.exception.MemberNotFoundException;
 import com.example.tradedemo.domain.members.repository.MemberItemRepository;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
+import com.example.tradedemo.domain.pending.entity.PendingAsset;
+import com.example.tradedemo.domain.pending.enums.PendingType;
+import com.example.tradedemo.domain.pending.enums.Type;
+import com.example.tradedemo.domain.pending.repository.PendingAssetRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -33,47 +43,7 @@ public class MarketListingService {
     private final MemberItemRepository memberItemRepository;
     private final MemberRepository memberRepository;
     private final MarketListingCacheService marketListingCacheService;
-
-    /**
-     * 개별 정산하기
-     * 수령 대기 상태인 돈/아이템을 수령한다.
-     * 판매자 -> 돈 | 구매자 -> 아이템 | 그 외 기타등등
-     */
-    @Transactional
-    public void settlement(Long memberId, Long marketListingId) {
-
-        MarketListing marketListing =
-                marketListingRepository.findById(marketListingId)
-                        .orElseThrow(MarketListingNotFoundException::new);
-
-        /**
-         * 판매자 검증
-         * 거래소 등록된 아이디와 이용자(개별정산 누르는)의 아이디가 같은지 확인
-         */
-        if (!marketListing.getMember().getId().equals(memberId)) {
-            throw new MarketListingOwnerMismatchException();
-        }
-        /**
-         * 상태 검증
-         * 거래소의 해당 아이템이 SOLD 상태만 정산 가능
-         */
-        if (marketListing.getStatus() != MarketListingStatus.SOLD) {
-            throw new IllegalStateException("정산 가능한 상태가 아닙니다.");
-        }
-        /**
-         * pending_asset 조회
-         */
-
-        /**
-         * wallet에 돈 지급
-         */
-
-        /**
-         * 거래 기록 :  wallet_history 기록
-         */
-
-    }
-
+    private final PendingAssetRepository pendingAssetRepository;
 
     /**
      * 상품 등록
@@ -130,9 +100,9 @@ public class MarketListingService {
      */
     @Transactional(readOnly = true)
     public Page<SearchAllMarketListingResponse> getAllMarketListing(
-            String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
+            Long memberId, String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
         if (keyword != null && !keyword.isBlank()) {
-            marketListingCacheService.cacheSearchKeyword(keyword);
+            marketListingCacheService.cacheSearchKeyword(memberId, keyword);
         }
 
         return marketListingRepository.getAllMarketListingWithKeyword(
@@ -165,5 +135,69 @@ public class MarketListingService {
         } else {
             return marketListingCacheService.getTrendingKeywordListWithPrefix(prefixKeyword);
         }
+    }
+
+    private SearchMarketListingResponse cancelMarketListingImpl(
+            PrincipalDetails details, boolean calledByAdminApi, Long marketListingId) {
+        MarketListing marketListing =
+                marketListingRepository.findById(marketListingId).orElseThrow(MarketListingNotFoundException::new);
+
+        boolean requestFromOwner =
+                marketListing.getMember().getId().equals(details.getMember().getId());
+
+        // 만약 아이템 주인이 아니라면
+        if (!requestFromOwner) {
+            // 만약 admin api 호출이 아니랴면 무조건 에러
+            if (!calledByAdminApi) {
+                throw new MarketListingCancelException(ErrorEnum.ERR_MARKET_LISTING_FORBIDDEN_FROM_CANCEL);
+            }
+
+            // 만약 admin api 호출이 맞다면 admin인지 확인
+            if (!details.getMember().getRole().equals(MemberRole.ADMIN)) {
+                throw new MarketListingCancelException(ErrorEnum.ERR_MARKET_LISTING_FORBIDDEN_FROM_CANCEL);
+            }
+        }
+
+        // 만약 이미 취소 상태라며는 그냥 일찍 돌려줍니다
+        if (marketListing.getStatus().equals(MarketListingStatus.CANCELLED)) {
+            return SearchMarketListingResponse.of(marketListing);
+        }
+
+        // 매물이 판매중 상태인지 확인
+        if (!marketListing.getStatus().equals(MarketListingStatus.SELLING)) {
+            throw new MarketListingCancelException(ErrorEnum.ERR_MARKET_LISTING_ILLEGAL_CANCEL_STATUS);
+        }
+
+        marketListing.updateStatus(MarketListingStatus.CANCELLED);
+
+        PendingAsset pendingAsset = PendingAsset.create(
+                PendingType.CANCELLED, // 주문 취소
+                Type.ITEM, // 아이템을 돌려주어야 함
+                BigDecimal.ZERO, // 돈의 양은 0
+                marketListing.getQuantity(), // item 갯수
+                false, // claimed 상태가 아님
+                null, // claimed된 적이 없으므로 null
+                LocalDateTime.now().plus(MarketListingConsts.MARKET_LISTING_CANCEL_PENDING_ASSET_DURATION),
+                marketListing, // 매물
+                null, // 주문을 통해서 생성 되는 것이 아니므로 null
+                memberRepository.getReferenceById(details.getMember().getId()) // 멤버
+                );
+
+        pendingAssetRepository.save(pendingAsset);
+
+        // modifiedAt 업데이트 강제하기 위해 flush
+        marketListing = marketListingRepository.saveAndFlush(marketListing);
+
+        return SearchMarketListingResponse.of(marketListing);
+    }
+
+    @Transactional
+    public SearchMarketListingResponse cancelMarketListing(PrincipalDetails details, Long marketListingId) {
+        return cancelMarketListingImpl(details, false, marketListingId);
+    }
+
+    @Transactional
+    public SearchMarketListingResponse cancelMarketListingAdmin(PrincipalDetails details, Long marketListingId) {
+        return cancelMarketListingImpl(details, true, marketListingId);
     }
 }
