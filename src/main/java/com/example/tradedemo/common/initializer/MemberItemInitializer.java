@@ -15,7 +15,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConditionalOnProperty(name = "app.add2-test-memberitems", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(name = "app.add-test-memberitems", havingValue = "true", matchIfMissing = false)
 @RequiredArgsConstructor
 public class MemberItemInitializer implements ApplicationRunner {
 
@@ -28,7 +28,7 @@ public class MemberItemInitializer implements ApplicationRunner {
     public void run(ApplicationArguments args) {
 
         // 테스트용 member
-        Member member = memberRepository.findById(2L).orElseThrow();
+        Member member = memberRepository.findById(1L).orElseThrow();
 
         // 아이템 조회
         Item sword = itemRepository.findByName("검").orElseThrow();

@@ -8,6 +8,7 @@ import com.example.tradedemo.domain.coupon.entity.MemberCoupon;
 import com.example.tradedemo.domain.coupon.enums.CouponStatus;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -67,5 +68,32 @@ public class MemberCouponCustomRepositoryImpl implements MemberCouponCustomRepos
                 .fetchOne();
 
         return Optional.ofNullable(result).map(SearchAllMemberCouponResponse::of);
+    }
+
+    @Override
+    public Optional<MemberCoupon> findMemberCouponForUse(Long memberId, Long memberCouponId) {
+        MemberCoupon result = queryFactory
+                .selectFrom(memberCoupon)
+                .join(memberCoupon.couponPolicy, couponPolicy)
+                .fetchJoin()
+                .where(memberCoupon.id.eq(memberCouponId), memberCoupon.member.id.eq(memberId))
+                .fetchOne();
+
+        return Optional.ofNullable(result);
+    }
+
+    @Override
+    public List<MemberCoupon> findAllExpiredCoupons(LocalDateTime now) {
+        return queryFactory
+                .selectFrom(memberCoupon)
+                .join(memberCoupon.member)
+                .fetchJoin()
+                .join(memberCoupon.couponPolicy, couponPolicy)
+                .fetchJoin()
+                .where(
+                        memberCoupon.status.eq(CouponStatus.UNUSED),
+                        memberCoupon.expiredAt.isNotNull(),
+                        memberCoupon.expiredAt.lt(now))
+                .fetch();
     }
 }
