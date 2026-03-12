@@ -1,5 +1,6 @@
 package com.example.tradedemo.domain.marketlistings.consts;
 
+import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 
 public final class MarketListingConsts {
@@ -11,6 +12,8 @@ public final class MarketListingConsts {
     public static final String TRENDING_PREFIX_KEYWORD = "trending:prefix:";
 
     // config
+    public static Duration MARKET_LISTING_CANCEL_PENDING_ASSET_DURATION = Duration.ofDays(3);
+
     public static final Long SEARCH_DUPLICATE_PREVENT_MINUTES = 15L;
     public static final Long TRENDING_KEYWORD_TIME_LIMIT = 2L;
     public static final int TRENDING_SEARCH_LIMIT = 5;
