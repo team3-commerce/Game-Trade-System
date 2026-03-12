@@ -72,7 +72,9 @@ public class PendingAsset extends Base {
     @JoinColumn(name = "market_listings_id", nullable = false)
     private MarketListing marketListing;
 
+
     /**
+     * 주문 ID
      * 주문 ID, null일 수도 있습니다
      */
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
