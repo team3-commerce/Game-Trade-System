@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "wallet_histories")
 public class WalletHistories extends Base {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     /**
@@ -32,6 +32,7 @@ public class WalletHistories extends Base {
 
     /**
      * 변동 타입
+     * 돈, 아이템
      */
     @Enumerated(EnumType.STRING)
     private WalletStatus type;

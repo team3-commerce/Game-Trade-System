@@ -30,6 +30,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import com.example.tradedemo.domain.wallet.entity.Wallet;
+import com.example.tradedemo.domain.wallet.entity.WalletHistories;
+import com.example.tradedemo.domain.wallet.enums.WalletStatus;
+import com.example.tradedemo.domain.wallet.repository.WalletHistoryRepository;
+import com.example.tradedemo.domain.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -44,6 +50,8 @@ public class MarketListingService {
     private final MemberRepository memberRepository;
     private final MarketListingCacheService marketListingCacheService;
     private final PendingAssetRepository pendingAssetRepository;
+    private final WalletRepository walletRepository;
+    private final WalletHistoryRepository walletHistoryRepository;
 
     /**
      * 개별 정산하기
@@ -53,36 +61,67 @@ public class MarketListingService {
     @Transactional
     public void settlement(Long memberId, Long marketListingId) {
 
-        MarketListing marketListing =
-                marketListingRepository.findById(marketListingId)
-                        .orElseThrow(MarketListingNotFoundException::new);
+        MarketListing marketListing = marketListingRepository.findById(marketListingId)
+                .orElseThrow(MarketListingNotFoundException::new);
 
         /**
-         * 판매자 검증
-         * 거래소 등록된 아이디와 이용자(개별정산 누르는)의 아이디가 같은지 확인
-         */
-        if (!marketListing.getMember().getId().equals(memberId)) {
-            throw new MarketListingOwnerMismatchException();
-        }
-        /**
-         * 상태 검증
-         * 거래소의 해당 아이템이 SOLD 상태만 정산 가능
+         * 마켓리스팅이 SOLD인지 확인
+         * 팔려야 수령 받음
          */
         if (marketListing.getStatus() != MarketListingStatus.SOLD) {
             throw new IllegalStateException("정산 가능한 상태가 아닙니다.");
         }
-        /**
-         * pending_asset 조회
-         */
 
         /**
-         * wallet에 돈 지급
+         * 사용자 기준 수령 대기 테이블 조회
          */
+        List<PendingAsset> pendingAssets =
+            pendingAssetRepository.findByMarketListingAndMemberAndClaimedFalse(
+                marketListing,
+                memberRepository.getReferenceById(memberId)
+            );
+
+        for (PendingAsset asset : pendingAssets) {
+            if (asset.getType() == Type.MONEY) {
+                /**
+                 * 판매자 : 돈 받기
+                 */
+                Wallet sellerWallet = walletRepository.findByMemberId(memberId)
+                        .orElseThrow(() -> new IllegalStateException("판매자 지갑 없음"));
+                sellerWallet.addBalance(asset.getMoneyAmount());
+                walletHistoryRepository.save(WalletHistories.create(
+                        asset.getMoneyAmount(),
+                        WalletStatus.PURCHASE,
+                        sellerWallet.getBalance(),
+                        sellerWallet,
+                        null,
+                        asset.getMember(),
+                        asset.getOrder()
+                ));
+
+            } else if (asset.getType() == Type.ITEM) {
+                /**
+                 * 구매자 : 아이템 받기
+                 */
+                MemberItem inventoryItem = memberItemRepository
+                        .findByMemberIdAndItemId(memberId, marketListing.getMemberItem().getItem().getId())
+                        .orElseThrow(() -> new IllegalStateException("인벤토리 없음"));
+                inventoryItem.increase(asset.getItemQuantity());
+            }
+
+            /**
+             * 수령 상태 업데이트
+             */
+            asset.setClaimed(true);
+            asset.setClaimedAt(LocalDateTime.now());
+            pendingAssetRepository.save(asset);
+        }
 
         /**
-         * 거래 기록 :  wallet_history 기록
+         * 수령 : 상태 변경
          */
-
+        marketListing.updateStatus(MarketListingStatus.CLAIMED);
+        marketListingRepository.saveAndFlush(marketListing);
     }
     /**
      * 상품 등록
@@ -110,7 +149,7 @@ public class MarketListingService {
 
         /**
          * 인벤토리 차감
-         * 2개 이상 존재할 경우 작성된 만큼 차감
+         * 작성된 만큼 차감
          */
         memberItem.decrease(request.getQuantity());
 

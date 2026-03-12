@@ -113,4 +113,18 @@ public class PendingAsset extends Base {
 
         return asset;
     }
+    /**
+     * 수령 여부
+     * @param claimed
+     */
+    public void setClaimed(Boolean claimed) {
+        this.isClaimed = claimed;
+    }
+    /**
+     * 수령시간
+     * @param claimedAt
+     */
+    public void setClaimedAt(LocalDateTime claimedAt) {
+        this.claimedAt = claimedAt;
+    }
 }
