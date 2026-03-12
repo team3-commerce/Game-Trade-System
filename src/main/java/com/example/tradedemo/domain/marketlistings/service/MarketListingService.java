@@ -4,6 +4,7 @@ import com.example.tradedemo.domain.marketlistings.dto.request.CreateMarketListi
 import com.example.tradedemo.domain.marketlistings.dto.response.GetMarketListingResponse;
 import com.example.tradedemo.domain.marketlistings.dto.response.SearchAllMarketListingResponse;
 import com.example.tradedemo.domain.marketlistings.dto.response.SearchMarketListingResponse;
+import com.example.tradedemo.domain.marketlistings.dto.response.SearchTrendingKeywordResponse;
 import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import com.example.tradedemo.domain.marketlistings.exception.MarketListingNotFoundException;
@@ -86,6 +87,9 @@ public class MarketListingService {
     @Transactional(readOnly = true)
     public Page<SearchAllMarketListingResponse> getAllMarketListing(
             String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
+        if (keyword != null && !keyword.isBlank()) {
+            marketListingCacheService.cacheSearchKeyword(keyword);
+        }
 
         return marketListingRepository.getAllMarketListingWithKeyword(
                 null, keyword, MarketListingStatus.SELLING, sortTotalPrice, sortSaleEndAt, pageable);
@@ -108,5 +112,14 @@ public class MarketListingService {
                 marketListingRepository.findById(marketListingId).orElseThrow(MarketListingNotFoundException::new);
 
         return SearchMarketListingResponse.of(marketListing);
+    }
+
+    @Transactional(readOnly = true)
+    public List<SearchTrendingKeywordResponse> getTrendingKeywords(String prefixKeyword) {
+        if (prefixKeyword == null || prefixKeyword.isBlank()) {
+            return marketListingCacheService.getTrendingKeywordList();
+        } else {
+            return marketListingCacheService.getTrendingKeywordListWithPrefix(prefixKeyword);
+        }
     }
 }
