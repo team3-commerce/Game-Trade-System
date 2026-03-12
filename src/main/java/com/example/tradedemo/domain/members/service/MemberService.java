@@ -77,6 +77,7 @@ public class MemberService {
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
 
         member.withdraw();
+        member.clearRefreshToken();
     }
 
     /**
