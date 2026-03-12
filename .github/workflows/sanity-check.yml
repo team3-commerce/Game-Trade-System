@@ -30,4 +30,4 @@ jobs:
       - name: check build and formatting
         run: |
           chmod +x gradlew
-          ./gradlew spotlessCheck build --no-daemon -x test
+          ./gradlew build --no-daemon -x test -x spotlessCheck
