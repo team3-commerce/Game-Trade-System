@@ -22,9 +22,9 @@ public class MarketListingService {
 
     @Transactional(readOnly = true)
     public Page<SearchAllMarketListingResponse> getAllMarketListing(
-            String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
+            Long memberId, String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
         if (keyword != null && !keyword.isBlank()) {
-            marketListingCacheService.cacheSearchKeyword(keyword);
+            marketListingCacheService.cacheSearchKeyword(memberId, keyword);
         }
 
         return marketListingRepository.getAllMarketListingWithKeyword(

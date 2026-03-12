@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 public class MarketListingCacheService {
     private final RedisTemplate<String, String> redisTemplate;
 
-    public void cacheSearchKeyword(String keyword) {
+    public void cacheSearchKeyword(Long memberId, String keyword) {
 
         if (keyword == null || keyword.isBlank()) {
             return;
@@ -37,6 +37,21 @@ public class MarketListingCacheService {
          * 언어 종류에 영향을 받지 않도록 locale 지정
          */
         String normalizedKeyword = keyword.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
+
+        /**
+         * 동일 검색어 어뷰징 방지용
+         */
+        String dupCheckKey = RedisConsts.MARKET_LISTING + memberId + ":" + normalizedKeyword;
+        Boolean firstSearch = redisTemplate
+                .opsForValue()
+                .setIfAbsent(
+                        dupCheckKey,
+                        normalizedKeyword,
+                        Duration.ofMinutes(RedisConsts.SEARCH_DUPLICATE_PREVENT_MINUTES));
+
+        if (!firstSearch) {
+            return;
+        }
 
         /**
          *  똑같은 keyword를 서로 다른 키에 저장
