@@ -96,4 +96,26 @@ public class MarketListingController {
         return ResponseEntity.ok(ApiResponse.success(
                 String.valueOf(HttpStatus.OK), marketListingService.getTrendingKeywords(prefixKeyword)));
     }
+
+    /**
+     * 마켓 상품 등록 취소
+     */
+    @PatchMapping("/api/v1/market-listings/{marketListingId}")
+    public ResponseEntity<ApiResponse<SearchMarketListingResponse>> cancelMarketListing(
+            @AuthenticationPrincipal PrincipalDetails details, @PathVariable Long marketListingId) {
+        SearchMarketListingResponse res = marketListingService.cancelMarketListing(details, marketListingId);
+
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK), res));
+    }
+
+    /**
+     * 관리자 마켓 상품 등록 취소
+     */
+    @PatchMapping("/api/v1/admin/market-listings/{marketListingId}")
+    public ResponseEntity<ApiResponse<SearchMarketListingResponse>> cancelMarketListingAdmin(
+            @AuthenticationPrincipal PrincipalDetails details, @PathVariable Long marketListingId) {
+        SearchMarketListingResponse res = marketListingService.cancelMarketListingAdmin(details, marketListingId);
+
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK), res));
+    }
 }

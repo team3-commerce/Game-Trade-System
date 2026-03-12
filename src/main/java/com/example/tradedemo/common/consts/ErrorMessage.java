@@ -24,6 +24,8 @@ public final class ErrorMessage {
     public static final String MSG_MARKET_LISTING_NOT_FOUND = "찾는 거래 매물 정보가 존재하지 않습니다";
     public static final String MSG_MARKET_LISTING_OWNER_MISMATCH = "아이템 소유자와 등록자가 다릅니다";
     public static final String MSG_MARKET_LISTING_OVER_SELLING = "인벤토리 내 아이템 정보가 존재하지 않습니다";
+    public static final String MSG_MARKET_LISTING_FORBIDDEN_FROM_CANCEL = "거래 매물을 삭제할 권한이 없습니다";
+    public static final String MSG_MARKET_LISTING_ILLEGAL_CANCEL_STATUS = "거래 매물이 취소 불가능한 상태 입니다";
 
     // Order
 
