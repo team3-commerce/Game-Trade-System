@@ -2,7 +2,7 @@ package com.example.tradedemo.domain.marketlistings.service;
 
 import com.example.tradedemo.auth.dto.PrincipalDetails;
 import com.example.tradedemo.common.exception.ErrorEnum;
-import com.example.tradedemo.domain.marketlistings.consts.MarketListingConstants;
+import com.example.tradedemo.domain.marketlistings.consts.MarketListingConsts;
 import com.example.tradedemo.domain.marketlistings.dto.request.CreateMarketListingRequest;
 import com.example.tradedemo.domain.marketlistings.dto.response.GetMarketListingResponse;
 import com.example.tradedemo.domain.marketlistings.dto.response.SearchAllMarketListingResponse;
@@ -177,7 +177,7 @@ public class MarketListingService {
                 marketListing.getQuantity(), // item 갯수
                 false, // claimed 상태가 아님
                 null, // claimed된 적이 없으므로 null
-                LocalDateTime.now().plus(MarketListingConstants.MARKET_LISTING_CANCEL_PENDING_ASSET_DURATION),
+                LocalDateTime.now().plus(MarketListingConsts.MARKET_LISTING_CANCEL_PENDING_ASSET_DURATION),
                 marketListing, // 매물
                 null, // 주문을 통해서 생성 되는 것이 아니므로 null
                 memberRepository.getReferenceById(details.getMember().getId()) // 멤버
