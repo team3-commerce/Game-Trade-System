@@ -2,7 +2,6 @@ package com.example.tradedemo.domain.members.service;
 
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
-import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepository;
 import com.example.tradedemo.domain.members.dto.MemberResponse;
@@ -12,8 +11,6 @@ import com.example.tradedemo.domain.members.dto.PasswordUpdateRequest;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.entity.MemberStatus;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
-import java.util.List;
-
 import com.example.tradedemo.domain.pending.repository.PendingAssetRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
