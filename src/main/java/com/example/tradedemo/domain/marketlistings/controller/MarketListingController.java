@@ -40,7 +40,7 @@ public class MarketListingController {
      *  asc/desc 가 아닌 값 전달 시 정렬 조건에서 무시 (예외 처리 x)
      */
     @GetMapping("/api/v1/me/market-listings")
-    public ResponseEntity<ApiResponse<Page<SearchAllMarketListingResponse>>> getAllMarketListing(
+    public ResponseEntity<ApiResponse<Page<SearchAllMarketListingResponse>>> getAllMeMarketListing(
             @AuthenticationPrincipal PrincipalDetails details,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String sortTotalPrice,
@@ -62,6 +62,7 @@ public class MarketListingController {
      */
     @GetMapping("/api/v1/market-listings")
     public ResponseEntity<ApiResponse<Page<SearchAllMarketListingResponse>>> getAllMarketListing(
+            @AuthenticationPrincipal PrincipalDetails details,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String sortTotalPrice,
             @RequestParam(required = false) String sortSaleEndAt,
@@ -71,7 +72,8 @@ public class MarketListingController {
 
         return ResponseEntity.ok(ApiResponse.success(
                 String.valueOf(HttpStatus.OK.value()),
-                marketListingService.getAllMarketListing(keyword, sortTotalPrice, sortSaleEndAt, pageable)));
+                marketListingService.getAllMarketListing(
+                        details.getMember().getId(), keyword, sortTotalPrice, sortSaleEndAt, pageable)));
     }
 
     /**
