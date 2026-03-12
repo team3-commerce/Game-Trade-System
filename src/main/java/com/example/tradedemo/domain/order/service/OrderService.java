@@ -1,6 +1,7 @@
 package com.example.tradedemo.domain.order.service;
 
 import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
+import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepository;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
@@ -10,8 +11,13 @@ import com.example.tradedemo.domain.order.exception.WalletInsufficientBalanceExc
 import com.example.tradedemo.domain.order.repository.OrderRepository;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
+import com.example.tradedemo.domain.pending.entity.PendingAsset;
+import com.example.tradedemo.domain.pending.enums.PendingType;
+import com.example.tradedemo.domain.pending.enums.Type;
+import com.example.tradedemo.domain.pending.repository.PendingAssetRepository;
 import com.example.tradedemo.domain.wallet.entity.Wallet;
 import com.example.tradedemo.domain.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +32,7 @@ public class OrderService {
     private final MarketListingRepository marketListingRepository;
     private final MemberRepository memberRepository;
     private final WalletRepository walletRepository;
+    private final PendingAssetRepository pendingAssetRepository;
 
     /**
      * 상품 구매
@@ -67,6 +74,9 @@ public class OrderService {
          */
         Member seller = marketlisting.getMember();
 
+        /**
+         * 주문 ID 생성
+         */
         Order order = Order.create(
                 marketlisting.getTotalPrice(),
                 marketlisting.getQuantity(),
@@ -76,7 +86,51 @@ public class OrderService {
                 marketlisting.getMemberItem().getItem() // 거래 매물의 인벤토리의 아이템도감 id
                 );
 
-        orderRepository.save(order);
+        /**
+         * 판매자 돈 수령 대기
+         */
+        PendingAsset sellerPending =
+                PendingAsset.create(
+                        PendingType.SALE_SUCCESS,
+                        Type.MONEY,
+                        marketlisting.getTotalPrice(),
+                        0L,
+                        false,
+                        null,
+                        LocalDateTime.now().plusDays(1),
+                        marketlisting,
+                        order,
+                        seller);
+
+        /**
+         * 구매자 아이템 수령 대기
+         */
+        PendingAsset buyerPending =
+                PendingAsset.create(
+                        PendingType.PURCHASE_SUCCESS,
+                        Type.ITEM,
+                        BigDecimal.ZERO,
+                        marketlisting.getQuantity(),
+                        false,
+                        null,
+                        LocalDateTime.now().plusDays(1),
+                        marketlisting,
+                        order,
+                        buyer);
+
+        /**
+         * 구매자 수령 대기 상태
+         */
+        pendingAssetRepository.save(sellerPending);
+        /**
+         * 판매자 수령 대기 상태
+         */
+        pendingAssetRepository.save(buyerPending);
+
+        /**
+         * 매물 상태 변경 : SELLING → SOLD
+         */
+        marketlisting.updateStatus(MarketListingStatus.SOLD);
     }
 
     /**
