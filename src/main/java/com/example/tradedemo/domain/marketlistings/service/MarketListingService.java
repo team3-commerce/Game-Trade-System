@@ -24,6 +24,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +32,7 @@ public class MarketListingService {
     private final MarketListingRepository marketListingRepository;
     private final MemberItemRepository memberItemRepository;
     private final MemberRepository memberRepository;
+    private final MarketListingCacheService marketListingCacheService;
     /**
      * 상품 등록
      */
