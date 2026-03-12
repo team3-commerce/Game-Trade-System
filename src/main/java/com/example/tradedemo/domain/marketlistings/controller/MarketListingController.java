@@ -88,8 +88,7 @@ public class MarketListingController {
 
         return ResponseEntity.ok(ApiResponse.success(
                 String.valueOf(HttpStatus.OK.value()),
-                marketListingService.getAllMarketListing(
-                        details.getMember().getId(), keyword, sortTotalPrice, sortSaleEndAt, pageable)));
+                marketListingService.getAllMarketListing( details.getMember().getId(), keyword, sortTotalPrice, sortSaleEndAt, pageable)));
     }
 
     /**
