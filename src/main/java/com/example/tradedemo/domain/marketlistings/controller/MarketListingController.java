@@ -78,7 +78,6 @@ public class MarketListingController {
      */
     @GetMapping("/market-listings")
     public ResponseEntity<ApiResponse<Page<SearchAllMarketListingResponse>>> getAllMarketListing(
-            @AuthenticationPrincipal PrincipalDetails details,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String sortTotalPrice,
             @RequestParam(required = false) String sortSaleEndAt,
@@ -88,7 +87,7 @@ public class MarketListingController {
 
         return ResponseEntity.ok(ApiResponse.success(
                 String.valueOf(HttpStatus.OK.value()),
-                marketListingService.getAllMarketListing( details.getMember().getId(), keyword, sortTotalPrice, sortSaleEndAt, pageable)));
+                marketListingService.getAllMarketListing(keyword, sortTotalPrice, sortSaleEndAt, pageable)));
     }
 
     /**
@@ -112,27 +111,5 @@ public class MarketListingController {
             @RequestParam(required = false) String prefixKeyword) {
         return ResponseEntity.ok(ApiResponse.success(
                 String.valueOf(HttpStatus.OK), marketListingService.getTrendingKeywords(prefixKeyword)));
-    }
-
-    /**
-     * 마켓 상품 등록 취소
-     */
-    @PatchMapping("/api/v1/market-listings/{marketListingId}")
-    public ResponseEntity<ApiResponse<SearchMarketListingResponse>> cancelMarketListing(
-            @AuthenticationPrincipal PrincipalDetails details, @PathVariable Long marketListingId) {
-        SearchMarketListingResponse res = marketListingService.cancelMarketListing(details, marketListingId);
-
-        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK), res));
-    }
-
-    /**
-     * 관리자 마켓 상품 등록 취소
-     */
-    @PatchMapping("/api/v1/admin/market-listings/{marketListingId}")
-    public ResponseEntity<ApiResponse<SearchMarketListingResponse>> cancelMarketListingAdmin(
-            @AuthenticationPrincipal PrincipalDetails details, @PathVariable Long marketListingId) {
-        SearchMarketListingResponse res = marketListingService.cancelMarketListingAdmin(details, marketListingId);
-
-        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK), res));
     }
 }

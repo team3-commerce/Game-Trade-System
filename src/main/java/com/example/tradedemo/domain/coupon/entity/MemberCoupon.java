@@ -48,18 +48,19 @@ public class MemberCoupon extends Base {
         return memberCoupon;
     }
 
-    // 만료일 초과 여부 체크
-    public boolean isExpired() {
-        return expiredAt != null && expiredAt.isBefore(LocalDateTime.now());
+    // 쿠폰 사용 가능 여부 체크
+    public boolean isUsable() {
+        if (status != CouponStatus.UNUSED) {
+            return false;
+        }
+        if (expiredAt != null && expiredAt.isBefore(LocalDateTime.now())) {
+            return false;
+        }
+        return true;
     }
 
     // 쿠폰 사용 처리
-    public void updateUsedStatus() {
+    public void use() {
         this.status = CouponStatus.USED;
-    }
-
-    // 쿠폰 만료 처리
-    public void updateExpireStatus() {
-        this.status = CouponStatus.EXPIRED;
     }
 }

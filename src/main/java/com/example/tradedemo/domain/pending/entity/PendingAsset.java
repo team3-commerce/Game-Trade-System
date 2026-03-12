@@ -54,9 +54,9 @@ public class PendingAsset extends Base {
     @Column(nullable = false)
     private Boolean isClaimed;
     /**
-     * 수령 시간, null일 수도 있습니다
+     * 수령 시간
      */
-    @Column(nullable = true)
+    @Column(nullable = false)
     private LocalDateTime claimedAt;
 
     /**
@@ -73,10 +73,10 @@ public class PendingAsset extends Base {
     private MarketListing marketListing;
 
     /**
-     * 주문 ID, null일 수도 있습니다
+     * 주문 ID
      */
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "order_id", nullable = true)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
     /**
