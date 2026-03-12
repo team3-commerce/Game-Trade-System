@@ -25,7 +25,7 @@ import com.example.tradedemo.domain.members.repository.MemberRepository;
 import com.example.tradedemo.domain.pending.entity.PendingAsset;
 import com.example.tradedemo.domain.pending.enums.PendingType;
 import com.example.tradedemo.domain.pending.enums.Type;
-import com.example.tradedemo.domain.pending.repository.PendingRepository;
+import com.example.tradedemo.domain.pending.repository.PendingAssetRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
@@ -43,7 +43,7 @@ public class MarketListingService {
     private final MemberItemRepository memberItemRepository;
     private final MemberRepository memberRepository;
     private final MarketListingCacheService marketListingCacheService;
-    private final PendingRepository pendingRepository;
+    private final PendingAssetRepository pendingAssetRepository;
 
     /**
      * 상품 등록
@@ -183,7 +183,7 @@ public class MarketListingService {
                 memberRepository.getReferenceById(details.getMember().getId()) // 멤버
                 );
 
-        pendingRepository.save(pendingAsset);
+        pendingAssetRepository.save(pendingAsset);
 
         // modifiedAt 업데이트 강제하기 위해 flush
         marketListing = marketListingRepository.saveAndFlush(marketListing);
