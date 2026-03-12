@@ -4,7 +4,9 @@ import com.example.tradedemo.auth.dto.PrincipalDetails;
 import com.example.tradedemo.common.dto.ApiResponse;
 import com.example.tradedemo.domain.marketlistings.dto.response.SearchAllMarketListingResponse;
 import com.example.tradedemo.domain.marketlistings.dto.response.SearchMarketListingResponse;
+import com.example.tradedemo.domain.marketlistings.dto.response.SearchTrendingKeywordResponse;
 import com.example.tradedemo.domain.marketlistings.service.MarketListingService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -70,5 +72,18 @@ public class MarketListingController {
             @PathVariable Long marketListingId) {
         return ResponseEntity.ok(ApiResponse.success(
                 String.valueOf(HttpStatus.OK), marketListingService.getMarketListing(marketListingId)));
+    }
+
+    /**
+     *  인기 검색어 조회
+     *  조회수가 높은 마켓 상품 검색 keyword 5개 까지 조회
+     *  키워드를 전달할 경우, 해당 키워드로 시작하는 인기검색어 조회
+     *  하루 단위로 인기 검색어 캐싱 TTL -> 1일
+     */
+    @GetMapping("/api/v1/market-listings/search-popular")
+    public ResponseEntity<ApiResponse<List<SearchTrendingKeywordResponse>>> getTrendingKeywords(
+            @RequestParam(required = false) String prefixKeyword) {
+        return ResponseEntity.ok(ApiResponse.success(
+                String.valueOf(HttpStatus.OK), marketListingService.getTrendingKeywords(prefixKeyword)));
     }
 }
