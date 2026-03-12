@@ -6,8 +6,14 @@ import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
 import com.example.tradedemo.domain.order.dto.response.*;
 import com.example.tradedemo.domain.order.entity.Order;
+import com.example.tradedemo.domain.order.exception.WalletInsufficientBalanceException;
 import com.example.tradedemo.domain.order.repository.OrderRepository;
+
+import java.math.BigDecimal;
 import java.util.List;
+
+import com.example.tradedemo.domain.wallet.entity.Wallet;
+import com.example.tradedemo.domain.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +25,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final MarketListingRepository marketListingRepository;
     private final MemberRepository memberRepository;
+    private final WalletRepository walletRepository;
 
     /**
      * 상품 구매
@@ -30,10 +37,30 @@ public class OrderService {
          */
         Member buyer = memberRepository.findById(buyerId).orElseThrow();
         /**
+         * 지갑 조회
+         * 돈 있는지 확인하고 구매해야 한다.
+         */
+        Wallet wallet = walletRepository.findByMemberId(buyerId).orElseThrow();
+        /**
          * 거래 매물
          */
         MarketListing marketlisting =
                 marketListingRepository.findById(marketListingId).orElseThrow();
+        /**
+         * 가격
+         */
+        BigDecimal price = marketlisting.getTotalPrice();
+        /**
+         * 잔액 비교
+         * 구매자의 돈과 총 가격 비교
+         */
+        if (wallet.getBalance().compareTo(price) < 0) {
+            throw new WalletInsufficientBalanceException();
+        }
+        /**
+         * 지갑에서 돈 차감
+         */
+        wallet.decrease(price);
         /**
          * 판매자
          */
