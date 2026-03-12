@@ -46,4 +46,14 @@ public class CouponHistory extends Base {
         history.memberCoupon = memberCoupon;
         return history;
     }
+
+    public static CouponHistory createExpired(Member member, MemberCoupon memberCoupon) {
+        CouponHistory history = new CouponHistory();
+        history.moneyAmount = memberCoupon.getCouponPolicy().getMoneyAmount();
+        history.usedAt = LocalDateTime.now();
+        history.status = CouponHistoryStatus.EXPIRED;
+        history.member = member;
+        history.memberCoupon = memberCoupon;
+        return history;
+    }
 }
