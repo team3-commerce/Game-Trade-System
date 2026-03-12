@@ -94,4 +94,12 @@ public class MarketListing extends Base {
 
         return marketListing;
     }
+
+    /**
+     * 상태를 업데이트 합니다.
+     * @param newStatus 새 상태
+     */
+    public void updateStatus(MarketListingStatus newStatus) {
+        this.status = newStatus;
+    }
 }
