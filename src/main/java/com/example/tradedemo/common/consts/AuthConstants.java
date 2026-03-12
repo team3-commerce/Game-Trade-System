@@ -1,10 +1,10 @@
-package com.example.tradedemo.auth.consts;
+package com.example.tradedemo.common.consts;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public final class AuthConst {
+public final class AuthConstants {
 
     public static final String AUTHENTICATION_HEADER = "Authorization";
     public static final String BEARER_PREFIX = "Bearer ";

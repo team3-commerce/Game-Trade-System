@@ -3,13 +3,14 @@ package com.example.tradedemo.domain.coupon.service;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.coupon.constants.CouponDuration;
-import com.example.tradedemo.domain.coupon.dto.*;
+import com.example.tradedemo.domain.coupon.dto.CreateCouponPolicyRequest;
+import com.example.tradedemo.domain.coupon.dto.CreateCouponPolicyResponse;
+import com.example.tradedemo.domain.coupon.dto.SearchAllCouponPolicyResponse;
+import com.example.tradedemo.domain.coupon.dto.SearchAllMemberCouponResponse;
 import com.example.tradedemo.domain.coupon.entity.CouponHistory;
 import com.example.tradedemo.domain.coupon.entity.CouponPolicy;
 import com.example.tradedemo.domain.coupon.entity.MemberCoupon;
-import com.example.tradedemo.domain.coupon.enums.CouponStatus;
 import com.example.tradedemo.domain.coupon.enums.IssueType;
-import com.example.tradedemo.domain.coupon.exception.CouponExpiredException;
 import com.example.tradedemo.domain.coupon.repository.CouponHistoryRepository;
 import com.example.tradedemo.domain.coupon.repository.CouponPolicyRepository;
 import com.example.tradedemo.domain.coupon.repository.MemberCouponRepository;
@@ -23,13 +24,11 @@ import jakarta.validation.Valid;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CouponService {
@@ -158,25 +157,16 @@ public class CouponService {
         couponPolicy.increaseExpendQuantity();
     }
 
-    @Transactional(noRollbackFor = CouponExpiredException.class)
+    @Transactional
     public void useCoupon(Long memberId, Long memberCouponId, Member member) {
         // 본인 쿠폰인지 조회
         MemberCoupon memberCoupon = memberCouponRepository
-                .findMemberCouponForUse(memberId, memberCouponId)
+                .findById(memberCouponId)
+                .filter(mc -> mc.getMember().getId().equals(memberId))
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_COUPON_NOT_FOUND));
 
-        // 만료일이 지난 경우 EXPIRED 처리
-        if (memberCoupon.isExpired()) {
-            memberCoupon.updateExpireStatus();
-            couponHistoryRepository.save(CouponHistory.createExpired(member, memberCoupon));
-            log.info("만료 처리 및 기록 추가 완료");
-        }
-        if (memberCoupon.getStatus() == CouponStatus.EXPIRED) {
-            throw new CouponExpiredException();
-        }
-
         // 사용 가능 여부 체크
-        if (memberCoupon.getStatus() != CouponStatus.UNUSED) {
+        if (!memberCoupon.isUsable()) {
             throw new ServiceException(ErrorEnum.ERR_COUPON_NOT_USABLE);
         }
 
@@ -185,7 +175,7 @@ public class CouponService {
                 .findByMemberId(memberId)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_WALLET_NOT_FOUND));
 
-        memberCoupon.updateUsedStatus();
+        memberCoupon.use();
 
         CouponHistory couponHistory = couponHistoryRepository.save(CouponHistory.create(member, memberCoupon));
 
@@ -199,11 +189,5 @@ public class CouponService {
                 couponHistory,
                 member,
                 null));
-    }
-
-    @Transactional(readOnly = true)
-    public Page<SearchAllCouponHistoryResponse> getAllCouponHistory(
-            Long memberId, String status, String sortCreatedAt, Pageable pageable) {
-        return couponHistoryRepository.findAllCouponHistoryByMemberId(memberId, status, sortCreatedAt, pageable);
     }
 }

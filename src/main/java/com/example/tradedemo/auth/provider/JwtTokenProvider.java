@@ -1,7 +1,7 @@
 package com.example.tradedemo.auth.provider;
 
-import static com.example.tradedemo.auth.consts.AuthConst.ACCESS_TOKEN_VALIDITY;
-import static com.example.tradedemo.auth.consts.AuthConst.REFRESH_TOKEN_VALIDITY;
+import static com.example.tradedemo.common.consts.AuthConstants.ACCESS_TOKEN_VALIDITY;
+import static com.example.tradedemo.common.consts.AuthConstants.REFRESH_TOKEN_VALIDITY;
 
 import com.example.tradedemo.auth.config.JwtProperties;
 import com.example.tradedemo.common.exception.ErrorEnum;

@@ -1,6 +1,6 @@
 package com.example.tradedemo.domain.members.scheduler;
 
-import com.example.tradedemo.domain.members.consts.MemberPolicyConst;
+import com.example.tradedemo.common.consts.MemberPolicy;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.entity.MemberStatus;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
@@ -31,7 +31,7 @@ public class MemberScheduler {
     }
 
     private void processDormantMember() {
-        LocalDateTime threshold = LocalDateTime.now().minusDays(MemberPolicyConst.DORMANT_THRESHOLD_DAYS);
+        LocalDateTime threshold = LocalDateTime.now().minusDays(MemberPolicy.DORMANT_THRESHOLD_DAYS);
 
         List<Member> targets = memberRepository.findAllByStatusAndLastLoginAtBefore(MemberStatus.ACTIVE, threshold);
 
@@ -42,7 +42,7 @@ public class MemberScheduler {
     }
 
     private void processDeleteMember() {
-        LocalDateTime threshold = LocalDateTime.now().minusYears(MemberPolicyConst.WITHDRAWAL_RETENTION_YEARS);
+        LocalDateTime threshold = LocalDateTime.now().minusYears(MemberPolicy.WITHDRAWAL_RETENTION_YEARS);
 
         List<Member> targets =
                 memberRepository.findAllByStatusAndStatusChangedAtBefore(MemberStatus.WITHDRAWN, threshold);

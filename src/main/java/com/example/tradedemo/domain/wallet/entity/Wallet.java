@@ -42,7 +42,22 @@ public class Wallet extends Base {
         return wallet;
     }
 
+    /**
+     * 금액 추가
+     * @param amount
+     */
     public void addBalance(BigDecimal amount) {
         this.balance = this.balance.add(amount);
+    }
+
+    /**
+     * 구매 시 돈 차감
+     * @param amount
+     */
+    public void decrease(BigDecimal amount) {
+        if (this.balance.compareTo(amount) < 0) {
+            throw new IllegalArgumentException("잔액 부족");
+        }
+        this.balance = this.balance.subtract(amount);
     }
 }

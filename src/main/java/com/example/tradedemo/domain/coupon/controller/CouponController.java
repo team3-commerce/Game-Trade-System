@@ -4,7 +4,10 @@ import com.example.tradedemo.auth.dto.PrincipalDetails;
 import com.example.tradedemo.common.dto.ApiResponse;
 import com.example.tradedemo.common.dto.PageResponse;
 import com.example.tradedemo.domain.coupon.constants.CouponMessage;
-import com.example.tradedemo.domain.coupon.dto.*;
+import com.example.tradedemo.domain.coupon.dto.CreateCouponPolicyRequest;
+import com.example.tradedemo.domain.coupon.dto.CreateCouponPolicyResponse;
+import com.example.tradedemo.domain.coupon.dto.SearchAllCouponPolicyResponse;
+import com.example.tradedemo.domain.coupon.dto.SearchAllMemberCouponResponse;
 import com.example.tradedemo.domain.coupon.service.CouponService;
 import com.example.tradedemo.domain.members.entity.Member;
 import jakarta.validation.Valid;
@@ -108,25 +111,5 @@ public class CouponController {
         couponService.useCoupon(memberId, memberCouponId, member);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), CouponMessage.COUPON_USED));
-    }
-
-    /**
-     * 내 쿠폰 사용 내역 조회
-     * status 값을 USED/EXPIRED 로 전달하여 필터 조건 추가 가능
-     * 그 외 값 입력 시 무시
-     */
-    @GetMapping("/api/v1/me/coupons-histories")
-    public ResponseEntity<ApiResponse<PageResponse<SearchAllCouponHistoryResponse>>> getAllCouponHistory(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) String sortCreatedAt,
-            @AuthenticationPrincipal PrincipalDetails principalDetails) {
-
-        Pageable pageable = PageRequest.of(page, 10);
-        Long memberId = principalDetails.getMember().getId();
-        PageResponse<SearchAllCouponHistoryResponse> response =
-                PageResponse.of(couponService.getAllCouponHistory(memberId, status, sortCreatedAt, pageable));
-
-        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
     }
 }
