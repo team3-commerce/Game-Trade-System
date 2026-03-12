@@ -78,6 +78,7 @@ public class MarketListingController {
      */
     @GetMapping("/market-listings")
     public ResponseEntity<ApiResponse<Page<SearchAllMarketListingResponse>>> getAllMarketListing(
+            @AuthenticationPrincipal PrincipalDetails details,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String sortTotalPrice,
             @RequestParam(required = false) String sortSaleEndAt,
@@ -87,7 +88,8 @@ public class MarketListingController {
 
         return ResponseEntity.ok(ApiResponse.success(
                 String.valueOf(HttpStatus.OK.value()),
-                marketListingService.getAllMarketListing(keyword, sortTotalPrice, sortSaleEndAt, pageable)));
+                marketListingService.getAllMarketListing(
+                        details.getMember().getId(), keyword, sortTotalPrice, sortSaleEndAt, pageable)));
     }
 
     /**
