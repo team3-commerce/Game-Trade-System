@@ -15,7 +15,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConditionalOnProperty(name = "app.add-test-items", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(name = "app.add-test-memberitems", havingValue = "true", matchIfMissing = false)
 @RequiredArgsConstructor
 public class MemberItemInitializer implements ApplicationRunner {
 
