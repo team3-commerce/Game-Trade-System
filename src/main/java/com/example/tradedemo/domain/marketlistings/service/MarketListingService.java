@@ -36,8 +36,41 @@ public class MarketListingService {
 
     /**
      * 개별 정산하기
+     * 수령 대기 상태인 돈/아이템을 수령한다.
+     * 판매자 -> 돈 | 구매자 -> 아이템 | 그 외 기타등등
      */
+    @Transactional
+    public void settlement(Long memberId, Long marketListingId) {
 
+        MarketListing marketListing =
+                marketListingRepository.findById(marketListingId).orElseThrow(MarketListingNotFoundException::new);
+
+        /**
+         * 판매자 검증
+         * 거래소 등록된 아이디와 이용자(개별정산 누르는)의 아이디가 같은지 확인
+         */
+        if (!marketListing.getMember().getId().equals(memberId)) {
+            throw new MarketListingOwnerMismatchException();
+        }
+        /**
+         * 상태 검증
+         * 거래소의 해당 아이템이 SOLD 상태만 정산 가능
+         */
+        if (marketListing.getStatus() != MarketListingStatus.SOLD) {
+            throw new IllegalStateException("정산 가능한 상태가 아닙니다.");
+        }
+        /**
+         * pending_asset 조회
+         */
+
+        /**
+         * wallet에 돈 지급
+         */
+
+        /**
+         * 거래 기록 :  wallet_history 기록
+         */
+    }
 
     /**
      * 상품 등록

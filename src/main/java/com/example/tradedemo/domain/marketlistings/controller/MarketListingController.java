@@ -19,18 +19,30 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class MarketListingController {
     private final MarketListingService marketListingService;
 
     /**
      * 개별 정산하기
+     * 이용자ID =  로그인 한 이용자 ID | 거래소의 ID
      */
-    
+    @PostMapping("/me/market-listings/{marketListingId}/settlement")
+    public ResponseEntity<ApiResponse<Void>> settlement(
+            @AuthenticationPrincipal PrincipalDetails principalDetails, @PathVariable Long marketListingId) {
+
+        Long memberId = principalDetails.getMember().getId();
+
+        marketListingService.settlement(memberId, marketListingId);
+
+        return ResponseEntity.ok(ApiResponse.success("200", null));
+    }
+
     /**
      * 상품 등록
      */
-    @PostMapping("/api/v1/market-listings")
+    @PostMapping("/market-listings")
     public ResponseEntity<ApiResponse<GetMarketListingResponse>> createMarketListing(
             @AuthenticationPrincipal PrincipalDetails details, @RequestBody CreateMarketListingRequest request) {
         GetMarketListingResponse res =
@@ -43,7 +55,7 @@ public class MarketListingController {
      *  sortTotalPrice, sortSaleEndAt 값을 asc/desc 로 전달하여 정렬 조건 추가 가능
      *  asc/desc 가 아닌 값 전달 시 정렬 조건에서 무시 (예외 처리 x)
      */
-    @GetMapping("/api/v1/me/market-listings")
+    @GetMapping("/me/market-listings")
     public ResponseEntity<ApiResponse<Page<SearchAllMarketListingResponse>>> getAllMarketListing(
             @AuthenticationPrincipal PrincipalDetails details,
             @RequestParam(required = false) String keyword,
@@ -64,7 +76,7 @@ public class MarketListingController {
      *  sortTotalPrice, sortSaleEndAt 값을 asc/desc 로 전달하여 정렬 조건 추가 가능
      *  asc/desc 가 아닌 값 전달 시 정렬 조건에서 무시 (예외 처리 x)
      */
-    @GetMapping("/api/v1/market-listings")
+    @GetMapping("/market-listings")
     public ResponseEntity<ApiResponse<Page<SearchAllMarketListingResponse>>> getAllMarketListing(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String sortTotalPrice,
@@ -81,7 +93,7 @@ public class MarketListingController {
     /**
      * 마켓 상품 단건 조회
      */
-    @GetMapping("/api/v1/market-listings/{marketListingId}")
+    @GetMapping("/market-listings/{marketListingId}")
     public ResponseEntity<ApiResponse<SearchMarketListingResponse>> getMarketListing(
             @PathVariable Long marketListingId) {
         return ResponseEntity.ok(ApiResponse.success(
@@ -94,7 +106,7 @@ public class MarketListingController {
      *  키워드를 전달할 경우, 해당 키워드로 시작하는 인기검색어 조회
      *  하루 단위로 인기 검색어 캐싱 TTL -> 1일
      */
-    @GetMapping("/api/v1/market-listings/search-popular")
+    @GetMapping("/market-listings/search-popular")
     public ResponseEntity<ApiResponse<List<SearchTrendingKeywordResponse>>> getTrendingKeywords(
             @RequestParam(required = false) String prefixKeyword) {
         return ResponseEntity.ok(ApiResponse.success(
