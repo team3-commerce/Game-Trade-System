@@ -1,5 +1,7 @@
 package com.example.tradedemo.domain.marketlistings.service;
 
+import com.example.tradedemo.common.exception.ErrorEnum;
+import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.marketlistings.dto.request.CreateMarketListingRequest;
 import com.example.tradedemo.domain.marketlistings.dto.response.GetMarketListingResponse;
 import com.example.tradedemo.domain.marketlistings.dto.response.SearchAllMarketListingResponse;
@@ -7,14 +9,9 @@ import com.example.tradedemo.domain.marketlistings.dto.response.SearchMarketList
 import com.example.tradedemo.domain.marketlistings.dto.response.SearchTrendingKeywordResponse;
 import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
-import com.example.tradedemo.domain.marketlistings.exception.MarketListingNotFoundException;
-import com.example.tradedemo.domain.marketlistings.exception.MarketListingOverSellingException;
-import com.example.tradedemo.domain.marketlistings.exception.MarketListingOwnerMismatchException;
 import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepository;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.entity.MemberItem;
-import com.example.tradedemo.domain.members.exception.MemberItemNotFoundException;
-import com.example.tradedemo.domain.members.exception.MemberNotFoundException;
 import com.example.tradedemo.domain.members.repository.MemberItemRepository;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
 import java.math.BigDecimal;
@@ -42,16 +39,16 @@ public class MarketListingService {
     @Transactional
     public void settlement(Long memberId, Long marketListingId) {
 
-        MarketListing marketListing =
-                marketListingRepository.findById(marketListingId)
-                        .orElseThrow(MarketListingNotFoundException::new);
+        MarketListing marketListing = marketListingRepository
+                .findById(marketListingId)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_FOUND));
 
         /**
          * 판매자 검증
          * 거래소 등록된 아이디와 이용자(개별정산 누르는)의 아이디가 같은지 확인
          */
         if (!marketListing.getMember().getId().equals(memberId)) {
-            throw new MarketListingOwnerMismatchException();
+            throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_OWNER_MISMATCH);
         }
         /**
          * 상태 검증
@@ -71,32 +68,33 @@ public class MarketListingService {
         /**
          * 거래 기록 :  wallet_history 기록
          */
-
     }
-
 
     /**
      * 상품 등록
      */
     @Transactional
     public GetMarketListingResponse create(Long memberId, CreateMarketListingRequest request) {
-        Member member = memberRepository.findById(memberId).orElseThrow(MemberNotFoundException::new);
+        Member member = memberRepository
+                .findById(memberId)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
 
-        MemberItem memberItem =
-                memberItemRepository.findById(request.getMemberItemId()).orElseThrow(MemberItemNotFoundException::new);
+        MemberItem memberItem = memberItemRepository
+                .findById(request.getMemberItemId())
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_ITEM_NOT_FOUND));
         /**
          * 판매자 검증
          * 아이템 소유자와 등록자가 동일한지 확인
          */
         if (!memberItem.getMember().getId().equals(member.getId())) {
-            throw new MarketListingOwnerMismatchException();
+            throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_OWNER_MISMATCH);
         }
         /**
          * 수량 검증
          * 가지고 있는 아이템보다 더 많이 팔려고 하는 경우
          */
         if (memberItem.getQuantity() < request.getQuantity()) {
-            throw new MarketListingOverSellingException();
+            throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_OVER_SELLING);
         }
 
         /**
@@ -152,8 +150,9 @@ public class MarketListingService {
 
     @Transactional(readOnly = true)
     public SearchMarketListingResponse getMarketListing(Long marketListingId) {
-        MarketListing marketListing =
-                marketListingRepository.findById(marketListingId).orElseThrow(MarketListingNotFoundException::new);
+        MarketListing marketListing = marketListingRepository
+                .findById(marketListingId)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_FOUND));
 
         return SearchMarketListingResponse.of(marketListing);
     }

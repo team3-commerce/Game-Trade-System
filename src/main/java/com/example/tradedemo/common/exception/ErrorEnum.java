@@ -47,7 +47,8 @@ public enum ErrorEnum {
     ERR_WALLET_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_WALLET_NOT_FOUND),
 
     // Order
-    ERR_WALLET_INSUFFICIENT_BALANCE_BAD_REQUEST(HttpStatus.BAD_REQUEST, ErrorMessage.MSG_WALLET_INSUFFICIENT_BALANCE_BAD_REQUEST);
+    ERR_WALLET_INSUFFICIENT_BALANCE_BAD_REQUEST(
+            HttpStatus.BAD_REQUEST, ErrorMessage.MSG_WALLET_INSUFFICIENT_BALANCE_BAD_REQUEST);
 
     private final HttpStatus httpStatus;
     private final String errorMessage;
