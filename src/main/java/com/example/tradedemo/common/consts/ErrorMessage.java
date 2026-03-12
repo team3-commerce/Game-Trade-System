@@ -15,12 +15,19 @@ public final class ErrorMessage {
     // Member
     public static final String MSG_MEMBER_NOT_FOUND = "찾는 유저 정보가 존재하지 않습니다";
     public static final String MSG_MEMBER_ITEM_NOT_FOUND = "찾는 유저 아이템 정보가 존재하지 않습니다";
+    public static final String MSG_MEMBER_HAS_ACTIVE_LISTINGS = "판매 중인 상품이 있습니다";
+    public static final String MSG_MEMBER_HAS_PENDING_ASSETS = "수령 대기 중인 자산이나 아이템이 있습니다";
 
     // Item
     public static final String MSG_ITEM_NOT_FOUND = "찾는 아이템 정보가 존재하지 않습니다";
+    public static final String MSG_INVENTORYITEM_NOT_FOUND = "아이템은 가지고 있는 것보다 많이 등록될 수 없습니다";
 
     // MarketListing
     public static final String MSG_MARKET_LISTING_NOT_FOUND = "찾는 거래 매물 정보가 존재하지 않습니다";
+    public static final String MSG_MARKET_LISTING_OWNER_MISMATCH = "아이템 소유자와 등록자가 다릅니다";
+    public static final String MSG_MARKET_LISTING_OVER_SELLING = "인벤토리 내 아이템 정보가 존재하지 않습니다";
+    public static final String MSG_MARKET_LISTING_FORBIDDEN_FROM_CANCEL = "거래 매물을 삭제할 권한이 없습니다";
+    public static final String MSG_MARKET_LISTING_ILLEGAL_CANCEL_STATUS = "거래 매물이 취소 불가능한 상태 입니다";
 
     // Order
 
