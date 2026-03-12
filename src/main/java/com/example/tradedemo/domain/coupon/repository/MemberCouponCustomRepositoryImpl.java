@@ -7,6 +7,8 @@ import com.example.tradedemo.domain.coupon.dto.SearchAllMemberCouponResponse;
 import com.example.tradedemo.domain.coupon.entity.MemberCoupon;
 import com.example.tradedemo.domain.coupon.enums.CouponStatus;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,12 +38,22 @@ public class MemberCouponCustomRepositoryImpl implements MemberCouponCustomRepos
             }
         }
 
+        // UNUSED, USED, EXPIRED 순서로 정렬
+        NumberExpression<Integer> statusOrder = new CaseBuilder()
+                .when(memberCoupon.status.eq(CouponStatus.UNUSED))
+                .then(0)
+                .when(memberCoupon.status.eq(CouponStatus.USED))
+                .then(1)
+                .when(memberCoupon.status.eq(CouponStatus.EXPIRED))
+                .then(2)
+                .otherwise(3);
+
         List<MemberCoupon> content = queryFactory
                 .selectFrom(memberCoupon)
                 .join(memberCoupon.couponPolicy, couponPolicy)
                 .fetchJoin()
                 .where(builder)
-                .orderBy(memberCoupon.createdAt.desc())
+                .orderBy(statusOrder.asc(), memberCoupon.createdAt.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
