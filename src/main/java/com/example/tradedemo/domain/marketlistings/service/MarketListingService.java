@@ -2,6 +2,7 @@ package com.example.tradedemo.domain.marketlistings.service;
 
 import com.example.tradedemo.auth.dto.PrincipalDetails;
 import com.example.tradedemo.common.exception.ErrorEnum;
+import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.marketlistings.consts.MarketListingConsts;
 import com.example.tradedemo.domain.marketlistings.dto.request.CreateMarketListingRequest;
 import com.example.tradedemo.domain.marketlistings.dto.response.GetMarketListingResponse;
@@ -10,16 +11,10 @@ import com.example.tradedemo.domain.marketlistings.dto.response.SearchMarketList
 import com.example.tradedemo.domain.marketlistings.dto.response.SearchTrendingKeywordResponse;
 import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
-import com.example.tradedemo.domain.marketlistings.exception.MarketListingCancelException;
-import com.example.tradedemo.domain.marketlistings.exception.MarketListingNotFoundException;
-import com.example.tradedemo.domain.marketlistings.exception.MarketListingOverSellingException;
-import com.example.tradedemo.domain.marketlistings.exception.MarketListingOwnerMismatchException;
 import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepository;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.entity.MemberItem;
 import com.example.tradedemo.domain.members.entity.MemberRole;
-import com.example.tradedemo.domain.members.exception.MemberItemNotFoundException;
-import com.example.tradedemo.domain.members.exception.MemberNotFoundException;
 import com.example.tradedemo.domain.members.repository.MemberItemRepository;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
 import com.example.tradedemo.domain.pending.entity.PendingAsset;
@@ -50,23 +45,26 @@ public class MarketListingService {
      */
     @Transactional
     public GetMarketListingResponse create(Long memberId, CreateMarketListingRequest request) {
-        Member member = memberRepository.findById(memberId).orElseThrow(MemberNotFoundException::new);
+        Member member = memberRepository
+                .findById(memberId)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
 
-        MemberItem memberItem =
-                memberItemRepository.findById(request.getMemberItemId()).orElseThrow(MemberItemNotFoundException::new);
+        MemberItem memberItem = memberItemRepository
+                .findById(request.getMemberItemId())
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_ITEM_NOT_FOUND));
         /**
          * 판매자 검증
          * 아이템 소유자와 등록자가 동일한지 확인
          */
         if (!memberItem.getMember().getId().equals(member.getId())) {
-            throw new MarketListingOwnerMismatchException();
+            throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_OWNER_MISMATCH);
         }
         /**
          * 수량 검증
          * 가지고 있는 아이템보다 더 많이 팔려고 하는 경우
          */
         if (memberItem.getQuantity() < request.getQuantity()) {
-            throw new MarketListingOverSellingException();
+            throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_OVER_SELLING);
         }
 
         /**
@@ -122,8 +120,9 @@ public class MarketListingService {
 
     @Transactional(readOnly = true)
     public SearchMarketListingResponse getMarketListing(Long marketListingId) {
-        MarketListing marketListing =
-                marketListingRepository.findById(marketListingId).orElseThrow(MarketListingNotFoundException::new);
+        MarketListing marketListing = marketListingRepository
+                .findById(marketListingId)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_FOUND));
 
         return SearchMarketListingResponse.of(marketListing);
     }
@@ -139,8 +138,9 @@ public class MarketListingService {
 
     private SearchMarketListingResponse cancelMarketListingImpl(
             PrincipalDetails details, boolean calledByAdminApi, Long marketListingId) {
-        MarketListing marketListing =
-                marketListingRepository.findById(marketListingId).orElseThrow(MarketListingNotFoundException::new);
+        MarketListing marketListing = marketListingRepository
+                .findById(marketListingId)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_FOUND));
 
         boolean requestFromOwner =
                 marketListing.getMember().getId().equals(details.getMember().getId());
@@ -149,12 +149,12 @@ public class MarketListingService {
         if (!requestFromOwner) {
             // 만약 admin api 호출이 아니랴면 무조건 에러
             if (!calledByAdminApi) {
-                throw new MarketListingCancelException(ErrorEnum.ERR_MARKET_LISTING_FORBIDDEN_FROM_CANCEL);
+                throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_FORBIDDEN_FROM_CANCEL);
             }
 
             // 만약 admin api 호출이 맞다면 admin인지 확인
             if (!details.getMember().getRole().equals(MemberRole.ADMIN)) {
-                throw new MarketListingCancelException(ErrorEnum.ERR_MARKET_LISTING_FORBIDDEN_FROM_CANCEL);
+                throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_FORBIDDEN_FROM_CANCEL);
             }
         }
 
@@ -165,7 +165,7 @@ public class MarketListingService {
 
         // 매물이 판매중 상태인지 확인
         if (!marketListing.getStatus().equals(MarketListingStatus.SELLING)) {
-            throw new MarketListingCancelException(ErrorEnum.ERR_MARKET_LISTING_ILLEGAL_CANCEL_STATUS);
+            throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_ILLEGAL_CANCEL_STATUS);
         }
 
         marketListing.updateStatus(MarketListingStatus.CANCELLED);
