@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.web.PagedModel;
 import org.springframework.stereotype.Service;
+import com.example.tradedemo.common.dto.PageResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -21,8 +22,8 @@ public class ItemService {
         return GetItemResponse.of(item);
     }
 
-    public PagedModel<GetItemResponse> getManyItems(SearchItemRequest req) {
+    public PageResponse<GetItemResponse> getManyItems(SearchItemRequest req) {
         Page<Item> items = itemRepository.searchItem(req);
-        return new PagedModel<GetItemResponse>(items.map(GetItemResponse::of));
+        return PageResponse.of(items.map(GetItemResponse::of));
     }
 }

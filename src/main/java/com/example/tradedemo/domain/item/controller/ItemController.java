@@ -1,6 +1,7 @@
 package com.example.tradedemo.domain.item.controller;
 
 import com.example.tradedemo.common.dto.ApiResponse;
+import com.example.tradedemo.common.dto.PageResponse;
 import com.example.tradedemo.domain.item.dto.GetItemResponse;
 import com.example.tradedemo.domain.item.dto.SearchItemRequest;
 import com.example.tradedemo.domain.item.service.ItemService;
@@ -29,9 +30,9 @@ public class ItemController {
     }
 
     @GetMapping("/api/v1/items")
-    public ResponseEntity<ApiResponse<PagedModel<GetItemResponse>>> getManyItem(
+    public ResponseEntity<ApiResponse<PageResponse<GetItemResponse>>> getManyItem(
             @Valid @ModelAttribute SearchItemRequest req) {
-        PagedModel<GetItemResponse> res = itemService.getManyItems(req);
+        PageResponse<GetItemResponse> res = itemService.getManyItems(req);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), res));
