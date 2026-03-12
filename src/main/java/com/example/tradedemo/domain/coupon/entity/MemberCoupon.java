@@ -48,15 +48,9 @@ public class MemberCoupon extends Base {
         return memberCoupon;
     }
 
-    // 쿠폰 사용 가능 여부 체크
-    public boolean isUsable() {
-        if (status != CouponStatus.UNUSED) {
-            return false;
-        }
-        if (expiredAt != null && expiredAt.isBefore(LocalDateTime.now())) {
-            return false;
-        }
-        return true;
+    // 만료일 초과 여부 체크
+    public boolean isExpired() {
+        return expiredAt != null && expiredAt.isBefore(LocalDateTime.now());
     }
 
     // 쿠폰 사용 처리

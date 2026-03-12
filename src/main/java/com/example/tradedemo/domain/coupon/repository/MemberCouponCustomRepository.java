@@ -14,5 +14,7 @@ public interface MemberCouponCustomRepository {
 
     Optional<SearchAllMemberCouponResponse> findMemberCouponByMemberIdAndMemberCouponId(Long memberId, Long couponId);
 
+    Optional<MemberCoupon> findMemberCouponForUse(Long memberId, Long memberCouponId);
+
     List<MemberCoupon> findAllExpiredCoupons(LocalDateTime now);
 }

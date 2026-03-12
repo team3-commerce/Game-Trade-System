@@ -71,6 +71,18 @@ public class MemberCouponCustomRepositoryImpl implements MemberCouponCustomRepos
     }
 
     @Override
+    public Optional<MemberCoupon> findMemberCouponForUse(Long memberId, Long memberCouponId) {
+        MemberCoupon result = queryFactory
+                .selectFrom(memberCoupon)
+                .join(memberCoupon.couponPolicy, couponPolicy)
+                .fetchJoin()
+                .where(memberCoupon.id.eq(memberCouponId), memberCoupon.member.id.eq(memberId))
+                .fetchOne();
+
+        return Optional.ofNullable(result);
+    }
+
+    @Override
     public List<MemberCoupon> findAllExpiredCoupons(LocalDateTime now) {
         return queryFactory
                 .selectFrom(memberCoupon)
