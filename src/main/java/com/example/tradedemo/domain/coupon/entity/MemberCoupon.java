@@ -60,7 +60,12 @@ public class MemberCoupon extends Base {
     }
 
     // 쿠폰 사용 처리
-    public void use() {
+    public void updateUsedStatus() {
         this.status = CouponStatus.USED;
+    }
+
+    // 쿠폰 만료 처리
+    public void updateExpireStatus() {
+        this.status = CouponStatus.EXPIRED;
     }
 }

@@ -172,7 +172,7 @@ public class CouponService {
                 .findByMemberId(memberId)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_WALLET_NOT_FOUND));
 
-        memberCoupon.use();
+        memberCoupon.updateUsedStatus();
 
         CouponHistory couponHistory = couponHistoryRepository.save(CouponHistory.create(member, memberCoupon));
 
