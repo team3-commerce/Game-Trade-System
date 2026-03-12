@@ -5,6 +5,6 @@ import com.example.tradedemo.common.exception.ServiceException;
 
 public class InventoryItemNotFoundException extends ServiceException {
     public InventoryItemNotFoundException() {
-        super(ErrorEnum.ERR_INVENTORYITEM_NOT_FOUND);
+        super(ErrorEnum.ERR_INVENTORY_ITEM_NOT_FOUND);
     }
 }

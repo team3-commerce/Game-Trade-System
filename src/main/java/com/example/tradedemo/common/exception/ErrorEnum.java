@@ -10,7 +10,7 @@ import org.springframework.http.HttpStatus;
 public enum ErrorEnum {
     // Item
     ERR_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_ITEM_NOT_FOUND),
-    ERR_INVENTORYITEM_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_INVENTORYITEM_NOT_FOUND),
+    ERR_INVENTORY_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_INVENTORY_ITEM_NOT_FOUND),
 
     // MarketListing
     ERR_MARKET_LISTING_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_MARKET_LISTING_NOT_FOUND),
