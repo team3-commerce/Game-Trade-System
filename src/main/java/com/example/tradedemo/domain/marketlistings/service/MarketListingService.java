@@ -1,6 +1,7 @@
 package com.example.tradedemo.domain.marketlistings.service;
 
 import com.example.tradedemo.auth.dto.PrincipalDetails;
+import com.example.tradedemo.common.dto.PageResponse;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.marketlistings.consts.MarketListingConsts;
@@ -26,7 +27,6 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -97,25 +97,25 @@ public class MarketListingService {
      * 마켓 상품 전체 조회
      */
     @Transactional(readOnly = true)
-    public Page<SearchAllMarketListingResponse> getAllMarketListing(
+    public PageResponse<SearchAllMarketListingResponse> getAllMarketListing(
             Long memberId, String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
         if (keyword != null && !keyword.isBlank()) {
             marketListingCacheService.cacheSearchKeyword(memberId, keyword);
         }
 
-        return marketListingRepository.getAllMarketListingWithKeyword(
-                null, keyword, MarketListingStatus.SELLING, sortTotalPrice, sortSaleEndAt, pageable);
+        return PageResponse.of(marketListingRepository.getAllMarketListingWithKeyword(
+                null, keyword, MarketListingStatus.SELLING, sortTotalPrice, sortSaleEndAt, pageable));
     }
 
     /**
      * 본인 마켓 상품 전체 조회
      */
     @Transactional(readOnly = true)
-    public Page<SearchAllMarketListingResponse> getAllMeMarketListing(
+    public PageResponse<SearchAllMarketListingResponse> getAllMeMarketListing(
             Long memberId, String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
 
-        return marketListingRepository.getAllMarketListingWithKeyword(
-                memberId, keyword, null, sortTotalPrice, sortSaleEndAt, pageable);
+        return PageResponse.of(marketListingRepository.getAllMarketListingWithKeyword(
+                memberId, keyword, null, sortTotalPrice, sortSaleEndAt, pageable));
     }
 
     @Transactional(readOnly = true)
