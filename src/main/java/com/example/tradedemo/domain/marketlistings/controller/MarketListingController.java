@@ -24,6 +24,10 @@ public class MarketListingController {
     private final MarketListingService marketListingService;
 
     /**
+     * 개별 정산하기
+     */
+    
+    /**
      * 상품 등록
      */
     @PostMapping("/api/v1/market-listings")

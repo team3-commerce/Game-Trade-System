@@ -33,6 +33,12 @@ public class MarketListingService {
     private final MemberItemRepository memberItemRepository;
     private final MemberRepository memberRepository;
     private final MarketListingCacheService marketListingCacheService;
+
+    /**
+     * 개별 정산하기
+     */
+
+
     /**
      * 상품 등록
      */
