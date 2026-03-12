@@ -3,10 +3,7 @@ package com.example.tradedemo.domain.coupon.service;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.coupon.constants.CouponDuration;
-import com.example.tradedemo.domain.coupon.dto.CreateCouponPolicyRequest;
-import com.example.tradedemo.domain.coupon.dto.CreateCouponPolicyResponse;
-import com.example.tradedemo.domain.coupon.dto.SearchAllCouponPolicyResponse;
-import com.example.tradedemo.domain.coupon.dto.SearchAllMemberCouponResponse;
+import com.example.tradedemo.domain.coupon.dto.*;
 import com.example.tradedemo.domain.coupon.entity.CouponHistory;
 import com.example.tradedemo.domain.coupon.entity.CouponPolicy;
 import com.example.tradedemo.domain.coupon.entity.MemberCoupon;
@@ -189,5 +186,11 @@ public class CouponService {
                 couponHistory,
                 member,
                 null));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<SearchAllCouponHistoryResponse> getAllCouponHistory(
+            Long memberId, String status, String sortCreatedAt, Pageable pageable) {
+        return couponHistoryRepository.findAllCouponHistoryByMemberId(memberId, status, sortCreatedAt, pageable);
     }
 }
