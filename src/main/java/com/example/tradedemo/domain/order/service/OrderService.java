@@ -55,6 +55,12 @@ public class OrderService {
         MarketListing marketlisting =
                 marketListingRepository.findById(marketListingId).orElseThrow();
         /**
+         * 이미 판매된 상품 또는 구매 불가 상태
+         */
+        if (marketlisting.getStatus() != MarketListingStatus.SELLING) {
+            throw new IllegalStateException("이미 판매되었거나 구매할 수 없는 상품입니다.");
+        }
+        /**
          * 가격
          */
         BigDecimal price = marketlisting.getTotalPrice();
@@ -85,6 +91,8 @@ public class OrderService {
                 marketlisting,
                 marketlisting.getMemberItem().getItem() // 거래 매물의 인벤토리의 아이템도감 id
                 );
+
+        orderRepository.save(order);
 
         /**
          * 판매자 돈 수령 대기
