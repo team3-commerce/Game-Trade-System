@@ -17,7 +17,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final MemberRepository memberRepository;
 
     @Override
-    @Cacheable(value = "memberAuth", key = "#email")
+    @Cacheable(value = "memberAuths", key = "#email")
     public UserDetails loadUserByUsername(String email) {
         return memberRepository
                 .findByEmail(email)

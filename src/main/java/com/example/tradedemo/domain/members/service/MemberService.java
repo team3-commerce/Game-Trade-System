@@ -41,7 +41,7 @@ public class MemberService {
     }
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    @Cacheable(value = "member", key = "#email")
+    @Cacheable(value = "members", key = "#email")
     public GetMyInfoResponse getMyInfoV2(String email) {
         Member member = memberRepository
                 .findByEmail(email)
@@ -68,7 +68,7 @@ public class MemberService {
     }
 
     @Transactional
-    @Caching(evict = {@CacheEvict(value = "member", key = "#email"), @CacheEvict(value = "memberAuth", key = "#email")})
+    @Caching(evict = {@CacheEvict(value = "members", key = "#email"), @CacheEvict(value = "memberAuths", key = "#email")})
     public void updateNicknameV2(String email, UpdateNicknameRequest request) {
         Member member = memberRepository
                 .findByEmail(email)
@@ -102,7 +102,7 @@ public class MemberService {
     }
 
     @Transactional
-    @Caching(evict = {@CacheEvict(value = "member", key = "#email"), @CacheEvict(value = "memberAuth", key = "#email")})
+    @Caching(evict = {@CacheEvict(value = "members", key = "#email"), @CacheEvict(value = "memberAuths", key = "#email")})
     public void updatePasswordV2(String email, UpdatePasswordRequest request) {
         Member member = memberRepository
                 .findByEmail(email)
@@ -141,7 +141,7 @@ public class MemberService {
     }
 
     @Transactional
-    @Caching(evict = {@CacheEvict(value = "member", key = "#email"), @CacheEvict(value = "memberAuth", key = "#email")})
+    @Caching(evict = {@CacheEvict(value = "members", key = "#email"), @CacheEvict(value = "memberAuths", key = "#email")})
     public void withdrawV2(String email) {
         Member member = memberRepository
                 .findByEmail(email)
@@ -180,8 +180,8 @@ public class MemberService {
     @Transactional
     @Caching(
             evict = {
-                @CacheEvict(value = "member", key = "#request.email()"),
-                @CacheEvict(value = "memberAuth", key = "#request.email()")
+                @CacheEvict(value = "members", key = "#request.email()"),
+                @CacheEvict(value = "memberAuths", key = "#request.email()")
             })
     public void suspendMemberV2(SuspendMemberRequest request) {
         Member member = memberRepository

@@ -32,23 +32,23 @@ public class CacheConfig {
                         .expireAfterWrite(Duration.ofMinutes(5))
                         .build());
 
-        // member 캐시
-        CaffeineCache memberCache = new CaffeineCache(
-                "member",
+        // members 캐시
+        CaffeineCache membersCache = new CaffeineCache(
+                "members",
                 Caffeine.newBuilder()
                         .maximumSize(1000)
                         .expireAfterAccess(Duration.ofMinutes(30))
                         .build());
 
-        // memberAuth 캐시 (UserDetails/PrincipalDetails)
-        CaffeineCache memberAuthCache = new CaffeineCache(
-                "memberAuth",
+        // memberAuths 캐시 (UserDetails/PrincipalDetails)
+        CaffeineCache memberAuthsCache = new CaffeineCache(
+                "memberAuths",
                 Caffeine.newBuilder()
                         .maximumSize(1000)
                         .expireAfterAccess(Duration.ofMinutes(30))
                         .build());
 
-        cacheManager.setCaches(List.of(marketListingsCache, memberCache, memberAuthCache));
+        cacheManager.setCaches(List.of(marketListingsCache, membersCache, memberAuthsCache));
         return cacheManager;
     }
 
