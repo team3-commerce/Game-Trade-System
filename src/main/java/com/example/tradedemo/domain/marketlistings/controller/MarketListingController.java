@@ -23,20 +23,7 @@ import org.springframework.web.bind.annotation.*;
 public class MarketListingController {
     private final MarketListingService marketListingService;
 
-    /**
-     * 개별 정산하기
-     * 이용자ID =  로그인 한 이용자 ID | 거래소의 ID
-     */
-    @PostMapping("/api/v1/me/market-listings/{marketListingId}/settlement")
-    public ResponseEntity<ApiResponse<Void>> settlement(
-            @AuthenticationPrincipal PrincipalDetails principalDetails, @RequestBody Long marketListingId) {
 
-        Long memberId = principalDetails.getMember().getId();
-
-        marketListingService.settlement(memberId, marketListingId);
-
-        return ResponseEntity.ok(ApiResponse.success("200", null));
-    }
     /**
      * 상품 등록
      */
