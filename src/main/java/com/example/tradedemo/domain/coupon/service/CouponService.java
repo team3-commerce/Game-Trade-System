@@ -61,8 +61,8 @@ public class CouponService {
         LocalDateTime policyStartedAt = LocalDateTime.now();
 
         // IssueType 에 따라 상수에서 Duration 자동 선택
-        Duration policyDuration = CouponDuration.getPolicyDuration(request.getIssueType());
-        Duration couponDuration = CouponDuration.getCouponDuration(request.getIssueType());
+        Duration policyDuration = CouponDuration.getPolicyDuration(request.getIssueType(), request.getPolicyDuration());
+        Duration couponDuration = CouponDuration.getCouponDuration(request.getIssueType(), request.getCouponDuration());
 
         // 정책 만료일 = 시작일 + policyDuration (AUTO_SIGNUP 이면 null)
         LocalDateTime policyExpiredAt = policyDuration != null ? policyStartedAt.plus(policyDuration) : null;
