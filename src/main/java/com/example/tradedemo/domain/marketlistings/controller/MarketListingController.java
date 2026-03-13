@@ -2,6 +2,7 @@ package com.example.tradedemo.domain.marketlistings.controller;
 
 import com.example.tradedemo.auth.dto.PrincipalDetails;
 import com.example.tradedemo.common.dto.ApiResponse;
+import com.example.tradedemo.common.dto.PageResponse;
 import com.example.tradedemo.domain.marketlistings.dto.request.CreateMarketListingRequest;
 import com.example.tradedemo.domain.marketlistings.dto.response.GetMarketListingResponse;
 import com.example.tradedemo.domain.marketlistings.dto.response.SearchAllMarketListingResponse;
@@ -10,7 +11,6 @@ import com.example.tradedemo.domain.marketlistings.dto.response.SearchTrendingKe
 import com.example.tradedemo.domain.marketlistings.service.MarketListingService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -54,7 +54,7 @@ public class MarketListingController {
      *  asc/desc 가 아닌 값 전달 시 정렬 조건에서 무시 (예외 처리 x)
      */
     @GetMapping("/api/v1/me/market-listings")
-    public ResponseEntity<ApiResponse<Page<SearchAllMarketListingResponse>>> getAllMeMarketListing(
+    public ResponseEntity<ApiResponse<PageResponse<SearchAllMarketListingResponse>>> getAllMeMarketListing(
             @AuthenticationPrincipal PrincipalDetails details,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String sortTotalPrice,
@@ -75,7 +75,7 @@ public class MarketListingController {
      *  asc/desc 가 아닌 값 전달 시 정렬 조건에서 무시 (예외 처리 x)
      */
     @GetMapping("/api/v1/market-listings")
-    public ResponseEntity<ApiResponse<Page<SearchAllMarketListingResponse>>> getAllMarketListing(
+    public ResponseEntity<ApiResponse<PageResponse<SearchAllMarketListingResponse>>> getAllMarketListing(
             @AuthenticationPrincipal PrincipalDetails details,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String sortTotalPrice,
