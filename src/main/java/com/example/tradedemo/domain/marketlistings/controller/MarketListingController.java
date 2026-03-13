@@ -27,9 +27,9 @@ public class MarketListingController {
      * 개별 정산하기
      * 이용자ID =  로그인 한 이용자 ID | 거래소의 ID
      */
-    @PostMapping("/api/vi/me/market-listings/{marketListingId}/settlement")
+    @PostMapping("/api/v1/me/market-listings/{marketListingId}/settlement")
     public ResponseEntity<ApiResponse<Void>> settlement(
-            @AuthenticationPrincipal PrincipalDetails principalDetails, @PathVariable Long marketListingId) {
+            @AuthenticationPrincipal PrincipalDetails principalDetails, @RequestBody Long marketListingId) {
 
         Long memberId = principalDetails.getMember().getId();
 
@@ -42,7 +42,7 @@ public class MarketListingController {
      */
     @PostMapping("/api/v1/market-listings")
     public ResponseEntity<ApiResponse<GetMarketListingResponse>> createMarketListing(
-            @AuthenticationPrincipal PrincipalDetails details, @RequestBody CreateMarketListingRequest request) {
+            @AuthenticationPrincipal PrincipalDetails details, @PathVariable CreateMarketListingRequest request) {
         GetMarketListingResponse res =
                 marketListingService.create(details.getMember().getId(), request);
 
