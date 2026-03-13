@@ -4,7 +4,7 @@ import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepository;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
-import com.example.tradedemo.domain.order.dto.response.*;
+import com.example.tradedemo.domain.order.dto.GetTransactionResponse;
 import com.example.tradedemo.domain.order.entity.Order;
 import com.example.tradedemo.domain.order.repository.OrderRepository;
 import java.util.List;

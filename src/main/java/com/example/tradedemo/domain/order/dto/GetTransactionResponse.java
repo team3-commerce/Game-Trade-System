@@ -1,4 +1,4 @@
-package com.example.tradedemo.domain.order.dto.response;
+package com.example.tradedemo.domain.order.dto;
 
 import com.example.tradedemo.domain.order.entity.Order;
 import java.math.BigDecimal;

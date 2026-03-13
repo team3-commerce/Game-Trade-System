@@ -1,7 +1,7 @@
 package com.example.tradedemo.domain.order.controller;
 
 import com.example.tradedemo.auth.dto.PrincipalDetails;
-import com.example.tradedemo.domain.order.dto.response.*;
+import com.example.tradedemo.domain.order.dto.GetTransactionResponse;
 import com.example.tradedemo.domain.order.service.OrderService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

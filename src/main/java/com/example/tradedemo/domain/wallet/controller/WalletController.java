@@ -1,7 +1,7 @@
 package com.example.tradedemo.domain.wallet.controller;
 
 import com.example.tradedemo.auth.dto.PrincipalDetails;
-import com.example.tradedemo.domain.wallet.dto.response.WalletResponse;
+import com.example.tradedemo.domain.wallet.dto.WalletResponse;
 import com.example.tradedemo.domain.wallet.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
