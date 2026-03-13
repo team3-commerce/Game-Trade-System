@@ -1,4 +1,4 @@
-package com.example.tradedemo.domain.marketlistings.dto.response;
+package com.example.tradedemo.domain.marketlistings.dto;
 
 import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;

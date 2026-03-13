@@ -1,4 +1,4 @@
-package com.example.tradedemo.domain.order.dto.response;
+package com.example.tradedemo.domain.order.dto;
 
 import com.example.tradedemo.domain.order.entity.Order;
 import java.math.BigDecimal;
@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 
 @Getter
-public class TransactionResponse {
+public class GetTransactionResponse {
 
     private final Long orderId;
     private final BigDecimal transactionMoney;
@@ -14,7 +14,7 @@ public class TransactionResponse {
     private final Long marketListingId;
     private final LocalDateTime createdAt;
 
-    private TransactionResponse(
+    private GetTransactionResponse(
             Long orderId,
             BigDecimal transactionMoney,
             Long transactionStock,
@@ -27,8 +27,8 @@ public class TransactionResponse {
         this.createdAt = createdAt;
     }
 
-    public static TransactionResponse of(Order order) {
-        return new TransactionResponse(
+    public static GetTransactionResponse of(Order order) {
+        return new GetTransactionResponse(
                 order.getId(),
                 order.getTransactionMoney(),
                 order.getTransactionStock(),

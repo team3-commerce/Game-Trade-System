@@ -1,10 +1,10 @@
 package com.example.tradedemo.domain.members.controller;
 
 import com.example.tradedemo.common.dto.ApiResponse;
-import com.example.tradedemo.domain.members.dto.MemberResponse;
-import com.example.tradedemo.domain.members.dto.MemberSuspendRequest;
-import com.example.tradedemo.domain.members.dto.NicknameUpdateRequest;
-import com.example.tradedemo.domain.members.dto.PasswordUpdateRequest;
+import com.example.tradedemo.domain.members.dto.GetMyInfoResponse;
+import com.example.tradedemo.domain.members.dto.SuspendMemberRequest;
+import com.example.tradedemo.domain.members.dto.UpdateNicknameRequest;
+import com.example.tradedemo.domain.members.dto.UpdatePasswordRequest;
 import com.example.tradedemo.domain.members.service.MemberService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +24,8 @@ public class MemberController {
      * 내 정보 조회
      */
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<MemberResponse>> getMyInfo(@AuthenticationPrincipal UserDetails userDetails) {
-        MemberResponse response = memberService.getMyInfo(userDetails.getUsername());
+    public ResponseEntity<ApiResponse<GetMyInfoResponse>> getMyInfo(@AuthenticationPrincipal UserDetails userDetails) {
+        GetMyInfoResponse response = memberService.getMyInfo(userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success("200", response));
     }
 
@@ -34,7 +34,7 @@ public class MemberController {
      */
     @PatchMapping("/me/nickname")
     public ResponseEntity<ApiResponse<Void>> updateNickname(
-            @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid NicknameUpdateRequest request) {
+            @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid UpdateNicknameRequest request) {
 
         memberService.updateNickname(userDetails.getUsername(), request);
         return ResponseEntity.ok(ApiResponse.success("200", null));
@@ -45,7 +45,7 @@ public class MemberController {
      */
     @PatchMapping("/me/password")
     public ResponseEntity<ApiResponse<Void>> updatePassword(
-            @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid PasswordUpdateRequest request) {
+            @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid UpdatePasswordRequest request) {
 
         memberService.updatePassword(userDetails.getUsername(), request);
         return ResponseEntity.ok(ApiResponse.success("200", null));
@@ -65,7 +65,7 @@ public class MemberController {
      */
     @PatchMapping("/admin/suspend")
     public ResponseEntity<ApiResponse<Void>> suspend(
-            @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid MemberSuspendRequest request) {
+            @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid SuspendMemberRequest request) {
 
         memberService.suspendMember(request);
         return ResponseEntity.ok(ApiResponse.success("200", null));

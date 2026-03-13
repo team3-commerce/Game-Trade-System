@@ -1,4 +1,4 @@
-package com.example.tradedemo.domain.wallet.dto.response;
+package com.example.tradedemo.domain.wallet.dto;
 
 import com.example.tradedemo.domain.wallet.entity.Wallet;
 import java.math.BigDecimal;

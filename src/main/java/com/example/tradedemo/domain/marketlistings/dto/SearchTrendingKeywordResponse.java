@@ -1,4 +1,4 @@
-package com.example.tradedemo.domain.marketlistings.dto.response;
+package com.example.tradedemo.domain.marketlistings.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

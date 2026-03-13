@@ -1,4 +1,4 @@
-package com.example.tradedemo.domain.members.entity;
+package com.example.tradedemo.domain.members.enums;
 
 public enum MemberStatus {
     ACTIVE, // 활성화

@@ -1,7 +1,7 @@
 package com.example.tradedemo.domain.marketlistings.service;
 
 import com.example.tradedemo.domain.marketlistings.consts.MarketListingConsts;
-import com.example.tradedemo.domain.marketlistings.dto.response.SearchTrendingKeywordResponse;
+import com.example.tradedemo.domain.marketlistings.dto.SearchTrendingKeywordResponse;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.*;
