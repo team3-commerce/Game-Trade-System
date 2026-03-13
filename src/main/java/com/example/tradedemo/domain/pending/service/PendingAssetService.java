@@ -1,5 +1,7 @@
 package com.example.tradedemo.domain.pending.service;
 
+import com.example.tradedemo.common.exception.ErrorEnum;
+import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.item.entity.Item;
 import com.example.tradedemo.domain.item.repository.ItemRepository;
 import com.example.tradedemo.domain.members.entity.Member;
@@ -9,10 +11,13 @@ import com.example.tradedemo.domain.members.repository.MemberRepository;
 import com.example.tradedemo.domain.pending.dto.PendingAssetResponse;
 import com.example.tradedemo.domain.pending.entity.PendingAsset;
 import com.example.tradedemo.domain.pending.enums.Type;
+import com.example.tradedemo.domain.pending.exception.PendingAssetForbiddenException;
+import com.example.tradedemo.domain.pending.exception.PendingAssetNotFoundException;
 import com.example.tradedemo.domain.pending.repository.PendingAssetRepository;
 import com.example.tradedemo.domain.wallet.entity.Wallet;
 import com.example.tradedemo.domain.wallet.entity.WalletHistories;
 import com.example.tradedemo.domain.wallet.enums.WalletStatus;
+import com.example.tradedemo.domain.wallet.exception.WalletNotFoundException;
 import com.example.tradedemo.domain.wallet.repository.WalletHistoryRepository;
 import com.example.tradedemo.domain.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
@@ -61,22 +66,22 @@ public class PendingAssetService {
          */
         PendingAsset asset = pendingAssetRepository
                         .findByIdAndMemberId(pendingAssetId, memberId)
-                        .orElseThrow(() -> new IllegalStateException("수령 대기 자산이 없습니다."));
+                        .orElseThrow(() -> new PendingAssetForbiddenException());
 
         /**
          * 수령 여부 확인
          */
         if (asset.getIsClaimed()) {
-            throw new IllegalStateException("이미 수령한 자산입니다.");
+            throw new PendingAssetNotFoundException();
         }
 
         /**
          * 돈 수령 처리
-         * 판매자가 거래 금액을 지갑으로 받는다.
+         * 판매자가 거래 금액을 지갑으로 받는다. 지갑 없다는 에러
          */
         if (asset.getType() == Type.MONEY) {
             Wallet wallet = walletRepository.findByMemberId(memberId)
-                    .orElseThrow(() -> new IllegalStateException("지갑이 없습니다."));
+                    .orElseThrow(() -> new WalletNotFoundException());
 
             wallet.addBalance(asset.getMoneyAmount());
 
