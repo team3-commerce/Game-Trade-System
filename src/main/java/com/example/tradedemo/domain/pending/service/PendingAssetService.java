@@ -11,6 +11,9 @@ import com.example.tradedemo.domain.pending.entity.PendingAsset;
 import com.example.tradedemo.domain.pending.enums.Type;
 import com.example.tradedemo.domain.pending.repository.PendingAssetRepository;
 import com.example.tradedemo.domain.wallet.entity.Wallet;
+import com.example.tradedemo.domain.wallet.entity.WalletHistories;
+import com.example.tradedemo.domain.wallet.enums.WalletStatus;
+import com.example.tradedemo.domain.wallet.repository.WalletHistoryRepository;
 import com.example.tradedemo.domain.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,6 +32,7 @@ public class PendingAssetService {
     private final MemberItemRepository memberItemRepository;
     private final MemberRepository memberRepository;
     private final ItemRepository itemRepository;
+    private final WalletHistoryRepository walletHistoryRepository;
 
     /**
      * 수령 대기 테이블 조회
@@ -75,6 +79,20 @@ public class PendingAssetService {
                     .orElseThrow(() -> new IllegalStateException("지갑이 없습니다."));
 
             wallet.addBalance(asset.getMoneyAmount());
+
+            /**
+             * 지갑 기록
+             */
+            walletHistoryRepository.save(WalletHistories.create(
+                    asset.getMoneyAmount(),
+                    WalletStatus.PURCHASE,
+                    wallet.getBalance(),
+                    wallet,
+                    null,
+                    wallet.getMember(),
+                    asset.getOrder()
+                    )
+            );
         }
         /**
          * 아이템 수령 처리
