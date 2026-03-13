@@ -1,5 +1,6 @@
 package com.example.tradedemo.domain.coupon.constants;
 
+import com.example.tradedemo.domain.coupon.dto.DurationRequest;
 import com.example.tradedemo.domain.coupon.enums.IssueType;
 import java.time.Duration;
 
@@ -14,14 +15,20 @@ public final class CouponDuration {
 
     private CouponDuration() {}
 
-    public static Duration getPolicyDuration(IssueType issueType) {
+    public static Duration getPolicyDuration(IssueType issueType, DurationRequest policyDuration) {
+        if (policyDuration != null) {
+            return Duration.ofSeconds(policyDuration.toSeconds());
+        }
         return switch (issueType) {
             case FIRST_COME -> FIRST_COME_POLICY;
             case AUTO_SIGNUP -> null; // 정책 만료 없음
         };
     }
 
-    public static Duration getCouponDuration(IssueType issueType) {
+    public static Duration getCouponDuration(IssueType issueType, DurationRequest couponDuration) {
+        if (couponDuration != null) {
+            return Duration.ofSeconds(couponDuration.toSeconds());
+        }
         return switch (issueType) {
             case FIRST_COME -> FIRST_COME_COUPON;
             case AUTO_SIGNUP -> AUTO_SIGNUP_COUPON; // null (무제한)
