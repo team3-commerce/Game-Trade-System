@@ -1,7 +1,7 @@
 package com.example.tradedemo.domain.members.repository;
 
-import com.example.tradedemo.domain.members.dto.response.GetAllMemberItemResponse;
-import com.example.tradedemo.domain.members.dto.response.GetMemberItemResponse;
+import com.example.tradedemo.domain.members.dto.GetAllMemberItemResponse;
+import com.example.tradedemo.domain.members.dto.GetMemberItemResponse;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

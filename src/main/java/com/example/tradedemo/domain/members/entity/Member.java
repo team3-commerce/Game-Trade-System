@@ -1,6 +1,8 @@
 package com.example.tradedemo.domain.members.entity;
 
 import com.example.tradedemo.common.entity.Base;
+import com.example.tradedemo.domain.members.enums.MemberRole;
+import com.example.tradedemo.domain.members.enums.MemberStatus;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;

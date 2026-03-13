@@ -29,7 +29,7 @@ public class OrderController {
      * 내 구매 내역 조회
      */
     @GetMapping("/me/purchases")
-    public List<TransactionResponse> getMyBuyer(@AuthenticationPrincipal PrincipalDetails principalDetails) {
+    public List<GetTransactionResponse> getMyBuyer(@AuthenticationPrincipal PrincipalDetails principalDetails) {
         Long memberId = principalDetails.getMember().getId();
         return orderService.getMyBuyer(memberId);
     }
@@ -38,7 +38,7 @@ public class OrderController {
      * 내 판매 내역 조회
      */
     @GetMapping("/me/sales")
-    public List<TransactionResponse> getMySeller(@AuthenticationPrincipal PrincipalDetails principalDetails) {
+    public List<GetTransactionResponse> getMySeller(@AuthenticationPrincipal PrincipalDetails principalDetails) {
         Long memberId = principalDetails.getMember().getId();
         return orderService.getMySeller(memberId);
     }

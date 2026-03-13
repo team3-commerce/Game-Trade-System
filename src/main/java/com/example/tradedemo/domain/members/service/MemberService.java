@@ -4,12 +4,12 @@ import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepository;
-import com.example.tradedemo.domain.members.dto.MemberResponse;
-import com.example.tradedemo.domain.members.dto.MemberSuspendRequest;
-import com.example.tradedemo.domain.members.dto.NicknameUpdateRequest;
-import com.example.tradedemo.domain.members.dto.PasswordUpdateRequest;
+import com.example.tradedemo.domain.members.dto.GetMyInfoResponse;
+import com.example.tradedemo.domain.members.dto.SuspendMemberRequest;
+import com.example.tradedemo.domain.members.dto.UpdateNicknameRequest;
+import com.example.tradedemo.domain.members.dto.UpdatePasswordRequest;
 import com.example.tradedemo.domain.members.entity.Member;
-import com.example.tradedemo.domain.members.entity.MemberStatus;
+import com.example.tradedemo.domain.members.enums.MemberStatus;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
 import com.example.tradedemo.domain.pending.repository.PendingAssetRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,18 +29,18 @@ public class MemberService {
     /**
      * 내 정보 조회
      */
-    public MemberResponse getMyInfo(String email) {
+    public GetMyInfoResponse getMyInfo(String email) {
         Member member = memberRepository
                 .findByEmail(email)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
-        return MemberResponse.from(member);
+        return GetMyInfoResponse.from(member);
     }
 
     /**
      * 내 닉네임 수정
      */
     @Transactional
-    public void updateNickname(String email, NicknameUpdateRequest request) {
+    public void updateNickname(String email, UpdateNicknameRequest request) {
         Member member = memberRepository
                 .findByEmail(email)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
@@ -58,7 +58,7 @@ public class MemberService {
      * 내 비밀번호 수정
      */
     @Transactional
-    public void updatePassword(String email, PasswordUpdateRequest request) {
+    public void updatePassword(String email, UpdatePasswordRequest request) {
         Member member = memberRepository
                 .findByEmail(email)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
@@ -99,7 +99,7 @@ public class MemberService {
      * 회원 정지(관리자)
      */
     @Transactional
-    public void suspendMember(MemberSuspendRequest request) {
+    public void suspendMember(SuspendMemberRequest request) {
         Member member = memberRepository
                 .findByEmail(request.email())
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));

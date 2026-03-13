@@ -1,7 +1,7 @@
 package com.example.tradedemo.domain.members.service;
 
-import com.example.tradedemo.domain.members.dto.response.GetAllMemberItemResponse;
-import com.example.tradedemo.domain.members.dto.response.GetMemberItemResponse;
+import com.example.tradedemo.domain.members.dto.GetAllMemberItemResponse;
+import com.example.tradedemo.domain.members.dto.GetMemberItemResponse;
 import com.example.tradedemo.domain.members.exception.MemberItemNotFoundException;
 import com.example.tradedemo.domain.members.repository.MemberItemRepository;
 import lombok.RequiredArgsConstructor;

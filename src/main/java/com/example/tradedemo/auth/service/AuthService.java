@@ -1,8 +1,8 @@
 package com.example.tradedemo.auth.service;
 
-import com.example.tradedemo.auth.dto.LoginRequest;
-import com.example.tradedemo.auth.dto.SignupRequest;
-import com.example.tradedemo.auth.dto.TokenResponse;
+import com.example.tradedemo.auth.dto.LoginAuthRequest;
+import com.example.tradedemo.auth.dto.SignupAuthRequest;
+import com.example.tradedemo.auth.dto.TokenAuthResponse;
 import com.example.tradedemo.auth.provider.JwtTokenProvider;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
@@ -32,7 +32,7 @@ public class AuthService {
      * 회원가입
      */
     @Transactional
-    public void signup(SignupRequest request) {
+    public void signup(SignupAuthRequest request) {
         // 중복 체크
         if (memberRepository.findByEmail(request.email()).isPresent()) {
             throw new ServiceException(ErrorEnum.ERR_AUTH_DUPLICATE_EMAIL);
@@ -60,7 +60,7 @@ public class AuthService {
      * 로그인
      */
     @Transactional
-    public TokenResponse login(LoginRequest request) {
+    public TokenAuthResponse login(LoginAuthRequest request) {
         // 사용자 확인
         Member member = memberRepository
                 .findByEmail(request.email())
@@ -92,7 +92,7 @@ public class AuthService {
         member.updateRefreshToken(refreshToken);
         member.updateLastLoginAt();
 
-        return new TokenResponse(accessToken, refreshToken);
+        return new TokenAuthResponse(accessToken, refreshToken);
     }
 
     /**

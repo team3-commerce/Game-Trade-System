@@ -2,7 +2,7 @@ package com.example.tradedemo.domain.marketlistings.repository;
 
 import static com.example.tradedemo.domain.marketlistings.entity.QMarketListing.marketListing;
 
-import com.example.tradedemo.domain.marketlistings.dto.response.SearchAllMarketListingResponse;
+import com.example.tradedemo.domain.marketlistings.dto.SearchAllMarketListingResponse;
 import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
