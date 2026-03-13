@@ -1,5 +1,12 @@
 package com.example.tradedemo.common.config;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import org.springframework.boot.cache.autoconfigure.CacheProperties;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.caffeine.CaffeineCache;
+import org.springframework.cache.caffeine.CaffeineCacheManager;
+import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -7,8 +14,29 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.JacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import java.time.Duration;
+import java.util.List;
+
 @Configuration
-public class RedisConfig {
+@EnableCaching
+public class CacheConfig {
+
+    @Bean
+    public CacheManager cacheManager(){
+
+        SimpleCacheManager cacheManager = new SimpleCacheManager();
+
+        CaffeineCache marketListingsCache = new CaffeineCache(
+                "marketListings",
+                Caffeine.newBuilder()
+                        .maximumSize(100)
+                        .expireAfterWrite(Duration.ofMinutes(5))
+                        .build()
+        );
+
+        cacheManager.setCaches(List.of(marketListingsCache));
+        return cacheManager;
+    }
 
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
