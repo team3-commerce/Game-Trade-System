@@ -1,40 +1,54 @@
 package com.example.tradedemo.common.config;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
-import org.springframework.boot.cache.autoconfigure.CacheProperties;
+import java.time.Duration;
+import java.util.List;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCache;
-import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.JacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-
-import java.time.Duration;
-import java.util.List;
 
 @Configuration
 @EnableCaching
 public class CacheConfig {
 
     @Bean
-    public CacheManager cacheManager(){
-
+    @Primary
+    public CacheManager cacheManager() {
         SimpleCacheManager cacheManager = new SimpleCacheManager();
 
+        // marketListings 캐시
         CaffeineCache marketListingsCache = new CaffeineCache(
                 "marketListings",
                 Caffeine.newBuilder()
                         .maximumSize(100)
                         .expireAfterWrite(Duration.ofMinutes(5))
-                        .build()
-        );
+                        .build());
 
-        cacheManager.setCaches(List.of(marketListingsCache));
+        // member 캐시
+        CaffeineCache memberCache = new CaffeineCache(
+                "member",
+                Caffeine.newBuilder()
+                        .maximumSize(1000)
+                        .expireAfterAccess(Duration.ofMinutes(30))
+                        .build());
+
+        // memberAuth 캐시 (UserDetails/PrincipalDetails)
+        CaffeineCache memberAuthCache = new CaffeineCache(
+                "memberAuth",
+                Caffeine.newBuilder()
+                        .maximumSize(1000)
+                        .expireAfterAccess(Duration.ofMinutes(30))
+                        .build());
+
+        cacheManager.setCaches(List.of(marketListingsCache, memberCache, memberAuthCache));
         return cacheManager;
     }
 
