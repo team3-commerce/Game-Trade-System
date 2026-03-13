@@ -1,5 +1,7 @@
 package com.example.tradedemo.domain.order.service;
 
+import com.example.tradedemo.common.exception.ErrorEnum;
+import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepository;
@@ -7,7 +9,6 @@ import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
 import com.example.tradedemo.domain.order.dto.GetTransactionResponse;
 import com.example.tradedemo.domain.order.entity.Order;
-import com.example.tradedemo.domain.order.exception.WalletInsufficientBalanceException;
 import com.example.tradedemo.domain.order.repository.OrderRepository;
 
 import java.math.BigDecimal;
@@ -73,7 +74,7 @@ public class OrderService {
          * 구매자의 돈과 총 가격 비교
          */
         if (wallet.getBalance().compareTo(price) < 0) {
-            throw new WalletInsufficientBalanceException();
+            throw new ServiceException(ErrorEnum.ERR_WALLET_INSUFFICIENT_BALANCE_BAD_REQUEST);
         }
         /**
          * 판매자

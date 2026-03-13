@@ -11,13 +11,10 @@ import com.example.tradedemo.domain.members.repository.MemberRepository;
 import com.example.tradedemo.domain.pending.dto.PendingAssetResponse;
 import com.example.tradedemo.domain.pending.entity.PendingAsset;
 import com.example.tradedemo.domain.pending.enums.Type;
-import com.example.tradedemo.domain.pending.exception.PendingAssetForbiddenException;
-import com.example.tradedemo.domain.pending.exception.PendingAssetNotFoundException;
 import com.example.tradedemo.domain.pending.repository.PendingAssetRepository;
 import com.example.tradedemo.domain.wallet.entity.Wallet;
 import com.example.tradedemo.domain.wallet.entity.WalletHistories;
 import com.example.tradedemo.domain.wallet.enums.WalletStatus;
-import com.example.tradedemo.domain.wallet.exception.WalletNotFoundException;
 import com.example.tradedemo.domain.wallet.repository.WalletHistoryRepository;
 import com.example.tradedemo.domain.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
@@ -66,13 +63,13 @@ public class PendingAssetService {
          */
         PendingAsset asset = pendingAssetRepository
                         .findByIdAndMemberId(pendingAssetId, memberId)
-                        .orElseThrow(() -> new PendingAssetForbiddenException());
+                        .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FORBIDDEN));
 
         /**
          * 수령 여부 확인
          */
         if (asset.getIsClaimed()) {
-            throw new PendingAssetNotFoundException();
+            throw new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FOUND_EXCEPTION);
         }
 
         /**
@@ -81,7 +78,7 @@ public class PendingAssetService {
          */
         if (asset.getType() == Type.MONEY) {
             Wallet wallet = walletRepository.findByMemberId(memberId)
-                    .orElseThrow(() -> new WalletNotFoundException());
+                    .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_WALLET_NOT_FOUND));
 
             wallet.addBalance(asset.getMoneyAmount());
 
