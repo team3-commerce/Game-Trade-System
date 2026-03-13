@@ -42,7 +42,7 @@ public class MarketListingController {
      */
     @PostMapping("/api/v1/market-listings")
     public ResponseEntity<ApiResponse<GetMarketListingResponse>> createMarketListing(
-            @AuthenticationPrincipal PrincipalDetails details, @PathVariable CreateMarketListingRequest request) {
+            @AuthenticationPrincipal PrincipalDetails details, @RequestBody CreateMarketListingRequest request) {
         GetMarketListingResponse res =
                 marketListingService.create(details.getMember().getId(), request);
 
