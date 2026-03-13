@@ -55,4 +55,10 @@ public class MemberItem extends Base {
         }
         this.quantity -= quantity;
     }
+    /**
+     * 수령 시 아이템 증가
+     */
+    public void increase(Long quantity) {
+        this.quantity += quantity;
+    }
 }

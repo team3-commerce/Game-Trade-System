@@ -72,7 +72,9 @@ public class PendingAsset extends Base {
     @JoinColumn(name = "market_listings_id", nullable = false)
     private MarketListing marketListing;
 
+
     /**
+     * 주문 ID
      * 주문 ID, null일 수도 있습니다
      */
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
@@ -104,12 +106,25 @@ public class PendingAsset extends Base {
         asset.itemQuantity = itemQuantity;
         asset.isClaimed = isClaimed;
         asset.claimedAt = claimedAt;
+        asset.expiredAt = expiredAt;
         asset.marketListing = marketListing;
         asset.order = order;
         asset.member = member;
-        asset.expiredAt = expiredAt;
-        asset.isClaimed = false;
 
         return asset;
+    }
+    /**
+     * 수령 여부
+     * @param claimed
+     */
+    public void setClaimed(Boolean claimed) {
+        this.isClaimed = claimed;
+    }
+    /**
+     * 수령시간
+     * @param claimedAt
+     */
+    public void setClaimedAt(LocalDateTime claimedAt) {
+        this.claimedAt = claimedAt;
     }
 }

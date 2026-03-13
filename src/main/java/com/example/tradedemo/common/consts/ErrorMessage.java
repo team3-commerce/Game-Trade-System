@@ -30,6 +30,7 @@ public final class ErrorMessage {
     public static final String MSG_MARKET_LISTING_ILLEGAL_CANCEL_STATUS = "거래 매물이 취소 불가능한 상태 입니다";
 
     // Order
+    public static final String MSG_WALLET_INSUFFICIENT_BALANCE_BAD_REQUEST = "잔액이 부족합니다.";
 
     // Wallet
     public static final String MSG_WALLET_NOT_FOUND = "지갑을 찾을 수 없습니다";

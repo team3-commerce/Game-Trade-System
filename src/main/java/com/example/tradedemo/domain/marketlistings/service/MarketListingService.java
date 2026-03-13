@@ -26,6 +26,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import com.example.tradedemo.domain.wallet.entity.Wallet;
+import com.example.tradedemo.domain.wallet.entity.WalletHistories;
+import com.example.tradedemo.domain.wallet.enums.WalletStatus;
+import com.example.tradedemo.domain.wallet.repository.WalletHistoryRepository;
+import com.example.tradedemo.domain.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -39,7 +45,79 @@ public class MarketListingService {
     private final MemberRepository memberRepository;
     private final MarketListingCacheService marketListingCacheService;
     private final PendingAssetRepository pendingAssetRepository;
+    private final WalletRepository walletRepository;
+    private final WalletHistoryRepository walletHistoryRepository;
 
+    /**
+     * 개별 정산하기
+     * 수령 대기 상태인 돈/아이템을 수령한다.
+     * 판매자 -> 돈 | 구매자 -> 아이템 | 그 외 기타등등
+     */
+    @Transactional
+    public void settlement(Long memberId, Long marketListingId) {
+
+        MarketListing marketListing = marketListingRepository.findById(marketListingId)
+                .orElseThrow();
+
+        /**
+         * 마켓리스팅이 SOLD인지 확인
+         * 팔려야 수령 받음
+         */
+        if (marketListing.getStatus() != MarketListingStatus.SOLD) {
+            throw new IllegalStateException("정산 가능한 상태가 아닙니다.");
+        }
+
+        /**
+         * 사용자 기준 수령 대기 테이블 조회
+         */
+        List<PendingAsset> pendingAssets =
+            pendingAssetRepository.findByMarketListingAndMemberAndClaimedFalse(
+                marketListing,
+                memberRepository.getReferenceById(memberId)
+            );
+
+        for (PendingAsset asset : pendingAssets) {
+            if (asset.getType() == Type.MONEY) {
+                /**
+                 * 판매자 : 돈 받기
+                 */
+                Wallet sellerWallet = walletRepository.findByMemberId(memberId)
+                        .orElseThrow(() -> new IllegalStateException("판매자 지갑 없음"));
+                sellerWallet.addBalance(asset.getMoneyAmount());
+                walletHistoryRepository.save(WalletHistories.create(
+                        asset.getMoneyAmount(),
+                        WalletStatus.PURCHASE,
+                        sellerWallet.getBalance(),
+                        sellerWallet,
+                        null,
+                        asset.getMember(),
+                        asset.getOrder()
+                ));
+
+            } else if (asset.getType() == Type.ITEM) {
+                /**
+                 * 구매자 : 아이템 받기
+                 */
+                MemberItem inventoryItem = memberItemRepository
+                        .findByMemberIdAndItemId(memberId, marketListing.getMemberItem().getItem().getId())
+                        .orElseThrow(() -> new IllegalStateException("인벤토리 없음"));
+                inventoryItem.increase(asset.getItemQuantity());
+            }
+
+            /**
+             * 수령 상태 업데이트
+             */
+            asset.setClaimed(true);
+            asset.setClaimedAt(LocalDateTime.now());
+            pendingAssetRepository.save(asset);
+        }
+
+        /**
+         * 수령 : 상태 변경
+         */
+        marketListing.updateStatus(MarketListingStatus.CLAIMED);
+        marketListingRepository.saveAndFlush(marketListing);
+    }
     /**
      * 상품 등록
      */
@@ -69,7 +147,7 @@ public class MarketListingService {
 
         /**
          * 인벤토리 차감
-         * 2개 이상 존재할 경우 작성된 만큼 차감
+         * 작성된 만큼 차감
          */
         memberItem.decrease(request.getQuantity());
 
@@ -99,6 +177,9 @@ public class MarketListingService {
     @Transactional(readOnly = true)
     public PageResponse<SearchAllMarketListingResponse> getAllMarketListing(
             Long memberId, String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
+
+        expireMarketListings();   // 만료 처리
+
         if (keyword != null && !keyword.isBlank()) {
             marketListingCacheService.cacheSearchKeyword(memberId, keyword);
         }
@@ -124,7 +205,27 @@ public class MarketListingService {
                 .findById(marketListingId)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_FOUND));
 
+        expireMarketListings();
+
         return SearchMarketListingResponse.of(marketListing);
+    }
+    /**
+     * 만료 시간
+     * 상품 등록 시 만료 시간 체크 : saleEndAt
+     * 만료 시간이 되면 SELLING(판매) → EXPIRED(만료)
+     */
+    @Transactional
+    public void expireMarketListings() {
+
+        List<MarketListing> expiredListings =
+                marketListingRepository.findByStatusAndSaleEndAtBefore(
+                        MarketListingStatus.SELLING,
+                        LocalDateTime.now()
+                );
+
+        for (MarketListing listing : expiredListings) {
+            listing.updateStatus(MarketListingStatus.EXPIRED);
+        }
     }
 
     @Transactional(readOnly = true)
