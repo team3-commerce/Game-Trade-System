@@ -1,5 +1,7 @@
 package com.example.tradedemo.domain.order.service;
 
+import com.example.tradedemo.common.exception.ErrorEnum;
+import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepository;
@@ -7,7 +9,6 @@ import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
 import com.example.tradedemo.domain.order.dto.GetTransactionResponse;
 import com.example.tradedemo.domain.order.entity.Order;
-import com.example.tradedemo.domain.order.exception.WalletInsufficientBalanceException;
 import com.example.tradedemo.domain.order.repository.OrderRepository;
 
 import java.math.BigDecimal;
@@ -19,6 +20,9 @@ import com.example.tradedemo.domain.pending.enums.PendingType;
 import com.example.tradedemo.domain.pending.enums.Type;
 import com.example.tradedemo.domain.pending.repository.PendingAssetRepository;
 import com.example.tradedemo.domain.wallet.entity.Wallet;
+import com.example.tradedemo.domain.wallet.entity.WalletHistories;
+import com.example.tradedemo.domain.wallet.enums.WalletStatus;
+import com.example.tradedemo.domain.wallet.repository.WalletHistoryRepository;
 import com.example.tradedemo.domain.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,6 +37,7 @@ public class OrderService {
     private final MemberRepository memberRepository;
     private final WalletRepository walletRepository;
     private final PendingAssetRepository pendingAssetRepository;
+    private final WalletHistoryRepository walletHistoryRepository;
 
     /**
      * 상품 구매
@@ -69,12 +74,8 @@ public class OrderService {
          * 구매자의 돈과 총 가격 비교
          */
         if (wallet.getBalance().compareTo(price) < 0) {
-            throw new WalletInsufficientBalanceException();
+            throw new ServiceException(ErrorEnum.ERR_WALLET_INSUFFICIENT_BALANCE_BAD_REQUEST);
         }
-        /**
-         * 지갑에서 돈 차감
-         */
-        wallet.decrease(price);
         /**
          * 판매자
          */
@@ -93,38 +94,56 @@ public class OrderService {
                 );
 
         orderRepository.save(order);
-
+        /**
+         * 지갑에서 돈 차감
+         */
+        wallet.decrease(price);
+        /**
+         * 구매자 WalletHistory  : 기록
+         * price.negate()       : - 가격
+         * wallet.getBalance()  : 차감 후 잔액
+         */
+        walletHistoryRepository.save(WalletHistories.create(
+                        price.negate(),
+                        WalletStatus.PURCHASE,
+                        wallet.getBalance(),
+                        wallet,
+                        null,
+                        wallet.getMember(),
+                        order
+                )
+        );
         /**
          * 판매자 돈 수령 대기
          */
-        PendingAsset sellerPending =
-                PendingAsset.create(
-                        PendingType.SALE_SUCCESS,
-                        Type.MONEY,
-                        marketlisting.getTotalPrice(),
-                        0L,
-                        false,
-                        null,
-                        LocalDateTime.now().plusDays(1),
-                        marketlisting,
-                        order,
-                        seller);
+        PendingAsset sellerPending = PendingAsset.create(
+                PendingType.SALE_SUCCESS,
+                Type.MONEY,
+                marketlisting.getTotalPrice(),
+                0L,
+                false,
+                null,
+                LocalDateTime.now().plusDays(1),
+                marketlisting,
+                order,
+                seller
+        );
 
         /**
          * 구매자 아이템 수령 대기
          */
-        PendingAsset buyerPending =
-                PendingAsset.create(
-                        PendingType.PURCHASE_SUCCESS,
-                        Type.ITEM,
-                        BigDecimal.ZERO,
-                        marketlisting.getQuantity(),
-                        false,
-                        null,
-                        LocalDateTime.now().plusDays(1),
-                        marketlisting,
-                        order,
-                        buyer);
+        PendingAsset buyerPending = PendingAsset.create(
+                PendingType.PURCHASE_SUCCESS,
+                Type.ITEM,
+                BigDecimal.ZERO,
+                marketlisting.getQuantity(),
+                false,
+                null,
+                LocalDateTime.now().plusDays(1),
+                marketlisting,
+                order,
+                buyer
+        );
 
         /**
          * 구매자 수령 대기 상태
