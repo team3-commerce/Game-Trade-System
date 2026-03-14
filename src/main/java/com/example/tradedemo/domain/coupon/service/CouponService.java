@@ -38,6 +38,8 @@ public class CouponService {
     private final CouponHistoryRepository couponHistoryRepository;
     private final WalletRepository walletRepository;
     private final WalletHistoryRepository walletHistoryRepository;
+    private final LockService lockService;
+    private final CouponIssueService couponIssueService;
 
     @Transactional
     public CreateCouponPolicyResponse createCouponPolicy(@Valid CreateCouponPolicyRequest request) {
@@ -157,6 +159,21 @@ public class CouponService {
 
         couponPolicy.increaseExpendQuantity();
     }
+
+
+    public void issueFirstComeCouponV2(Long couponPolicyId, Member member) {
+        String lockKey = lockService.buildLockKey(couponPolicyId);
+        String lockValue = lockService.acquireLock(lockKey); // 락 획득
+
+        try {
+            // DeadLock 발생 -> 기존 로직을 트랜잭션 분리
+            couponIssueService.issueFirstComeCouponV2(couponPolicyId, member);
+        } finally {
+            lockService.releaseLock(lockKey, lockValue); // 락 해제
+        }
+
+    }
+
 
     @Transactional(noRollbackFor = CouponExpiredException.class)
     public void useCoupon(Long memberId, Long memberCouponId, Member member) {

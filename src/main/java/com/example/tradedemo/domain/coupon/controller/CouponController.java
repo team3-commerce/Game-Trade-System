@@ -96,6 +96,17 @@ public class CouponController {
                 ApiResponse.success(String.valueOf(HttpStatus.OK.value()), CouponMessage.COUPON_ISSUED));
     }
 
+    @PostMapping("/api/v2/coupon-policies/{couponPolicyId}/issue")
+    public ResponseEntity<ApiResponse<String>> issueFirstComeCouponV2(
+            @PathVariable Long couponPolicyId, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+
+        Member member = principalDetails.getMember();
+        couponService.issueFirstComeCouponV2(couponPolicyId, member);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(String.valueOf(HttpStatus.OK.value()), CouponMessage.COUPON_ISSUED));
+    }
+
     /**
      * 내 쿠폰 사용
      */
