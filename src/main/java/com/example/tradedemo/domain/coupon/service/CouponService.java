@@ -24,6 +24,9 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -85,6 +88,47 @@ public class CouponService {
     }
 
     @Transactional
+    @CacheEvict(value = "couponPolicies", allEntries = true)
+    public CreateCouponPolicyResponse createCouponPolicyV2(@Valid CreateCouponPolicyRequest request) {
+        // 정책 이름 중복 검사
+        if (couponPolicyRepository.existsByName(request.getName())) {
+            throw new ServiceException(ErrorEnum.ERR_COUPON_POLICY_DUPLICATE_NAME);
+        }
+
+        // FIRST_COME 이면 totalQuantity 필수
+        if (request.getIssueType() == IssueType.FIRST_COME && request.getTotalQuantity() == null) {
+            throw new ServiceException(ErrorEnum.ERR_COUPON_POLICY_FIRST_COME_QUANTITY_REQUIRED);
+        }
+
+        // AUTO_SIGNUP 은 하나만 존재할 수 있음
+        if (request.getIssueType() == IssueType.AUTO_SIGNUP
+                && couponPolicyRepository.existsByIssueType(IssueType.AUTO_SIGNUP)) {
+            throw new ServiceException(ErrorEnum.ERR_COUPON_POLICY_AUTO_SIGNUP_ALREADY_EXISTS);
+        }
+
+        LocalDateTime policyStartedAt = LocalDateTime.now();
+
+        Duration policyDuration = CouponDuration.getPolicyDuration(request.getIssueType(), request.getPolicyDuration());
+        Duration couponDuration = CouponDuration.getCouponDuration(request.getIssueType(), request.getCouponDuration());
+
+        LocalDateTime policyExpiredAt = policyDuration != null ? policyStartedAt.plus(policyDuration) : null;
+
+        CouponPolicy couponPolicy = CouponPolicy.create(
+                request.getName(),
+                request.getMoneyAmount(),
+                request.getIssueType(),
+                request.getTotalQuantity(),
+                policyStartedAt,
+                policyExpiredAt,
+                policyDuration,
+                couponDuration);
+
+        CouponPolicy savedPolicy = couponPolicyRepository.save(couponPolicy);
+
+        return CreateCouponPolicyResponse.from(savedPolicy);
+    }
+
+    @Transactional
     public void autoSignupCoupon(Member member) {
 
         // AUTO_SIGNUP 정책 없으면 회원가입 시 쿠폰 미발급
@@ -121,12 +165,42 @@ public class CouponService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "couponPolicies",
+            key = "'page:' + #pageable.pageNumber + ':sort:' + #sortCreatedAt + ':type:' + #issueType",
+            unless = "#result.isEmpty()")
+    public Page<SearchAllCouponPolicyResponse> searchAllCouponPoliciesV2(
+            String sortCreatedAt, String issueType, Pageable pageable) {
+        return couponPolicyRepository.getAllCouponPolicy(sortCreatedAt, issueType, pageable);
+    }
+
+
+    @Transactional(readOnly = true)
     public Page<SearchAllMemberCouponResponse> getAllMemberCoupon(Long memberId, String status, Pageable pageable) {
         return memberCouponRepository.findAllMemberCouponByMemberId(memberId, status, pageable);
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "memberCoupons",
+            key = "'member:' + #memberId + ':page:' + #pageable.pageNumber + ':status:' + #status",
+            unless = "#result.isEmpty()")
+    public Page<SearchAllMemberCouponResponse> getAllMemberCouponV2(Long memberId, String status, Pageable pageable) {
+        return memberCouponRepository.findAllMemberCouponByMemberId(memberId, status, pageable);
+    }
+
+    @Transactional(readOnly = true)
     public SearchAllMemberCouponResponse getMemberCoupon(Long memberId, Long couponId) {
+        return memberCouponRepository
+                .findMemberCouponByMemberIdAndMemberCouponId(memberId, couponId)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_COUPON_NOT_FOUND));
+    }
+
+    @Transactional(readOnly = true)
+    @Cacheable(
+            value = "memberCoupons",
+            key = "'member:' + #memberId + ':coupon:' + #couponId")
+    public SearchAllMemberCouponResponse getMemberCouponV2(Long memberId, Long couponId) {
         return memberCouponRepository
                 .findMemberCouponByMemberIdAndMemberCouponId(memberId, couponId)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_COUPON_NOT_FOUND));
@@ -161,6 +235,10 @@ public class CouponService {
     }
 
 
+    @Caching(evict = {
+            @CacheEvict(value = "memberCoupons", allEntries = true),
+            @CacheEvict(value = "couponPolicies", allEntries = true)
+    })
     public void issueFirstComeCouponV2(Long couponPolicyId, Member member) {
         String lockKey = lockService.buildLockKey(couponPolicyId);
         String lockValue = lockService.acquireLock(lockKey); // 락 획득
@@ -218,8 +296,68 @@ public class CouponService {
                 null));
     }
 
+    @Transactional(noRollbackFor = CouponExpiredException.class)
+    @Caching(evict = {
+            @CacheEvict(
+                    value = "memberCoupons",
+                    key = "'member:' + #memberId + ':coupon:' + #memberCouponId"),
+            @CacheEvict(value = "memberCoupons",   allEntries = true),
+            @CacheEvict(value = "couponHistories", allEntries = true)
+    })
+    public void useCouponV2(Long memberId, Long memberCouponId, Member member) {
+        // 본인 쿠폰인지 조회
+        MemberCoupon memberCoupon = memberCouponRepository
+                .findMemberCouponForUse(memberId, memberCouponId)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_COUPON_NOT_FOUND));
+
+        // 만료일이 지난 경우 EXPIRED 처리
+        if (memberCoupon.isExpired()) {
+            memberCoupon.updateExpireStatus();
+            couponHistoryRepository.save(CouponHistory.createExpired(member, memberCoupon));
+            log.info("만료 처리 및 기록 추가 완료");
+        }
+        if (memberCoupon.getStatus() == CouponStatus.EXPIRED) {
+            throw new CouponExpiredException();
+        }
+
+        // 사용 가능 여부 체크
+        if (memberCoupon.getStatus() != CouponStatus.UNUSED) {
+            throw new ServiceException(ErrorEnum.ERR_COUPON_NOT_USABLE);
+        }
+
+        // 지갑 조회
+        Wallet wallet = walletRepository
+                .findByMemberId(memberId)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_WALLET_NOT_FOUND));
+
+        memberCoupon.updateUsedStatus();
+
+        CouponHistory couponHistory = couponHistoryRepository.save(CouponHistory.create(member, memberCoupon));
+
+        wallet.addBalance(memberCoupon.getCouponPolicy().getMoneyAmount());
+
+        walletHistoryRepository.save(WalletHistories.create(
+                memberCoupon.getCouponPolicy().getMoneyAmount(),
+                WalletStatus.COUPON,
+                wallet.getBalance(),
+                wallet,
+                couponHistory,
+                member,
+                null));
+    }
+
     @Transactional(readOnly = true)
     public Page<SearchAllCouponHistoryResponse> getAllCouponHistory(
+            Long memberId, String status, String sortCreatedAt, Pageable pageable) {
+        return couponHistoryRepository.findAllCouponHistoryByMemberId(memberId, status, sortCreatedAt, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    @Cacheable(
+            value = "couponHistories",
+            key = "'member:' + #memberId + ':page:' + #pageable.pageNumber + ':status:' + #status + ':sort:' + #sortCreatedAt",
+            unless = "#result.isEmpty()")
+    public Page<SearchAllCouponHistoryResponse> getAllCouponHistoryV2(
             Long memberId, String status, String sortCreatedAt, Pageable pageable) {
         return couponHistoryRepository.findAllCouponHistoryByMemberId(memberId, status, sortCreatedAt, pageable);
     }
