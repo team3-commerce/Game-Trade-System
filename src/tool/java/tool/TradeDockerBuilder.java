@@ -24,11 +24,6 @@ public class TradeDockerBuilder {
     public static final String DB_NAME = "tradedb";
     public static  final int DB_PORT = 42000;
 
-    /**
-     * =============================================================
-     * IntelliJ 쓰시는 분들은 그냥 왼쪽 초록색 화살표 버튼을 누르시면 됩니다.
-     * =============================================================
-     */
     public static void main(String[] args) {
         if (args.length == 0) {
             try {
