@@ -2,6 +2,7 @@ package com.example.tradedemo.domain.members.controller;
 
 import com.example.tradedemo.auth.dto.PrincipalDetails;
 import com.example.tradedemo.common.dto.ApiResponse;
+import com.example.tradedemo.common.dto.PageResponse;
 import com.example.tradedemo.domain.members.dto.GetAllMemberItemResponse;
 import com.example.tradedemo.domain.members.dto.GetMemberItemResponse;
 import com.example.tradedemo.domain.members.service.MemberItemService;
@@ -28,13 +29,23 @@ public class MemberItemController {
      * 아이템 획득일 기준으로 최신순으로 정렬
      */
     @GetMapping("/api/v1/me/items")
-    public ResponseEntity<ApiResponse<Page<GetAllMemberItemResponse>>> getAllMemberItem(
+    public ResponseEntity<ApiResponse<PageResponse<GetAllMemberItemResponse>>> getAllMemberItem(
             @RequestParam(defaultValue = "0") int page, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         Pageable pageable = PageRequest.of(page, 10);
         Long memberId = principalDetails.getMember().getId();
 
         return ResponseEntity.ok(ApiResponse.success(
                 String.valueOf(HttpStatus.OK), memberItemService.getAllMemberItem(memberId, pageable)));
+    }
+
+    @GetMapping("/api/v2/me/items")
+    public ResponseEntity<ApiResponse<PageResponse<GetAllMemberItemResponse>>> getAllMemberItemV2(
+            @RequestParam(defaultValue = "0") int page, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        Pageable pageable = PageRequest.of(page, 10);
+        Long memberId = principalDetails.getMember().getId();
+
+        return ResponseEntity.ok(ApiResponse.success(
+                String.valueOf(HttpStatus.OK), memberItemService.getAllMemberItemV2(memberId, pageable)));
     }
 
     /**
@@ -47,5 +58,14 @@ public class MemberItemController {
 
         return ResponseEntity.ok(ApiResponse.success(
                 String.valueOf(HttpStatus.OK), memberItemService.getMemberItem(memberId, memberItemId)));
+    }
+
+    @GetMapping("/api/v2/me/items/{memberItemId}")
+    public ResponseEntity<ApiResponse<GetMemberItemResponse>> getMemberItemV2(
+            @AuthenticationPrincipal PrincipalDetails principalDetails, @PathVariable Long memberItemId) {
+        Long memberId = principalDetails.getMember().getId();
+
+        return ResponseEntity.ok(ApiResponse.success(
+                String.valueOf(HttpStatus.OK), memberItemService.getMemberItemV2(memberId, memberItemId)));
     }
 }
