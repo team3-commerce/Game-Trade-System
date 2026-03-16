@@ -64,8 +64,39 @@ public class CacheConfig {
                         .expireAfterWrite(Duration.ofMinutes(30))
                         .build());
 
-        cacheManager.setCaches(
-                List.of(marketListingsCache, membersCache, memberAuthsCache, refreshTokensCache, blacklistedTokensCache));
+        // couponPolicies 캐시
+        CaffeineCache couponPoliciesCache = new CaffeineCache(
+                "couponPolicies",
+                Caffeine.newBuilder()
+                        .maximumSize(50)
+                        .expireAfterWrite(Duration.ofMinutes(10))
+                        .build());
+
+        // memberCoupons 캐시
+        CaffeineCache memberCouponsCache = new CaffeineCache(
+                "memberCoupons",
+                Caffeine.newBuilder()
+                        .maximumSize(1000)
+                        .expireAfterWrite(Duration.ofMinutes(5))
+                        .build());
+
+        // couponHistories 캐시
+        CaffeineCache couponHistoriesCache = new CaffeineCache(
+                "couponHistories",
+                Caffeine.newBuilder()
+                        .maximumSize(500)
+                        .expireAfterWrite(Duration.ofMinutes(10))
+                        .build());
+
+        cacheManager.setCaches(List.of(
+                marketListingsCache,
+                membersCache,
+                memberAuthsCache,
+                refreshTokensCache,
+                blacklistedTokensCache,
+                couponPoliciesCache,
+                memberCouponsCache,
+                couponHistoriesCache));
         return cacheManager;
     }
 

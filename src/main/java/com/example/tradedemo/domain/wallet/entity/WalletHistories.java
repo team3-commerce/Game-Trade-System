@@ -70,6 +70,17 @@ public class WalletHistories extends Base {
     @JoinColumn(name = "member_id")
     private Member member;
 
+    /**
+     * 지갑 기록
+     * @param amount            지갑 금액 변동사항
+     * @param type              변동 타입(쿠폰, 결제, 할인)
+     * @param balanceSnapshot   변동 후 잔액
+     * @param wallet            지갑 id
+     * @param couponHistory     쿠폰 기록 id
+     * @param member            맴버 id
+     * @param order             주문(거래 내역) id
+     * @return
+     */
     public static WalletHistories create(
             BigDecimal amount,
             WalletStatus type,

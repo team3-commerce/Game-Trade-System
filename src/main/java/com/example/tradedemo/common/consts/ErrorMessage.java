@@ -45,4 +45,14 @@ public final class ErrorMessage {
     public static final String MSG_COUPON_POLICY_SOLD_OUT = "선착순 쿠폰이 마감되었습니다";
     public static final String MSG_COUPON_NOT_USABLE = "사용할 수 없는 쿠폰입니다";
     public static final String MSG_COUPON_EXPIRED = "만료된 쿠폰입니다";
+    public static final String MSG_COUPON_LOCK_CONFLICT = "현재 요청이 많아 잠시 후 다시 시도해주세요";
+
+    // pending
+    public static final String MSG_PENDING_ASSET_FOUND_EXCEPTION = "수령 대기 자산이 없습니다.";
+    public static final String MSG_PENDING_ASSET_ALREADY_CLAIMED = "이미 수령한 자산입니다";
+    public static final String MSG_PENDING_ASSET_FORBIDDEN = "본인의 수령 대기 자산만 수령할 수 있습니다";
+    public static final String MSG_PENDING_ASSET_EXPIRED_EXCEPTION = "수령 대기 기간 만료 상태입니다";
+
+
+
 }
