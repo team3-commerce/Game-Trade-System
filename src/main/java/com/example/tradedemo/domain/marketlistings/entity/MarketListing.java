@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MarketListing extends Base {
     /**
-     *
+     * 거래 매물 id
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -2,7 +2,7 @@ package com.example.tradedemo.domain.members.scheduler;
 
 import com.example.tradedemo.domain.members.consts.MemberPolicyConst;
 import com.example.tradedemo.domain.members.entity.Member;
-import com.example.tradedemo.domain.members.entity.MemberStatus;
+import com.example.tradedemo.domain.members.enums.MemberStatus;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
 import java.time.LocalDateTime;
 import java.util.List;

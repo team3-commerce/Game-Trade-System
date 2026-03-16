@@ -5,17 +5,17 @@ import com.example.tradedemo.common.dto.PageResponse;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.marketlistings.consts.MarketListingConsts;
-import com.example.tradedemo.domain.marketlistings.dto.request.CreateMarketListingRequest;
-import com.example.tradedemo.domain.marketlistings.dto.response.GetMarketListingResponse;
-import com.example.tradedemo.domain.marketlistings.dto.response.SearchAllMarketListingResponse;
-import com.example.tradedemo.domain.marketlistings.dto.response.SearchMarketListingResponse;
-import com.example.tradedemo.domain.marketlistings.dto.response.SearchTrendingKeywordResponse;
+import com.example.tradedemo.domain.marketlistings.dto.CreateMarketListingRequest;
+import com.example.tradedemo.domain.marketlistings.dto.GetMarketListingResponse;
+import com.example.tradedemo.domain.marketlistings.dto.SearchAllMarketListingResponse;
+import com.example.tradedemo.domain.marketlistings.dto.SearchMarketListingResponse;
+import com.example.tradedemo.domain.marketlistings.dto.SearchTrendingKeywordResponse;
 import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepository;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.entity.MemberItem;
-import com.example.tradedemo.domain.members.entity.MemberRole;
+import com.example.tradedemo.domain.members.enums.MemberRole;
 import com.example.tradedemo.domain.members.repository.MemberItemRepository;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
 import com.example.tradedemo.domain.pending.entity.PendingAsset;
@@ -26,6 +26,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import com.example.tradedemo.domain.wallet.entity.Wallet;
+import com.example.tradedemo.domain.wallet.entity.WalletHistories;
+import com.example.tradedemo.domain.wallet.enums.WalletStatus;
+import com.example.tradedemo.domain.wallet.repository.WalletHistoryRepository;
+import com.example.tradedemo.domain.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -39,6 +45,8 @@ public class MarketListingService {
     private final MemberRepository memberRepository;
     private final MarketListingCacheService marketListingCacheService;
     private final PendingAssetRepository pendingAssetRepository;
+    private final WalletRepository walletRepository;
+    private final WalletHistoryRepository walletHistoryRepository;
 
     /**
      * 상품 등록
@@ -69,7 +77,7 @@ public class MarketListingService {
 
         /**
          * 인벤토리 차감
-         * 2개 이상 존재할 경우 작성된 만큼 차감
+         * 작성된 만큼 차감
          */
         memberItem.decrease(request.getQuantity());
 
@@ -99,6 +107,9 @@ public class MarketListingService {
     @Transactional(readOnly = true)
     public PageResponse<SearchAllMarketListingResponse> getAllMarketListing(
             Long memberId, String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
+
+        expireMarketListings();   // 만료 처리
+
         if (keyword != null && !keyword.isBlank()) {
             marketListingCacheService.cacheSearchKeyword(memberId, keyword);
         }
@@ -124,7 +135,27 @@ public class MarketListingService {
                 .findById(marketListingId)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_FOUND));
 
+        expireMarketListings();
+
         return SearchMarketListingResponse.of(marketListing);
+    }
+    /**
+     * 만료 시간
+     * 상품 등록 시 만료 시간 체크 : saleEndAt
+     * 만료 시간이 되면 SELLING(판매) → EXPIRED(만료)
+     */
+    @Transactional
+    public void expireMarketListings() {
+
+        List<MarketListing> expiredListings =
+                marketListingRepository.findByStatusAndSaleEndAtBefore(
+                        MarketListingStatus.SELLING,
+                        LocalDateTime.now()
+                );
+
+        for (MarketListing listing : expiredListings) {
+            listing.updateStatus(MarketListingStatus.EXPIRED);
+        }
     }
 
     @Transactional(readOnly = true)

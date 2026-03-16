@@ -3,8 +3,8 @@ package com.example.tradedemo.domain.members.repository;
 import static com.example.tradedemo.domain.item.entity.QItem.item;
 import static com.example.tradedemo.domain.members.entity.QMemberItem.memberItem;
 
-import com.example.tradedemo.domain.members.dto.response.GetAllMemberItemResponse;
-import com.example.tradedemo.domain.members.dto.response.GetMemberItemResponse;
+import com.example.tradedemo.domain.members.dto.GetAllMemberItemResponse;
+import com.example.tradedemo.domain.members.dto.GetMemberItemResponse;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;

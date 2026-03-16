@@ -1,4 +1,4 @@
-package com.example.tradedemo.domain.marketlistings.dto.response;
+package com.example.tradedemo.domain.marketlistings.dto;
 
 import com.example.tradedemo.domain.item.dto.GetItemResponse;
 import com.example.tradedemo.domain.item.entity.Item;

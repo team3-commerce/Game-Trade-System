@@ -24,20 +24,28 @@ public class CreateCouponPolicyRequest {
     // FIRST_COME 이면 필수, AUTO_SIGNUP 이면 null
     private final Long totalQuantity;
 
+    // null이면 상수 기본값 사용
+    private final DurationRequest policyDuration;
+    private final DurationRequest couponDuration;
+
     @JsonCreator
     private CreateCouponPolicyRequest(
             @JsonProperty("name") String name,
             @JsonProperty("moneyAmount") BigDecimal moneyAmount,
             @JsonProperty("issueType") IssueType issueType,
-            @JsonProperty("totalQuantity") Long totalQuantity) {
+            @JsonProperty("totalQuantity") Long totalQuantity,
+            @JsonProperty("policyDuration") DurationRequest policyDuration,
+            @JsonProperty("couponDuration") DurationRequest couponDuration) {
         this.name = name;
         this.moneyAmount = moneyAmount;
         this.issueType = issueType;
         this.totalQuantity = totalQuantity;
+        this.policyDuration = policyDuration;
+        this.couponDuration = couponDuration;
     }
 
     public static CreateCouponPolicyRequest of(
-            String name, BigDecimal moneyAmount, IssueType issueType, Long totalQuantity) {
-        return new CreateCouponPolicyRequest(name, moneyAmount, issueType, totalQuantity);
+            String name, BigDecimal moneyAmount, IssueType issueType, Long totalQuantity, DurationRequest policyDuration, DurationRequest couponDuration) {
+        return new CreateCouponPolicyRequest(name, moneyAmount, issueType, totalQuantity, policyDuration, couponDuration);
     }
 }

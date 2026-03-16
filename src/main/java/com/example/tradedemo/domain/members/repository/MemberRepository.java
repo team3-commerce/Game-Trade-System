@@ -1,7 +1,7 @@
 package com.example.tradedemo.domain.members.repository;
 
 import com.example.tradedemo.domain.members.entity.Member;
-import com.example.tradedemo.domain.members.entity.MemberStatus;
+import com.example.tradedemo.domain.members.enums.MemberStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package com.example.tradedemo.domain.marketlistings.dto.request;
+package com.example.tradedemo.domain.marketlistings.dto;
 
 import com.example.tradedemo.domain.marketlistings.enums.SalesDurations;
 import java.math.BigDecimal;

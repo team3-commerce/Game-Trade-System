@@ -1,6 +1,6 @@
 package com.example.tradedemo.domain.wallet.service;
 
-import com.example.tradedemo.domain.wallet.dto.response.WalletResponse;
+import com.example.tradedemo.domain.wallet.dto.WalletResponse;
 import com.example.tradedemo.domain.wallet.entity.Wallet;
 import com.example.tradedemo.domain.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;

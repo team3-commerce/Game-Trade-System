@@ -1,10 +1,11 @@
 package com.example.tradedemo.domain.members.controller;
 
+import com.example.tradedemo.auth.dto.PrincipalDetails;
 import com.example.tradedemo.common.dto.ApiResponse;
-import com.example.tradedemo.domain.members.dto.MemberResponse;
-import com.example.tradedemo.domain.members.dto.MemberSuspendRequest;
-import com.example.tradedemo.domain.members.dto.NicknameUpdateRequest;
-import com.example.tradedemo.domain.members.dto.PasswordUpdateRequest;
+import com.example.tradedemo.domain.members.dto.GetMyInfoResponse;
+import com.example.tradedemo.domain.members.dto.SuspendMemberRequest;
+import com.example.tradedemo.domain.members.dto.UpdateNicknameRequest;
+import com.example.tradedemo.domain.members.dto.UpdatePasswordRequest;
 import com.example.tradedemo.domain.members.service.MemberService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +15,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/")
+@RequestMapping("/api")
 @RequiredArgsConstructor
 public class MemberController {
 
@@ -23,51 +24,94 @@ public class MemberController {
     /**
      * 내 정보 조회
      */
-    @GetMapping("/me")
-    public ResponseEntity<ApiResponse<MemberResponse>> getMyInfo(@AuthenticationPrincipal UserDetails userDetails) {
-        MemberResponse response = memberService.getMyInfo(userDetails.getUsername());
+    @GetMapping("/v1/me")
+    public ResponseEntity<ApiResponse<GetMyInfoResponse>> getMyInfo(
+            @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        GetMyInfoResponse response = memberService.getMyInfo(principalDetails.getEmail());
+        return ResponseEntity.ok(ApiResponse.success("200", response));
+    }
+
+    @GetMapping("/v2/me")
+    public ResponseEntity<ApiResponse<GetMyInfoResponse>> getMyInfoV2(
+            @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        GetMyInfoResponse response = memberService.getMyInfoV2(principalDetails.getEmail());
         return ResponseEntity.ok(ApiResponse.success("200", response));
     }
 
     /**
      * 내 닉네임 수정
      */
-    @PatchMapping("/me/nickname")
+    @PatchMapping("/v1/me/nickname")
     public ResponseEntity<ApiResponse<Void>> updateNickname(
-            @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid NicknameUpdateRequest request) {
+            @AuthenticationPrincipal PrincipalDetails principalDetails,
+            @RequestBody @Valid UpdateNicknameRequest request) {
 
-        memberService.updateNickname(userDetails.getUsername(), request);
+        memberService.updateNickname(principalDetails.getEmail(), request);
+        return ResponseEntity.ok(ApiResponse.success("200", null));
+    }
+
+    @PatchMapping("/v2/me/nickname")
+    public ResponseEntity<ApiResponse<Void>> updateNicknameV2(
+            @AuthenticationPrincipal PrincipalDetails principalDetails,
+            @RequestBody @Valid UpdateNicknameRequest request) {
+
+        memberService.updateNicknameV2(principalDetails.getEmail(), request);
         return ResponseEntity.ok(ApiResponse.success("200", null));
     }
 
     /**
      * 내 비밀번호 수정
      */
-    @PatchMapping("/me/password")
+    @PatchMapping("/v1/me/password")
     public ResponseEntity<ApiResponse<Void>> updatePassword(
-            @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid PasswordUpdateRequest request) {
+            @AuthenticationPrincipal PrincipalDetails principalDetails,
+            @RequestBody @Valid UpdatePasswordRequest request) {
 
-        memberService.updatePassword(userDetails.getUsername(), request);
+        memberService.updatePassword(principalDetails.getEmail(), request);
+        return ResponseEntity.ok(ApiResponse.success("200", null));
+    }
+
+    @PatchMapping("/v2/me/password")
+    public ResponseEntity<ApiResponse<Void>> updatePasswordV2(
+            @AuthenticationPrincipal PrincipalDetails principalDetails,
+            @RequestBody @Valid UpdatePasswordRequest request) {
+
+        memberService.updatePasswordV2(principalDetails.getEmail(), request);
         return ResponseEntity.ok(ApiResponse.success("200", null));
     }
 
     /**
      * 회원 탈퇴
      */
-    @DeleteMapping("/me")
-    public ResponseEntity<ApiResponse<Void>> deleteMyinfo(@AuthenticationPrincipal UserDetails userDetails) {
-        memberService.withdraw(userDetails.getUsername());
+    @DeleteMapping("/v1/me")
+    public ResponseEntity<ApiResponse<Void>> deleteMyinfo(@AuthenticationPrincipal PrincipalDetails principalDetails) {
+        memberService.withdraw(principalDetails.getEmail());
+        return ResponseEntity.ok(ApiResponse.success("200", null));
+    }
+
+    @DeleteMapping("/v2/me")
+    public ResponseEntity<ApiResponse<Void>> deleteMyinfoV2(
+            @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        memberService.withdrawV2(principalDetails.getEmail());
         return ResponseEntity.ok(ApiResponse.success("200", null));
     }
 
     /**
      * 관리자 - 회원 계정 정지
      */
-    @PatchMapping("/admin/suspend")
+    @PatchMapping("/v1/admin/suspend")
     public ResponseEntity<ApiResponse<Void>> suspend(
-            @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid MemberSuspendRequest request) {
+            @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid SuspendMemberRequest request) {
 
         memberService.suspendMember(request);
+        return ResponseEntity.ok(ApiResponse.success("200", null));
+    }
+
+    @PatchMapping("/v2/admin/suspend")
+    public ResponseEntity<ApiResponse<Void>> suspendV2(
+            @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid SuspendMemberRequest request) {
+
+        memberService.suspendMemberV2(request);
         return ResponseEntity.ok(ApiResponse.success("200", null));
     }
 }

@@ -2,8 +2,8 @@ package com.example.tradedemo.domain.members.controller;
 
 import com.example.tradedemo.auth.dto.PrincipalDetails;
 import com.example.tradedemo.common.dto.ApiResponse;
-import com.example.tradedemo.domain.members.dto.response.GetAllMemberItemResponse;
-import com.example.tradedemo.domain.members.dto.response.GetMemberItemResponse;
+import com.example.tradedemo.domain.members.dto.GetAllMemberItemResponse;
+import com.example.tradedemo.domain.members.dto.GetMemberItemResponse;
 import com.example.tradedemo.domain.members.service.MemberItemService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
