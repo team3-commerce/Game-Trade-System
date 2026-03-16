@@ -17,7 +17,7 @@ public class LockService {
     private final LockRedisRepository lockRedisRepository;
 
     private static final long LOCK_TIMEOUT_SECONDS = 5;
-    private static final int MAX_RETRY = 200;
+    private static final int WAIT_SECONDS = 20;
     private static final long RETRY_DELAY_MS = 100;
 
     /**
@@ -27,7 +27,10 @@ public class LockService {
     public String acquireLock(String key) {
         String lockValue = java.util.UUID.randomUUID().toString();
 
-        for (int i = 0; i < MAX_RETRY; i++) {
+        // 현재 시각 + 20초 = 마감 시각
+        long deadline = System.currentTimeMillis() + WAIT_SECONDS * 1000;
+
+        while (System.currentTimeMillis() < deadline) {
             boolean acquired = lockRedisRepository.tryLock(key, lockValue, LOCK_TIMEOUT_SECONDS);
 
             if (acquired) {
@@ -35,7 +38,7 @@ public class LockService {
                 return lockValue;
             }
 
-            log.info("락 대기 중 {}/{} - key: {}", i + 1, MAX_RETRY, key);
+            log.info("락 대기 중 - key: {}", key);
             try {
                 Thread.sleep(RETRY_DELAY_MS);
             } catch (InterruptedException e) {
