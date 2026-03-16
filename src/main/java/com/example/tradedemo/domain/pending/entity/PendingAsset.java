@@ -127,4 +127,10 @@ public class PendingAsset extends Base {
     public void setClaimedAt(LocalDateTime claimedAt) {
         this.claimedAt = claimedAt;
     }
+    /**
+     * 만료타입
+     */
+    public void setExpireType() {
+        this.pendingType = PendingType.EXPIRED;
+    }
 }
