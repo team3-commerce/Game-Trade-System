@@ -7,6 +7,7 @@ import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepository;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
+import com.example.tradedemo.domain.order.dto.CreateOrderResponse;
 import com.example.tradedemo.domain.order.dto.GetTransactionResponse;
 import com.example.tradedemo.domain.order.entity.Order;
 import com.example.tradedemo.domain.order.repository.OrderRepository;
@@ -25,6 +26,8 @@ import com.example.tradedemo.domain.wallet.enums.WalletStatus;
 import com.example.tradedemo.domain.wallet.repository.WalletHistoryRepository;
 import com.example.tradedemo.domain.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -159,6 +162,94 @@ public class OrderService {
          */
         marketlisting.updateStatus(MarketListingStatus.SOLD);
     }
+
+    @Transactional
+    @Caching(evict = {
+        @CacheEvict(cacheNames = "marketListingsFirstPage", allEntries = true),
+        @CacheEvict(cacheNames = "marketListingItem", key = "'listing:' + #marketListingId")
+    })
+    public CreateOrderResponse purchaseV2(Long buyerId, Long marketListingId) {
+        Member buyer = memberRepository.findById(buyerId).orElseThrow(
+                () -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND)
+        );
+        Wallet wallet = walletRepository.findByMemberId(buyerId).orElseThrow(
+                () -> new ServiceException(ErrorEnum.ERR_WALLET_NOT_FOUND)
+        );
+
+        MarketListing marketlisting = marketListingRepository.findById(marketListingId).orElseThrow(
+                () -> new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_FOUND)
+        );
+
+        if (marketlisting.getStatus() != MarketListingStatus.SELLING) {
+            throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_SELLING);
+        }
+
+        BigDecimal price = marketlisting.getTotalPrice();
+
+        if (wallet.getBalance().compareTo(price) < 0) {
+            throw new ServiceException(ErrorEnum.ERR_WALLET_INSUFFICIENT_BALANCE_BAD_REQUEST);
+        }
+
+        Member seller = marketlisting.getMember();
+
+        Order order = Order.create(
+                marketlisting.getTotalPrice(),
+                marketlisting.getQuantity(),
+                seller,
+                buyer,
+                marketlisting,
+                marketlisting.getMemberItem().getItem() // 거래 매물의 인벤토리의 아이템도감 id
+        );
+
+        orderRepository.save(order);
+
+        wallet.decrease(price);
+
+        walletHistoryRepository.save(WalletHistories.create(
+                        price.negate(),
+                        WalletStatus.PURCHASE,
+                        wallet.getBalance(),
+                        wallet,
+                        null,
+                        wallet.getMember(),
+                        order
+                )
+        );
+
+        PendingAsset sellerPending = PendingAsset.create(
+                PendingType.SALE_SUCCESS,
+                Type.MONEY,
+                marketlisting.getTotalPrice(),
+                0L,
+                false,
+                null,
+                LocalDateTime.now().plusDays(1),
+                marketlisting,
+                order,
+                seller
+        );
+
+        PendingAsset buyerPending = PendingAsset.create(
+                PendingType.PURCHASE_SUCCESS,
+                Type.ITEM,
+                BigDecimal.ZERO,
+                marketlisting.getQuantity(),
+                false,
+                null,
+                LocalDateTime.now().plusDays(1),
+                marketlisting,
+                order,
+                buyer
+        );
+
+        pendingAssetRepository.save(sellerPending);
+        pendingAssetRepository.save(buyerPending);
+
+        marketlisting.updateStatus(MarketListingStatus.SOLD);
+
+        return CreateOrderResponse.create(order, marketlisting.getItemName());
+    }
+
 
     /**
      * 내 구매 내역 조회

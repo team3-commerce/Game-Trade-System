@@ -87,6 +87,22 @@ public class MarketListingController {
                         details.getMember().getId(), keyword, sortTotalPrice, sortSaleEndAt, pageable)));
     }
 
+    @GetMapping("/api/v2/market-listings")
+    public ResponseEntity<ApiResponse<PageResponse<SearchAllMarketListingResponse>>> getAllMarketListingV2(
+            @AuthenticationPrincipal PrincipalDetails details,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String sortTotalPrice,
+            @RequestParam(required = false) String sortSaleEndAt,
+            @RequestParam(defaultValue = "0") int page) {
+
+        Pageable pageable = PageRequest.of(page, 10);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                String.valueOf(HttpStatus.OK.value()),
+                marketListingService.getAllMarketListingV2(
+                        details.getMember().getId(), keyword, sortTotalPrice, sortSaleEndAt, pageable)));
+    }
+
     /**
      * 마켓 상품 단건 조회
      */
@@ -95,6 +111,13 @@ public class MarketListingController {
             @PathVariable Long marketListingId) {
         return ResponseEntity.ok(ApiResponse.success(
                 String.valueOf(HttpStatus.OK), marketListingService.getMarketListing(marketListingId)));
+    }
+
+    @GetMapping("/api/v2/market-listings/{marketListingId}")
+    public ResponseEntity<ApiResponse<SearchMarketListingResponse>> getMarketListingV2(
+            @PathVariable Long marketListingId) {
+        return ResponseEntity.ok(ApiResponse.success(
+                String.valueOf(HttpStatus.OK), marketListingService.getMarketListingV2(marketListingId)));
     }
 
     /**
@@ -120,6 +143,15 @@ public class MarketListingController {
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK), res));
     }
+
+    @PatchMapping("/api/v2/market-listings/{marketListingId}")
+    public ResponseEntity<ApiResponse<SearchMarketListingResponse>> cancelMarketListingV2(
+            @AuthenticationPrincipal PrincipalDetails details, @PathVariable Long marketListingId) {
+        SearchMarketListingResponse res = marketListingService.cancelMarketListingV2(details, marketListingId);
+
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK), res));
+    }
+
 
     /**
      * 관리자 마켓 상품 등록 취소
