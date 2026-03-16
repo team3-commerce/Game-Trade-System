@@ -34,7 +34,7 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
-                        auth -> auth.requestMatchers("/api/v1/auth/**")
+                        auth -> auth.requestMatchers("/api/v1/auth/**", "/api/v2/auth/**")
                                 .permitAll() // 화이트리스트
                                 .requestMatchers("/api/v1/admin/**")
                                 .hasRole("ADMIN") // 관리자 전용

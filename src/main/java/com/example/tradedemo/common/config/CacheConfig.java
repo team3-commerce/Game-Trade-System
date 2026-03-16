@@ -48,7 +48,15 @@ public class CacheConfig {
                         .expireAfterAccess(Duration.ofMinutes(30))
                         .build());
 
-        cacheManager.setCaches(List.of(marketListingsCache, membersCache, memberAuthsCache));
+        // refreshTokens 캐시
+        CaffeineCache refreshTokensCache = new CaffeineCache(
+                "refreshTokens",
+                Caffeine.newBuilder()
+                        .maximumSize(10000)
+                        .expireAfterWrite(Duration.ofDays(7).plusHours(1))
+                        .build());
+
+        cacheManager.setCaches(List.of(marketListingsCache, membersCache, memberAuthsCache, refreshTokensCache));
         return cacheManager;
     }
 
