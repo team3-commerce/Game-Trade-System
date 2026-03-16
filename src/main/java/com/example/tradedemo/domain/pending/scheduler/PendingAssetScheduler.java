@@ -20,8 +20,7 @@ public class PendingAssetScheduler {
 
     /**
      * 1분마다 실행
-     * 만료된 수령 대기 자산 삭제
-     * 수령대기기록에 남김
+     * 만료된 수령 대기 상태 변경
      */
     @Scheduled(fixedDelay = 60000)
     @Transactional
