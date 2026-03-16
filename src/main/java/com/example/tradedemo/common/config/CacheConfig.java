@@ -56,7 +56,16 @@ public class CacheConfig {
                         .expireAfterWrite(Duration.ofDays(7).plusHours(1))
                         .build());
 
-        cacheManager.setCaches(List.of(marketListingsCache, membersCache, memberAuthsCache, refreshTokensCache));
+        // blacklistedTokens 캐시
+        CaffeineCache blacklistedTokensCache = new CaffeineCache(
+                "blacklistedTokens",
+                Caffeine.newBuilder()
+                        .maximumSize(10000)
+                        .expireAfterWrite(Duration.ofMinutes(30))
+                        .build());
+
+        cacheManager.setCaches(
+                List.of(marketListingsCache, membersCache, memberAuthsCache, refreshTokensCache, blacklistedTokensCache));
         return cacheManager;
     }
 

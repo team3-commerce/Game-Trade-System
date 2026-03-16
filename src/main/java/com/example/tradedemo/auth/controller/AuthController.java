@@ -1,11 +1,14 @@
 package com.example.tradedemo.auth.controller;
 
+import static com.example.tradedemo.auth.consts.AuthConst.BEARER_PREFIX;
+
 import com.example.tradedemo.auth.dto.LoginAuthRequest;
 import com.example.tradedemo.auth.dto.PrincipalDetails;
 import com.example.tradedemo.auth.dto.SignupAuthRequest;
 import com.example.tradedemo.auth.dto.TokenAuthResponse;
 import com.example.tradedemo.auth.service.AuthService;
 import com.example.tradedemo.common.dto.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -54,8 +57,14 @@ public class AuthController {
      * 로그아웃 V2
      */
     @PostMapping("/v2/auth/logout")
-    public ResponseEntity<ApiResponse<Void>> logoutV2(@AuthenticationPrincipal PrincipalDetails principalDetails) {
-        authService.logoutV2(principalDetails.getEmail());
+    public ResponseEntity<ApiResponse<Void>> logoutV2(
+            @AuthenticationPrincipal PrincipalDetails principalDetails, HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        String accessToken = (authHeader != null && authHeader.startsWith(BEARER_PREFIX))
+                ? authHeader.substring(BEARER_PREFIX.length())
+                : null;
+
+        authService.logoutV2(principalDetails.getEmail(), accessToken);
         return ResponseEntity.ok(ApiResponse.success("200", null));
     }
 

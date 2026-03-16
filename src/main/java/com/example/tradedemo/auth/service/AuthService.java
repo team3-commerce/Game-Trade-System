@@ -145,7 +145,13 @@ public class AuthService {
      * 로그아웃 V2
      */
     @CacheEvict(value = "refreshTokens", key = "#email")
-    public void logoutV2(String email) {}
+    public void logoutV2(String email, String accessToken) {
+        // 블랙리스트 전용 캐시 조회
+        Cache blacklistCache = cacheManager.getCache("blacklistedTokens");
+        if (blacklistCache != null) {
+            blacklistCache.put(accessToken, "logout");
+        }
+    }
 
     /**
      * 토큰 재발급 V2

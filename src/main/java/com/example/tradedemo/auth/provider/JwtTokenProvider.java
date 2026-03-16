@@ -80,6 +80,18 @@ public class JwtTokenProvider {
     }
 
     /**
+     * 토큰 만료 시간 조회
+     */
+    public Date getExpiration(String token) {
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getExpiration();
+    }
+
+    /**
      * 토큰 유효성 검증
      */
     public boolean validateToken(String token) {
