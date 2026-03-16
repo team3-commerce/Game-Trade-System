@@ -5,6 +5,7 @@ import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.pending.entity.PendingAsset;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,7 +19,6 @@ public interface PendingAssetRepository extends JpaRepository<PendingAsset, Long
      * @return
      */
     List<PendingAsset> findByMemberIdAndIsClaimedFalse(Long memberId);
-
     /**
      * 개별 수령 조회
      * @param pendingAssetId
@@ -26,4 +26,11 @@ public interface PendingAssetRepository extends JpaRepository<PendingAsset, Long
      * @return
      */
     Optional<PendingAsset> findByIdAndMemberId(Long pendingAssetId, Long memberId);
+
+    /**
+     * 수령대기테이블 만료 대상
+     * @param now
+     * @return
+     */
+    List<PendingAsset> findByExpiredAtBeforeAndIsClaimedFalse(LocalDateTime now);
 }

@@ -51,6 +51,7 @@ public final class ErrorMessage {
     public static final String MSG_PENDING_ASSET_FOUND_EXCEPTION = "수령 대기 자산이 없습니다.";
     public static final String MSG_PENDING_ASSET_ALREADY_CLAIMED = "이미 수령한 자산입니다";
     public static final String MSG_PENDING_ASSET_FORBIDDEN = "본인의 수령 대기 자산만 수령할 수 있습니다";
+    public static final String MSG_PENDING_ASSET_EXPIRED_EXCEPTION = "수령 대기 기간 만료 상태입니다";
 
 
 
