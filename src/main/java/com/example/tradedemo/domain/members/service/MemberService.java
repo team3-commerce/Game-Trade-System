@@ -68,7 +68,9 @@ public class MemberService {
     }
 
     @Transactional
-    @Caching(evict = {@CacheEvict(value = "members", key = "#email"), @CacheEvict(value = "memberAuths", key = "#email")})
+    @Caching(
+            evict = {@CacheEvict(value = "members", key = "#email"), @CacheEvict(value = "memberAuths", key = "#email")
+            })
     public void updateNicknameV2(String email, UpdateNicknameRequest request) {
         Member member = memberRepository
                 .findByEmail(email)
@@ -102,7 +104,9 @@ public class MemberService {
     }
 
     @Transactional
-    @Caching(evict = {@CacheEvict(value = "members", key = "#email"), @CacheEvict(value = "memberAuths", key = "#email")})
+    @Caching(
+            evict = {@CacheEvict(value = "members", key = "#email"), @CacheEvict(value = "memberAuths", key = "#email")
+            })
     public void updatePasswordV2(String email, UpdatePasswordRequest request) {
         Member member = memberRepository
                 .findByEmail(email)
@@ -141,7 +145,12 @@ public class MemberService {
     }
 
     @Transactional
-    @Caching(evict = {@CacheEvict(value = "members", key = "#email"), @CacheEvict(value = "memberAuths", key = "#email")})
+    @Caching(
+            evict = {
+                @CacheEvict(value = "members", key = "#email"),
+                @CacheEvict(value = "memberAuths", key = "#email"),
+                @CacheEvict(value = "refreshTokens", key = "#email")
+            })
     public void withdrawV2(String email) {
         Member member = memberRepository
                 .findByEmail(email)

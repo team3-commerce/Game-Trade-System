@@ -3,6 +3,7 @@ package com.example.tradedemo.auth.config;
 import com.example.tradedemo.auth.filter.JwtAuthenticationFilter;
 import com.example.tradedemo.auth.provider.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -28,13 +29,14 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, JwtTokenProvider jwtTokenProvider) throws Exception {
+    public SecurityFilterChain filterChain(
+            HttpSecurity http, JwtTokenProvider jwtTokenProvider, CacheManager cacheManager) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
-                        auth -> auth.requestMatchers("/api/v1/auth/**")
+                        auth -> auth.requestMatchers("/api/v1/auth/**", "/api/v2/auth/**")
                                 .permitAll() // 화이트리스트
                                 .requestMatchers("/api/v1/admin/**")
                                 .hasRole("ADMIN") // 관리자 전용
@@ -42,7 +44,8 @@ public class SecurityConfig {
                                 .authenticated() // 나머지는 인증 필요
                         )
                 .addFilterBefore(
-                        new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
+                        new JwtAuthenticationFilter(jwtTokenProvider, cacheManager),
+                        UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(
                         exception -> exception
                                 .authenticationEntryPoint(customAuthenticationEntryPoint) // 401 처리 등록

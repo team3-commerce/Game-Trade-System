@@ -12,7 +12,10 @@ import com.example.tradedemo.domain.members.repository.MemberRepository;
 import com.example.tradedemo.domain.wallet.entity.Wallet;
 import com.example.tradedemo.domain.wallet.repository.WalletRepository;
 import java.math.BigDecimal;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.Cache;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +30,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final CouponService couponService;
     private final WalletRepository walletRepository;
+    private final org.springframework.cache.CacheManager cacheManager;
 
     /**
      * 회원가입
@@ -104,5 +108,103 @@ public class AuthService {
                 .findByEmail(email)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
         member.clearRefreshToken();
+    }
+
+    /**
+     * 로그인 V2
+     */
+    @Transactional
+    public TokenAuthResponse loginV2(LoginAuthRequest request) {
+        // 사용자 확인
+        Member member = memberRepository
+                .findByEmail(request.email())
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
+
+        // 비밀번호 확인
+        if (!passwordEncoder.matches(request.password(), member.getPassword())) {
+            throw new ServiceException(ErrorEnum.ERR_AUTH_INVALID_PASSWORD);
+        }
+
+        // 계정 상태별 처리
+        handleMemberStatus(member);
+
+        // 로그인 처리
+        String accessToken = jwtTokenProvider.createAccessToken(
+                member.getEmail(), member.getRole().name());
+        String refreshToken = jwtTokenProvider.createRefreshToken();
+
+        // 캐시에 저장
+        getRefreshCache().put(member.getEmail(), refreshToken);
+
+        member.updateLastLoginAt();
+
+        return new TokenAuthResponse(accessToken, refreshToken);
+    }
+
+    /**
+     * 로그아웃 V2
+     */
+    @CacheEvict(value = "refreshTokens", key = "#email")
+    public void logoutV2(String email, String accessToken) {
+        // 블랙리스트 전용 캐시 조회
+        Cache blacklistCache = cacheManager.getCache("blacklistedTokens");
+        if (blacklistCache != null) {
+            blacklistCache.put(accessToken, "logout");
+        }
+    }
+
+    /**
+     * 토큰 재발급 V2
+     */
+    @Transactional
+    public TokenAuthResponse reissueV2(String email, String refreshToken) {
+        // 캐시에서 리프레시 토큰 조회
+        Cache cache = getRefreshCache();
+
+        // 저장소 내 존재 확인
+        String cachedToken = cache.get(email, String.class);
+
+        if (cachedToken == null || !cachedToken.equals(refreshToken)) {
+            throw new ServiceException(ErrorEnum.ERR_AUTH_INVALID_TOKEN);
+        }
+
+        // 토큰 유효성 검증
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new ServiceException(ErrorEnum.ERR_AUTH_EXPIRED_TOKEN);
+        }
+
+        Member member = memberRepository
+                .findByEmail(email)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
+
+        // 새 토큰 생성
+        String newAccessToken = jwtTokenProvider.createAccessToken(
+                member.getEmail(), member.getRole().name());
+        String newRefreshToken = jwtTokenProvider.createRefreshToken();
+
+        // 캐시 업데이트
+        cache.put(member.getEmail(), newRefreshToken);
+
+        return new TokenAuthResponse(newAccessToken, newRefreshToken);
+    }
+
+    /**
+     * 멤버 상태 처리 로직
+     */
+    private void handleMemberStatus(Member member) {
+        switch (member.getStatus()) {
+            case WITHDRAWN -> throw new ServiceException(ErrorEnum.ERR_AUTH_WITHDRAWN_MEMBER);
+            case INACTIVE_SUSPENDED -> throw new ServiceException(
+                    ErrorEnum.ERR_AUTH_SUSPENDED_MEMBER, member.getStatusReason());
+            case INACTIVE_DORMANT -> member.activate();
+            case ACTIVE -> {}
+        }
+    }
+
+    /**
+     * Refresh Token 전용 캐시 저장소를 가져오는 로직
+     */
+    private Cache getRefreshCache() {
+        return Objects.requireNonNull(cacheManager.getCache("refreshTokens"), "CacheConfig에 refreshTokens 캐시 설정이 누락");
     }
 }
