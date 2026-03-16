@@ -1,4 +1,4 @@
-package dbbuilder;
+package tool;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,8 +17,8 @@ import java.awt.Frame;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@SpringBootApplication(scanBasePackages = {"com.example.tradedemo", "dbbuilder"})
-public class DbBuilder {
+@SpringBootApplication(scanBasePackages = {"com.example.tradedemo", "tool"})
+public class TradeDockerBuilder {
     public static final String DB_IMAGE_NAME = "mysql:8.4";
     public static final String DB_PASSWORD = "1234";
     public static final String DB_NAME = "tradedb";
@@ -137,7 +137,7 @@ public class DbBuilder {
 
         String[] result = new String[1];
 
-        JDialog dialog = new JDialog((Frame) null, "DB Builder", true);
+        JDialog dialog = new JDialog((Frame) null, "Docker Builder", true);
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));

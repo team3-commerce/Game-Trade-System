@@ -1,6 +1,6 @@
-package dbbuilder.builder;
+package tool.builder;
 
-import dbbuilder.DataBuilder;
+import tool.DataBuilder;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.Duration;

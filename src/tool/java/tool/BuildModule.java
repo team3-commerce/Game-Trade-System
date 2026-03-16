@@ -1,4 +1,4 @@
-package dbbuilder;
+package tool;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Bind;
@@ -52,7 +52,7 @@ public class BuildModule {
         System.out.println("PULLING IMAGE");
         System.out.println("========================");
 
-        BuilderUtil.pullDockerImage(dockerClient, DbBuilder.DB_IMAGE_NAME);
+        BuilderUtil.pullDockerImage(dockerClient, TradeDockerBuilder.DB_IMAGE_NAME);
 
         System.out.println("========================");
         System.out.println("STARTING CONTAINER");
@@ -60,15 +60,15 @@ public class BuildModule {
 
         var hostConfig = HostConfig.newHostConfig()
                 .withPortBindings(new PortBinding(
-                        Ports.Binding.bindPort(DbBuilder.DB_PORT), // host port -- 내가 접속할 포트
+                        Ports.Binding.bindPort(TradeDockerBuilder.DB_PORT), // host port -- 내가 접속할 포트
                         ExposedPort.tcp(3306))) // container port -- container가 쓸 포트
                 .withBinds(new Bind(this.dockerVolume, new Volume("/var/lib/mysql")));
 
         var container = dockerClient
-                .createContainerCmd(DbBuilder.DB_IMAGE_NAME)
+                .createContainerCmd(TradeDockerBuilder.DB_IMAGE_NAME)
                 .withEnv(
-                        "MYSQL_ROOT_PASSWORD=%s".formatted(DbBuilder.DB_PASSWORD), 
-                        "MYSQL_DATABASE=%s".formatted(DbBuilder.DB_NAME)
+                        "MYSQL_ROOT_PASSWORD=%s".formatted(TradeDockerBuilder.DB_PASSWORD),
+                        "MYSQL_DATABASE=%s".formatted(TradeDockerBuilder.DB_NAME)
                 )
                 .withHostConfig(hostConfig)
                 .withName("mysql-test-" + UUID.randomUUID())
@@ -85,9 +85,9 @@ public class BuildModule {
         Thread.sleep(10000);
 
         argsToPass.add(
-                0, "--spring.config.additional-location=file:.\\\\./src/dbbuilder/resources/dbbuilder-application.yml");
+                0, "--spring.config.additional-location=file:.\\\\./src/tool/resources/docker-builder-application.yml");
 
-        this.springContext = SpringApplication.run(DbBuilder.class, argsToPass.toArray(new String[0]));
+        this.springContext = SpringApplication.run(TradeDockerBuilder.class, argsToPass.toArray(new String[0]));
 
         System.out.println("========================");
         System.out.println("SAVING DATA TO DB");

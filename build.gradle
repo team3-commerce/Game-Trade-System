@@ -76,28 +76,28 @@ tasks.named('test') {
 }
 
 sourceSets {
-    dbbuilder {
-        java.srcDir 'src/dbbuilder/java'
+    tool {
         java.srcDir 'src/main/java'
+        java.srcDir 'src/tool/java'
     }
 }
 
-tasks.register('runDbBuilder', JavaExec) {
-    classpath = sourceSets.dbbuilder.runtimeClasspath
-    mainClass = 'dbbuilder.DbBuilder' 
+tasks.register('runDockerBuilder', JavaExec) {
+    classpath = sourceSets.tool.runtimeClasspath
+    mainClass = 'tool.TradeDockerBuilder'
 }
 
 configurations {
-    dbbuilderImplementation.extendsFrom implementation
-    dbbuilderCompileOnly.extendsFrom compileOnly
-    dbbuilderAnnotationProcessor.extendsFrom annotationProcessor
-    dbbuilderRuntimeOnly.extendsFrom runtimeOnly
+    toolImplementation.extendsFrom implementation
+    toolCompileOnly.extendsFrom compileOnly
+    toolAnnotationProcessor.extendsFrom annotationProcessor
+    toolRuntimeOnly.extendsFrom runtimeOnly
 }
 
 dependencies {
-    dbbuilderImplementation sourceSets.main.output
+    toolImplementation sourceSets.main.output
 
-    dbbuilderImplementation 'com.github.docker-java:docker-java:3.7.0'
-    dbbuilderImplementation 'com.github.docker-java:docker-java-transport-httpclient5:3.7.0'
-    dbbuilderImplementation 'net.datafaker:datafaker:2.5.4'
+    toolImplementation 'com.github.docker-java:docker-java:3.7.0'
+    toolImplementation 'com.github.docker-java:docker-java-transport-httpclient5:3.7.0'
+    toolImplementation 'net.datafaker:datafaker:2.5.4'
 }

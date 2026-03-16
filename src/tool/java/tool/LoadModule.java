@@ -1,4 +1,4 @@
-package dbbuilder;
+package tool;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.exception.NotFoundException;

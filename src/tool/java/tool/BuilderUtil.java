@@ -1,4 +1,4 @@
-package dbbuilder;
+package tool;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
@@ -66,7 +66,7 @@ public class BuilderUtil {
         var scanner = new ClassPathScanningCandidateComponentProvider(false);
         scanner.addIncludeFilter(new AssignableTypeFilter(DataBuilder.class));
 
-        return scanner.findCandidateComponents("dbbuilder");
+        return scanner.findCandidateComponents("tool");
     }
 
     public static boolean dataBuilderBeanExists(String dataBuilderName) {
