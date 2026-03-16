@@ -1,8 +1,6 @@
 package com.example.tradedemo.domain.pending.scheduler;
 
 import com.example.tradedemo.domain.pending.entity.PendingAsset;
-import com.example.tradedemo.domain.pending.entity.PendingAssetExpiredHistory;
-import com.example.tradedemo.domain.pending.repository.PendingAssetExpiredHistoryRepository;
 import com.example.tradedemo.domain.pending.repository.PendingAssetRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,11 +14,9 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class PendingAssetExpiredScheduler {
+public class PendingAssetScheduler {
 
     private final PendingAssetRepository pendingAssetRepository;
-    private final PendingAssetExpiredHistoryRepository historyRepository;
-
 
     /**
      * 1분마다 실행
@@ -37,19 +33,14 @@ public class PendingAssetExpiredScheduler {
                 pendingAssetRepository.findByExpiredAtBeforeAndIsClaimedFalse(now);
 
         if (expiredAssets.isEmpty()) {
-            log.info("[PendingAsset 만료] 없음");
+            log.info("[PendingAsset Scheduler] 만료 대상 없음");
             return;
         }
 
-        List<PendingAssetExpiredHistory> histories =
-                expiredAssets.stream()
-                        .map(PendingAssetExpiredHistory::create)
-                        .toList();
+        for (PendingAsset asset : expiredAssets) {
+            asset.setExpireType();
+        }
 
-        historyRepository.saveAll(histories);
-
-        pendingAssetRepository.deleteAll(expiredAssets);
-
-        log.info("[수령대기(PendingAsset) 만료 처리 완료] 삭제 건수={}", expiredAssets.size());
+        log.info("[PendingAsset Scheduler] 만료 처리 완료 count={}", expiredAssets.size());
     }
 }

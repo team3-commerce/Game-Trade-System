@@ -26,8 +26,9 @@ public interface PendingAssetRepository extends JpaRepository<PendingAsset, Long
      * @return
      */
     Optional<PendingAsset> findByIdAndMemberId(Long pendingAssetId, Long memberId);
+
     /**
-     * 기간 만료된 수령대기 항목 조회(삭제하기)
+     * 수령대기테이블 만료 대상
      * @param now
      * @return
      */

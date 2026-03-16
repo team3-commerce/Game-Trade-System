@@ -10,6 +10,7 @@ import com.example.tradedemo.domain.members.repository.MemberItemRepository;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
 import com.example.tradedemo.domain.pending.dto.PendingAssetResponse;
 import com.example.tradedemo.domain.pending.entity.PendingAsset;
+import com.example.tradedemo.domain.pending.enums.PendingType;
 import com.example.tradedemo.domain.pending.enums.Type;
 import com.example.tradedemo.domain.pending.repository.PendingAssetRepository;
 import com.example.tradedemo.domain.wallet.entity.Wallet;
@@ -35,7 +36,6 @@ public class PendingAssetService {
     private final MemberRepository memberRepository;
     private final ItemRepository itemRepository;
     private final WalletHistoryRepository walletHistoryRepository;
-
     /**
      * 수령 대기 테이블 조회
      * memberId 기준으로 아직 수령하지 않은 것(돈/아이템)을 조회한다.
@@ -50,7 +50,6 @@ public class PendingAssetService {
                 .map(PendingAssetResponse::from)
                 .collect(Collectors.toList());
     }
-
     /**
      * 개별 수령하기
      * pendingAsset을 실제 자산으로 지급한다.
@@ -64,14 +63,18 @@ public class PendingAssetService {
         PendingAsset asset = pendingAssetRepository
                         .findByIdAndMemberId(pendingAssetId, memberId)
                         .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FORBIDDEN));
-
         /**
          * 수령 여부 확인
          */
         if (asset.getIsClaimed()) {
             throw new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FOUND_EXCEPTION);
         }
-
+        /**
+         * 만료 상태인지 확인
+         */
+        if (asset.getPendingType() == PendingType.EXPIRED) {
+            throw new ServiceException(ErrorEnum.ERR_PENDING_ASSET_EXPIRED_EXCEPTION);
+        }
         /**
          * 돈 수령 처리
          * 판매자가 거래 금액을 지갑으로 받는다. 지갑 없다는 에러
@@ -81,7 +84,6 @@ public class PendingAssetService {
                     .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_WALLET_NOT_FOUND));
 
             wallet.addBalance(asset.getMoneyAmount());
-
             /**
              * 지갑 기록
              */
@@ -108,7 +110,6 @@ public class PendingAssetService {
                     .getId();
 
             Long quantity = asset.getItemQuantity();
-
             /**
              * 인벤토리에 동일한 item이 있는지 확인(없으면 null 반환)
              */
