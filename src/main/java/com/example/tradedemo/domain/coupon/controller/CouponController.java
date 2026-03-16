@@ -158,12 +158,23 @@ public class CouponController {
                 ApiResponse.success(String.valueOf(HttpStatus.OK.value()), CouponMessage.COUPON_ISSUED));
     }
 
-    @PostMapping("/api/v3/coupon-policies/{couponPolicyId}/issue")
+    @PostMapping("/api/v3-1/coupon-policies/{couponPolicyId}/issue")
     public ResponseEntity<ApiResponse<String>> issueFirstComeCouponV3_1(
             @PathVariable Long couponPolicyId, @AuthenticationPrincipal PrincipalDetails principalDetails) {
 
         Member member = principalDetails.getMember();
         couponService.issueFirstComeCouponV3_1(couponPolicyId, member);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(String.valueOf(HttpStatus.OK.value()), CouponMessage.COUPON_ISSUED));
+    }
+
+    @PostMapping("/api/v3-2/coupon-policies/{couponPolicyId}/issue")
+    public ResponseEntity<ApiResponse<String>> issueFirstComeCouponV3_2(
+            @PathVariable Long couponPolicyId, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+
+        Member member = principalDetails.getMember();
+        couponService.issueFirstComeCouponV3_2(couponPolicyId, member);
 
         return ResponseEntity.ok(
                 ApiResponse.success(String.valueOf(HttpStatus.OK.value()), CouponMessage.COUPON_ISSUED));

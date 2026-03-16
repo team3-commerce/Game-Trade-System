@@ -187,7 +187,7 @@ public class CouponConcurrencyTest {
     }
 
     /**
-     * V3 테스트 결과
+     * V3_1 테스트 결과
      *  ========================================
      *  쿠폰 총 수량:        100
      *  동시 요청 수:        150
@@ -196,8 +196,8 @@ public class CouponConcurrencyTest {
      *  ========================================
      */
     @Test
-    @DisplayName("V3 분산락 + AOP 적용 - 선착순 쿠폰 발급 동시성 테스트")
-    void 선착순쿠폰_동시발급_Redis_Lock_V3() throws InterruptedException {
+    @DisplayName("V3_1 Lettuce 분산락 + AOP 적용 - 선착순 쿠폰 발급 동시성 테스트")
+    void 선착순쿠폰_동시발급_Redis_Lock_V3_1() throws InterruptedException {
 
         // given
         ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
@@ -210,6 +210,55 @@ public class CouponConcurrencyTest {
                 try {
                     barrier.await();
                     couponService.issueFirstComeCouponV3_1(couponPolicy.getId(), member);
+                } catch (Exception ignored) {
+                }
+            });
+        }
+
+        executor.shutdown();
+        executor.awaitTermination(100, TimeUnit.SECONDS);
+
+        // then
+        long issuedCount = memberCouponRepository.count();
+        CouponPolicy updatedPolicy = couponPolicyRepository.findById(couponPolicy.getId()).orElseThrow();
+
+        System.out.println("========================================");
+        System.out.println("쿠폰 총 수량:        " + TOTAL_QUANTITY);
+        System.out.println("동시 요청 수:        " + THREAD_COUNT);
+        System.out.println("실제 DB 발급 수:      " + issuedCount);
+        System.out.println("expendQuantity:    " + updatedPolicy.getExpendQuantity());
+        System.out.println("========================================");
+
+        // 선착순 100개, 150명 요청 시 100명 성공
+        // 발급받은 사람 수와 쿠폰 정책이 발급된 수량이 일치해야함
+        assertThat(issuedCount).isEqualTo(updatedPolicy.getExpendQuantity());
+        assertThat(issuedCount).isEqualTo(TOTAL_QUANTITY);
+    }
+
+    /**
+     * V3_2 테스트 결과
+     *  ========================================
+     *  쿠폰 총 수량:        100
+     *  동시 요청 수:        150
+     *  실제 DB 발급 수:      100
+     *  expendQuantity:    100
+     *  ========================================
+     */
+    @Test
+    @DisplayName("V3_2 Redisson 분산락 + AOP 적용 - 선착순 쿠폰 발급 동시성 테스트")
+    void 선착순쿠폰_동시발급_Redis_Lock_V3_2() throws InterruptedException {
+
+        // given
+        ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
+        CyclicBarrier barrier = new CyclicBarrier(THREAD_COUNT);
+
+        // when
+        for (int i = 0; i < THREAD_COUNT; i++) {
+            final Member member = members.get(i);
+            executor.submit(() -> {
+                try {
+                    barrier.await();
+                    couponService.issueFirstComeCouponV3_2(couponPolicy.getId(), member);
                 } catch (Exception ignored) {
                 }
             });
