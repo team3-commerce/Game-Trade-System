@@ -22,17 +22,15 @@ import com.example.tradedemo.domain.pending.entity.PendingAsset;
 import com.example.tradedemo.domain.pending.enums.PendingType;
 import com.example.tradedemo.domain.pending.enums.Type;
 import com.example.tradedemo.domain.pending.repository.PendingAssetRepository;
+import com.example.tradedemo.domain.wallet.repository.WalletHistoryRepository;
+import com.example.tradedemo.domain.wallet.repository.WalletRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
-
-import com.example.tradedemo.domain.wallet.entity.Wallet;
-import com.example.tradedemo.domain.wallet.entity.WalletHistories;
-import com.example.tradedemo.domain.wallet.enums.WalletStatus;
-import com.example.tradedemo.domain.wallet.repository.WalletHistoryRepository;
-import com.example.tradedemo.domain.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -101,6 +99,50 @@ public class MarketListingService {
         return GetMarketListingResponse.create(marketListing, memberItem.getItem());
     }
 
+    @Transactional
+    @Caching(
+            evict = {
+                @CacheEvict(cacheNames = "inventoryList", allEntries = true),
+                @CacheEvict(
+                        cacheNames = "inventoryItem",
+                        key = "'member:' + #memberId + ':item:' + #request.getMemberItemId()")
+            })
+    public GetMarketListingResponse createV2(Long memberId, CreateMarketListingRequest request) {
+        Member member = memberRepository
+                .findById(memberId)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
+
+        MemberItem memberItem = memberItemRepository
+                .findById(request.getMemberItemId())
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_ITEM_NOT_FOUND));
+
+        if (!memberItem.getMember().getId().equals(member.getId())) {
+            throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_OWNER_MISMATCH);
+        }
+
+        if (memberItem.getQuantity() < request.getQuantity()) {
+            throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_OVER_SELLING);
+        }
+
+        memberItem.decrease(request.getQuantity());
+
+        BigDecimal unitPrice = request.getTotalPrice()
+                .divide(BigDecimal.valueOf(request.getQuantity()), 0, RoundingMode.DOWN); // 0 방향으로 반내림
+
+        MarketListing marketListing = MarketListing.create(
+                memberItem.getItem().getName(),
+                request.getTotalPrice(),
+                unitPrice,
+                request.getQuantity(),
+                request.getSalesDuration().getDuration(),
+                memberItem,
+                member);
+
+        marketListingRepository.saveAndFlush(marketListing);
+
+        return GetMarketListingResponse.create(marketListing, memberItem.getItem());
+    }
+
     /**
      * 마켓 상품 전체 조회
      */
@@ -108,7 +150,7 @@ public class MarketListingService {
     public PageResponse<SearchAllMarketListingResponse> getAllMarketListing(
             Long memberId, String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
 
-        expireMarketListings();   // 만료 처리
+        expireMarketListings(); // 만료 처리
 
         if (keyword != null && !keyword.isBlank()) {
             marketListingCacheService.cacheSearchKeyword(memberId, keyword);
@@ -147,11 +189,8 @@ public class MarketListingService {
     @Transactional
     public void expireMarketListings() {
 
-        List<MarketListing> expiredListings =
-                marketListingRepository.findByStatusAndSaleEndAtBefore(
-                        MarketListingStatus.SELLING,
-                        LocalDateTime.now()
-                );
+        List<MarketListing> expiredListings = marketListingRepository.findByStatusAndSaleEndAtBefore(
+                MarketListingStatus.SELLING, LocalDateTime.now());
 
         for (MarketListing listing : expiredListings) {
             listing.updateStatus(MarketListingStatus.EXPIRED);

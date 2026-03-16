@@ -35,6 +35,16 @@ public class MarketListingController {
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), res));
     }
+
+    @PostMapping("/api/v2/market-listings")
+    public ResponseEntity<ApiResponse<GetMarketListingResponse>> createMarketListingV2(
+            @AuthenticationPrincipal PrincipalDetails details, @RequestBody CreateMarketListingRequest request) {
+        GetMarketListingResponse res =
+                marketListingService.createV2(details.getMember().getId(), request);
+
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), res));
+    }
+
     /**
      *  본인 마켓 상품 전체 조회
      *  sortTotalPrice, sortSaleEndAt 값을 asc/desc 로 전달하여 정렬 조건 추가 가능

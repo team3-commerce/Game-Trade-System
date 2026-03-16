@@ -40,6 +40,21 @@ public class CacheConfig {
                         .expireAfterAccess(Duration.ofMinutes(30))
                         .build());
 
+        // member_item 캐시
+        CaffeineCache memberItemListCache = new CaffeineCache(
+                "inventoryList",
+                Caffeine.newBuilder()
+                        .maximumSize(1000)
+                        .expireAfterAccess(Duration.ofMinutes(60))
+                        .build());
+
+        CaffeineCache memberItemCache = new CaffeineCache(
+                "inventoryItem",
+                Caffeine.newBuilder()
+                        .maximumSize(1000)
+                        .expireAfterAccess(Duration.ofMinutes(60))
+                        .build());
+
         // memberAuths 캐시 (UserDetails/PrincipalDetails)
         CaffeineCache memberAuthsCache = new CaffeineCache(
                 "memberAuths",
@@ -72,7 +87,15 @@ public class CacheConfig {
                         .expireAfterWrite(Duration.ofMinutes(10))
                         .build());
 
-        cacheManager.setCaches(List.of(marketListingsCache, membersCache, memberAuthsCache, couponPoliciesCache, memberCouponsCache, couponHistoriesCache));
+        cacheManager.setCaches(List.of(
+                marketListingsCache,
+                membersCache,
+                memberItemListCache,
+                memberItemCache,
+                memberAuthsCache,
+                couponPoliciesCache,
+                memberCouponsCache,
+                couponHistoriesCache));
         return cacheManager;
     }
 
