@@ -29,9 +29,12 @@ public class DbBuilder {
      * IntelliJ 쓰시는 분들은 그냥 왼쪽 초록색 화살표 버튼을 누르시면 됩니다.
      * =============================================================
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         if (args.length == 0) {
-            args = runGui();
+            try {
+                args = runGui();
+            }catch (Exception e) {
+            }
         }
 
         boolean buildDb = false;
