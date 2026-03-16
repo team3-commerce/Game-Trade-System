@@ -63,6 +63,22 @@ public class CacheConfig {
                         .expireAfterAccess(Duration.ofMinutes(30))
                         .build());
 
+        // refreshTokens 캐시
+        CaffeineCache refreshTokensCache = new CaffeineCache(
+                "refreshTokens",
+                Caffeine.newBuilder()
+                        .maximumSize(10000)
+                        .expireAfterWrite(Duration.ofDays(7).plusHours(1))
+                        .build());
+
+        // blacklistedTokens 캐시
+        CaffeineCache blacklistedTokensCache = new CaffeineCache(
+                "blacklistedTokens",
+                Caffeine.newBuilder()
+                        .maximumSize(10000)
+                        .expireAfterWrite(Duration.ofMinutes(30))
+                        .build());
+
         // couponPolicies 캐시
         CaffeineCache couponPoliciesCache = new CaffeineCache(
                 "couponPolicies",
@@ -93,6 +109,8 @@ public class CacheConfig {
                 memberItemListCache,
                 memberItemCache,
                 memberAuthsCache,
+                refreshTokensCache,
+                blacklistedTokensCache,
                 couponPoliciesCache,
                 memberCouponsCache,
                 couponHistoriesCache));
