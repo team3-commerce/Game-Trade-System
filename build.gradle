@@ -74,3 +74,30 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+sourceSets {
+    dbbuilder {
+        java.srcDir 'src/dbbuilder/java'
+        java.srcDir 'src/main/java'
+    }
+}
+
+tasks.register('runDbBuilder', JavaExec) {
+    classpath = sourceSets.dbbuilder.runtimeClasspath
+    mainClass = 'dbbuilder.DbBuilder' 
+}
+
+configurations {
+    dbbuilderImplementation.extendsFrom implementation
+    dbbuilderCompileOnly.extendsFrom compileOnly
+    dbbuilderAnnotationProcessor.extendsFrom annotationProcessor
+    dbbuilderRuntimeOnly.extendsFrom runtimeOnly
+}
+
+dependencies {
+    dbbuilderImplementation sourceSets.main.output
+
+    dbbuilderImplementation 'com.github.docker-java:docker-java:3.7.0'
+    dbbuilderImplementation 'com.github.docker-java:docker-java-transport-httpclient5:3.7.0'
+    dbbuilderImplementation 'net.datafaker:datafaker:2.5.4'
+}
