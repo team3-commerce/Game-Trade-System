@@ -26,10 +26,17 @@ public class CacheConfig {
 
         // marketListings 캐시
         CaffeineCache marketListingsCache = new CaffeineCache(
-                "marketListings",
+                "marketListingItem",
+                Caffeine.newBuilder()
+                        .maximumSize(1000)
+                        .expireAfterWrite(Duration.ofMinutes(10))
+                        .build());
+
+        CaffeineCache marketListingsFirstPageCache = new CaffeineCache(
+                "marketListingsFirstPage",
                 Caffeine.newBuilder()
                         .maximumSize(100)
-                        .expireAfterWrite(Duration.ofMinutes(5))
+                        .expireAfterWrite(Duration.ofMinutes(3))
                         .build());
 
         // members 캐시
@@ -89,6 +96,7 @@ public class CacheConfig {
 
         cacheManager.setCaches(List.of(
                 marketListingsCache,
+                marketListingsFirstPageCache,
                 membersCache,
                 memberItemListCache,
                 memberItemCache,
