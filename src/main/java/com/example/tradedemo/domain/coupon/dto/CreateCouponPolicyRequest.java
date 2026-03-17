@@ -8,44 +8,28 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
+@Setter
+@NoArgsConstructor
 public class CreateCouponPolicyRequest {
     @NotBlank(message = "쿠폰 정책 이름은 필수입니다")
-    private final String name;
+    private String name;
 
     @NotNull(message = "지급 금액은 필수입니다")
     @Positive(message = "지급 금액은 0보다 커야 합니다")
-    private final BigDecimal moneyAmount;
+    private BigDecimal moneyAmount;
 
     @NotNull(message = "발급 타입은 필수입니다")
-    private final IssueType issueType;
+    private IssueType issueType;
 
     // FIRST_COME 이면 필수, AUTO_SIGNUP 이면 null
-    private final Long totalQuantity;
+    private Long totalQuantity;
 
     // null이면 상수 기본값 사용
-    private final DurationRequest policyDuration;
-    private final DurationRequest couponDuration;
+    private DurationRequest policyDuration;
+    private DurationRequest couponDuration;
 
-    @JsonCreator
-    private CreateCouponPolicyRequest(
-            @JsonProperty("name") String name,
-            @JsonProperty("moneyAmount") BigDecimal moneyAmount,
-            @JsonProperty("issueType") IssueType issueType,
-            @JsonProperty("totalQuantity") Long totalQuantity,
-            @JsonProperty("policyDuration") DurationRequest policyDuration,
-            @JsonProperty("couponDuration") DurationRequest couponDuration) {
-        this.name = name;
-        this.moneyAmount = moneyAmount;
-        this.issueType = issueType;
-        this.totalQuantity = totalQuantity;
-        this.policyDuration = policyDuration;
-        this.couponDuration = couponDuration;
-    }
-
-    public static CreateCouponPolicyRequest of(
-            String name, BigDecimal moneyAmount, IssueType issueType, Long totalQuantity, DurationRequest policyDuration, DurationRequest couponDuration) {
-        return new CreateCouponPolicyRequest(name, moneyAmount, issueType, totalQuantity, policyDuration, couponDuration);
-    }
 }
