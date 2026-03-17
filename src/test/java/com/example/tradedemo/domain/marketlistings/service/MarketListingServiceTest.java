@@ -99,15 +99,10 @@ class MarketListingServiceTest {
         for (int i = 0; i < threadCount; i++) {
 
             executorService.submit(() -> {
-
                 try {
-
                     startLatch.await(); // 동시에 시작
-
                     marketListingService.create(memberId, request);
-
                     successCount.incrementAndGet();
-
                 } catch (Exception e) {
 
                     failCount.incrementAndGet();

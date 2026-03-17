@@ -157,4 +157,12 @@ class PendingAssetServiceTest {
         assertEquals(0, BigDecimal.valueOf(100).compareTo(walletFromDb.getBalance()),
                 "Wallet 잔액은 100이어야 함 (중복 수령 방지)");
     }
+    /*
+    ========================================
+    비관적 락
+    동시 요청 수: 2(100원 수령하기 2번 누름)
+    최종 잔액:    100.00
+    예상 잔액:    100
+    ========================================
+    */
 }

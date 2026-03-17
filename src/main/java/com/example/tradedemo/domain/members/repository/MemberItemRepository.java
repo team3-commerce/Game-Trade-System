@@ -24,7 +24,7 @@ public interface MemberItemRepository extends JpaRepository<MemberItem, Long>, M
     Optional<MemberItem> findById(Long id);
 
     /**
-     * 안밴토리
+     * 인밴토리
      * @param memberId
      * @param itemId
      * @return
