@@ -35,21 +35,16 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
         SocialProvider provider = SocialProvider.from(registrationId);
         
-        log.info("Social login attempt - provider: {}, registrationId: {}", provider, registrationId);
-
         if (provider == null) {
             throw new OAuth2AuthenticationException(ErrorEnum.ERR_AUTH_SOCIAL_UNSUPPORTED_PROVIDER.getErrorMessage());
         }
 
         Map<String, Object> attributes = oAuth2User.getAttributes();
-        log.info("Social login attributes keys: {}", attributes.keySet());
-
         OAuth2UserInfo userInfo = getOAuth2UserInfo(provider, attributes);
 
         String email = userInfo.getEmail();
         if (email == null || email.trim().isEmpty()) {
             email = userInfo.getId() + "@" + provider.name().toLowerCase() + ".com";
-            log.info("Social login email is empty, generated virtual email: {}", email);
         }
 
         Member member = processOAuth2User(provider, userInfo, email);
@@ -85,7 +80,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         // 계정 상태 체크 (활동 중이 아닌 경우 로그인을 차단)
         if (member.getStatus() != MemberStatus.ACTIVE) {
             log.warn("Blocked login attempt for {} member: {}", member.getStatus(), email);
-            throw new OAuth2AuthenticationException(ErrorEnum.ERR_MEMBER_NOT_FOUND.getErrorMessage()); // 또는 적절한 에러 메시지
+            throw new OAuth2AuthenticationException(ErrorEnum.ERR_AUTH_NOT_ACTIVE_STATUS.getErrorMessage());
         }
 
         return member;

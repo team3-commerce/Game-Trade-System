@@ -15,6 +15,7 @@ public final class ErrorMessage {
     public static final String MSG_AUTH_SOCIAL_UNLINK_FORBIDDEN = "최소 하나의 로그인 수단이 필요합니다";
     public static final String MSG_AUTH_SOCIAL_NOT_FOUND = "연동된 소셜 계정을 찾을 수 없습니다";
     public static final String MSG_AUTH_SOCIAL_UNSUPPORTED_PROVIDER = "지원하지 않는 소셜 로그인 제공자입니다";
+    public static final String MSG_AUTH_NOT_ACTIVE_STATUS = "활성화된 계정이 아닙니다";
 
     // Member
     public static final String MSG_MEMBER_NOT_FOUND = "찾는 유저 정보가 존재하지 않습니다";
