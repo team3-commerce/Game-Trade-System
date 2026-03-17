@@ -25,6 +25,7 @@ public class PendingAssetLockService {
      * 실패 시 100ms 간격으로 최대 10회 재시도
      * @param lockKey 락 키 (예: "pending-asset:1")
      * @param action  락 안에서 실행할 비즈니스 로직
+     * executeWithLock(lockKey, () -> {action});
      */
     public void executeWithLock(String lockKey, Runnable action) {
         String lockValue = UUID.randomUUID().toString();
