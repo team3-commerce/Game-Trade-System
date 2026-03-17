@@ -25,7 +25,6 @@ public class Member extends Base {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(nullable = false)
     private String password;
 
     @Column(unique = true, nullable = false)
@@ -60,6 +59,10 @@ public class Member extends Base {
 
     public static Member create(String email, String password, String nickname, MemberRole role) {
         return new Member(email, password, nickname, role);
+    }
+
+    public static Member createSocial(String email, String nickname, MemberRole role) {
+        return new Member(email, "SOCIAL_USER", nickname, role);
     }
 
     // 로그인 시 시간 업데이트

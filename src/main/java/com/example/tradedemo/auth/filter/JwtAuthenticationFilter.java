@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.security.core.Authentication;
@@ -14,6 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+@Slf4j
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
@@ -23,15 +25,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        // 토큰 추출
-        String token = resolveToken(request);
+        try {
+            // 토큰 추출
+            String token = resolveToken(request);
 
-        // 유효성 검사 및 블랙리스트 확인
-        if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
-            if (!isBlacklisted(token)) {
-                Authentication authentication = jwtTokenProvider.getAuthentication(token);
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+            // 유효성 검사 및 블랙리스트 확인
+            if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
+                if (!isBlacklisted(token)) {
+                    Authentication authentication = jwtTokenProvider.getAuthentication(token);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
             }
+        } catch (Exception e) {
+            log.error("Could not set user authentication in security context", e);
         }
 
         filterChain.doFilter(request, response);
