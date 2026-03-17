@@ -1,8 +1,8 @@
 package com.example.tradedemo.domain.coupon.dto;
 
 import com.example.tradedemo.domain.coupon.enums.IssueType;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -26,10 +26,14 @@ public class CreateCouponPolicyRequest {
     private IssueType issueType;
 
     // FIRST_COME 이면 필수, AUTO_SIGNUP 이면 null
+    @Positive(message = "발급 수량은 0보다 커야 합니다")
     private Long totalQuantity;
 
     // null이면 상수 기본값 사용
+    @Valid
     private DurationRequest policyDuration;
+
+    @Valid
     private DurationRequest couponDuration;
 
 }
