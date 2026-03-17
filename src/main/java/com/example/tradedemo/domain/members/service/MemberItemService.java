@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberItemService {
 
     private final MemberItemRepository memberItemRepository;
+    private final MemberItemCacheService memberItemCacheService;
 
     @Transactional(readOnly = true)
     public PageResponse<GetAllMemberItemResponse> getAllMemberItem(Long memberId, Pageable pageable) {
@@ -28,6 +29,27 @@ public class MemberItemService {
     @Cacheable(cacheNames = "inventoryList", key = "'member:' + #memberId + ':page:' + #pageable.getPageNumber()")
     public PageResponse<GetAllMemberItemResponse> getAllMemberItemV2(Long memberId, Pageable pageable) {
         return PageResponse.of(memberItemRepository.findAllMemberItemByMemberId(memberId, pageable));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<GetAllMemberItemResponse> getAllMemberItemV3(Long memberId, Pageable pageable) {
+
+        // redis 캐시 확인
+        String key = memberItemCacheService.getInventoryListKey(memberId, pageable);
+
+        PageResponse<GetAllMemberItemResponse> cached = memberItemCacheService.getMemberItemList(key);
+
+        // 캐시가 있을 경우 반환
+        if(cached != null) {
+            return cached;
+        }
+
+        // 캐시가 없으면 db에서 조회 후 redis에 저장
+        PageResponse<GetAllMemberItemResponse> result = PageResponse.of(memberItemRepository.findAllMemberItemByMemberId(memberId, pageable));
+
+        memberItemCacheService.setMemberItemList(key, result);
+
+        return result;
     }
 
     @Transactional(readOnly = true)
@@ -44,5 +66,24 @@ public class MemberItemService {
         return memberItemRepository
                 .findMemberItemByMemberIdAndMemberItemId(memberId, memberItemId)
                 .orElseThrow(MemberItemNotFoundException::new);
+    }
+
+    @Transactional(readOnly = true)
+    public GetMemberItemResponse getMemberItemV3(Long memberId, Long memberItemId) {
+
+        String key = memberItemCacheService.getInventoryItemKey(memberId, memberItemId);
+
+        GetMemberItemResponse cached = memberItemCacheService.getMemberItem(key);
+        if(cached != null) {
+            return cached;
+        }
+
+        GetMemberItemResponse result = memberItemRepository
+                .findMemberItemByMemberIdAndMemberItemId(memberId, memberItemId)
+                .orElseThrow(MemberItemNotFoundException::new);
+
+        memberItemCacheService.setMemberItem(key, result);
+
+        return result;
     }
 }
