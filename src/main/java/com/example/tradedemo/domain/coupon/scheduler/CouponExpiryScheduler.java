@@ -36,8 +36,9 @@ public class CouponExpiryScheduler {
             return;
         }
 
+        expiredCoupons.forEach(MemberCoupon::updateExpireStatus);
+
         List<CouponHistory> histories = expiredCoupons.stream()
-                .peek(MemberCoupon::updateExpireStatus)
                 .map(mc -> CouponHistory.createExpired(mc.getMember(), mc))
                 .toList();
 
