@@ -68,7 +68,7 @@ public class PendingAssetService {
          * 동시에 본인의 자산인지 확인
          */
         PendingAsset asset = pendingAssetRepository
-                        .findByIdAndMemberId(pendingAssetId, memberId)
+                        .findByIdAndMemberIdWithLock(pendingAssetId, memberId)
                         .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FORBIDDEN));
         /**
          * 수령 여부 확인
@@ -152,7 +152,7 @@ public class PendingAssetService {
     @CacheEvict(cacheNames = "inventoryList", allEntries = true)
     public void claimPendingAssetV2(Long memberId, Long pendingAssetId) {
         PendingAsset asset = pendingAssetRepository
-                .findByIdAndMemberId(pendingAssetId, memberId)
+                .findByIdAndMemberIdWithLock(pendingAssetId, memberId)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FORBIDDEN));
 
         if (asset.getIsClaimed()) {
