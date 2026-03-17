@@ -284,4 +284,107 @@ public class CouponConcurrencyTest {
         assertThat(issuedCount).isEqualTo(TOTAL_QUANTITY);
     }
 
+    /**
+     * V3_3 테스트 결과
+     *  ========================================
+     *  쿠폰 총 수량:        100
+     *  동시 요청 수:        150
+     *  실제 DB 발급 수:      21
+     *  expendQuantity:    21
+     *  ========================================
+     *  => 데이터 정합성은 일치하나 낙관적 락은 충돌이 잦은 환경에서 재시도가 많이 발생하기 때문에
+     *     쿠폰 발급에 적용할 Lock으로 적합하지 않다
+     */
+    @Test
+    @DisplayName("V3_3 낙관적 락 + AOP 적용 - 선착순 쿠폰 발급 동시성 테스트")
+    void 선착순쿠폰_동시발급_Optimistic_Lock_V3_3() throws InterruptedException {
+
+        // given
+        ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
+        CyclicBarrier barrier = new CyclicBarrier(THREAD_COUNT);
+
+        // when
+        for (int i = 0; i < THREAD_COUNT; i++) {
+            final Member member = members.get(i);
+            executor.submit(() -> {
+                try {
+                    barrier.await();
+                    couponService.issueFirstComeCouponV3_3(couponPolicy.getId(), member);
+                } catch (Exception ignored) {
+                }
+            });
+        }
+
+        executor.shutdown();
+        // 낙관적 락은 충돌 시 재시도가 발생하므로 분산락보다 훨씬 긴 대기 시간 필요
+        executor.awaitTermination(700, TimeUnit.SECONDS);
+
+        // then
+        long issuedCount = memberCouponRepository.count();
+        CouponPolicy updatedPolicy = couponPolicyRepository.findById(couponPolicy.getId()).orElseThrow();
+
+        System.out.println("========================================");
+        System.out.println("쿠폰 총 수량:        " + TOTAL_QUANTITY);
+        System.out.println("동시 요청 수:        " + THREAD_COUNT);
+        System.out.println("실제 DB 발급 수:      " + issuedCount);
+        System.out.println("expendQuantity:    " + updatedPolicy.getExpendQuantity());
+        System.out.println("========================================");
+
+        // 실제 DB 발급 수와 expendQuantity가 항상 일치해야 함
+        assertThat(issuedCount).isEqualTo(updatedPolicy.getExpendQuantity());
+
+        // version 충돌 감지로 수량 초과 발급이 절대 발생하지 않아야 함
+        assertThat(issuedCount).isLessThanOrEqualTo(TOTAL_QUANTITY);
+    }
+
+    /**
+     * V3_4 테스트 결과
+     * ========================================
+     *  쿠폰 총 수량:        100
+     *  동시 요청 수:        150
+     *  실제 DB 발급 수:      100
+     *  expendQuantity:    100
+     * ========================================
+     */
+    @Test
+    @DisplayName("V3_4 비관적 락 + AOP 적용 - 선착순 쿠폰 발급 동시성 테스트")
+    void 선착순쿠폰_동시발급_Pessimistic_Lock_V3_4() throws InterruptedException {
+
+        // given
+        ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
+        CyclicBarrier barrier = new CyclicBarrier(THREAD_COUNT);
+
+        // when
+        for (int i = 0; i < THREAD_COUNT; i++) {
+            final Member member = members.get(i);
+            executor.submit(() -> {
+                try {
+                    barrier.await();
+                    couponService.issueFirstComeCouponV3_4(couponPolicy.getId(), member);
+                } catch (Exception ignored) {
+                }
+            });
+        }
+
+        executor.shutdown();
+
+        executor.awaitTermination(100, TimeUnit.SECONDS);
+
+        // then
+        long issuedCount = memberCouponRepository.count();
+        CouponPolicy updatedPolicy = couponPolicyRepository.findById(couponPolicy.getId()).orElseThrow();
+
+        System.out.println("========================================");
+        System.out.println("쿠폰 총 수량:        " + TOTAL_QUANTITY);
+        System.out.println("동시 요청 수:        " + THREAD_COUNT);
+        System.out.println("실제 DB 발급 수:      " + issuedCount);
+        System.out.println("expendQuantity:    " + updatedPolicy.getExpendQuantity());
+        System.out.println("========================================");
+
+        // 실제 DB 발급 수와 expendQuantity가 항상 일치해야 함
+        assertThat(issuedCount).isEqualTo(updatedPolicy.getExpendQuantity());
+
+        // 낙관적 락과 달리 정확히 100개가 발급되어야 함
+        assertThat(issuedCount).isEqualTo(TOTAL_QUANTITY);
+    }
 }

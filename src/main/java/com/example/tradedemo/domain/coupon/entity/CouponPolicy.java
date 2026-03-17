@@ -56,6 +56,11 @@ public class CouponPolicy extends Base {
     @Column
     private Duration couponDuration;
 
+    // 낙관적 락 구현을 위한 필드 추가
+    @Version
+    @Column(nullable = false)
+    private Long version;
+
     public static CouponPolicy create(
             String name,
             BigDecimal moneyAmount,

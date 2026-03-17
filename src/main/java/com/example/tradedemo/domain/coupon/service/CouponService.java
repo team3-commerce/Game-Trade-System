@@ -1,5 +1,7 @@
 package com.example.tradedemo.domain.coupon.service;
 
+import com.example.tradedemo.common.annotation.OptimisticLock;
+import com.example.tradedemo.common.annotation.PessimisticLock;
 import com.example.tradedemo.common.annotation.RedisLock;
 import com.example.tradedemo.common.annotation.RedissonLock;
 import com.example.tradedemo.common.exception.ErrorEnum;
@@ -311,6 +313,70 @@ public class CouponService {
 
         // 발급 시점
         LocalDateTime issuedAt = LocalDateTime.now();
+
+        // 쿠폰 만료일 = 발급 시점 + couponDuration
+        LocalDateTime expiredAt = issuedAt.plus(couponPolicy.getCouponDuration());
+
+        memberCouponRepository.save(MemberCoupon.create(member, couponPolicy, issuedAt, expiredAt));
+
+        couponPolicy.increaseExpendQuantity();
+    }
+
+    /**
+     * 선착순 쿠폰 발급 V3_3 낙관적 락 + AOP 적용
+     */
+    @OptimisticLock
+    @Transactional
+    public void issueFirstComeCouponV3_3(Long couponPolicyId, Member member) {
+
+        CouponPolicy couponPolicy = couponPolicyRepository
+                .findByIdAndIssueType(couponPolicyId, IssueType.FIRST_COME)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_COUPON_POLICY_NOT_FOUND));
+
+        // 발급 가능 여부 체크
+        if (!couponPolicy.isIssuable()) {
+            throw new ServiceException(ErrorEnum.ERR_COUPON_POLICY_SOLD_OUT);
+        }
+
+        // 중복 발급 방지
+        if (memberCouponRepository.existsByMemberAndCouponPolicy(member, couponPolicy)) {
+            throw new ServiceException(ErrorEnum.ERR_COUPON_ALREADY_ISSUED);
+        }
+
+        // 발급 시점
+        LocalDateTime issuedAt = LocalDateTime.now();
+
+        // 쿠폰 만료일 = 발급 시점 + couponDuration
+        LocalDateTime expiredAt = issuedAt.plus(couponPolicy.getCouponDuration());
+
+        memberCouponRepository.save(MemberCoupon.create(member, couponPolicy, issuedAt, expiredAt));
+
+        couponPolicy.increaseExpendQuantity();
+    }
+
+    /**
+     * 선착순 쿠폰 발급 V3_4 비관적 락 + AOP 적용
+     */
+    @PessimisticLock
+    @Transactional
+    public void issueFirstComeCouponV3_4(Long couponPolicyId, Member member) {
+
+        CouponPolicy couponPolicy = couponPolicyRepository
+                .findByIdAndIssueTypeWithLock(couponPolicyId, IssueType.FIRST_COME)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_COUPON_POLICY_NOT_FOUND));
+
+        // 발급 가능 여부 체크
+        if (!couponPolicy.isIssuable()) {
+            throw new ServiceException(ErrorEnum.ERR_COUPON_POLICY_SOLD_OUT);
+        }
+
+        // 중복 발급 방지
+        if (memberCouponRepository.existsByMemberAndCouponPolicy(member, couponPolicy)) {
+            throw new ServiceException(ErrorEnum.ERR_COUPON_ALREADY_ISSUED);
+        }
+
+        // 발급 시점
+        LocalDateTime issuedAt  = LocalDateTime.now();
 
         // 쿠폰 만료일 = 발급 시점 + couponDuration
         LocalDateTime expiredAt = issuedAt.plus(couponPolicy.getCouponDuration());

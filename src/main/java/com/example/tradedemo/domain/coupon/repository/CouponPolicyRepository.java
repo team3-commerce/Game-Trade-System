@@ -3,7 +3,11 @@ package com.example.tradedemo.domain.coupon.repository;
 import com.example.tradedemo.domain.coupon.entity.CouponPolicy;
 import com.example.tradedemo.domain.coupon.enums.IssueType;
 import java.util.Optional;
+
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
 
 public interface CouponPolicyRepository extends JpaRepository<CouponPolicy, Long>, CouponPolicyCustomRepository {
 
@@ -17,4 +21,8 @@ public interface CouponPolicyRepository extends JpaRepository<CouponPolicy, Long
 
     // FIRST_COME 단건 조회
     Optional<CouponPolicy> findByIdAndIssueType(Long id, IssueType issueType);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT cp FROM CouponPolicy cp WHERE cp.id = :id AND cp.issueType = :issueType")
+    Optional<CouponPolicy> findByIdAndIssueTypeWithLock(Long id, IssueType issueType);
 }
