@@ -4,6 +4,7 @@ import com.example.tradedemo.auth.dto.PrincipalDetails;
 import com.example.tradedemo.common.dto.ApiResponse;
 import com.example.tradedemo.domain.order.dto.CreateOrderResponse;
 import com.example.tradedemo.domain.order.dto.GetTransactionResponse;
+import com.example.tradedemo.domain.order.facade.OrderFacade;
 import com.example.tradedemo.domain.order.service.OrderService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class OrderController {
 
     private final OrderService orderService;
+    private final OrderFacade orderFacade;
 
     /**
      * 상품 구매
@@ -26,7 +28,7 @@ public class OrderController {
     public void purchase(
             @PathVariable Long marketListingId, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         Long memberId = principalDetails.getMember().getId();
-        orderService.purchase(memberId, marketListingId);
+        orderFacade.purchase(memberId, marketListingId);
     }
 
     @PostMapping("/v2/market-listings/{marketListingId}")
@@ -34,7 +36,7 @@ public class OrderController {
             @PathVariable Long marketListingId, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         Long memberId = principalDetails.getMember().getId();
         return ResponseEntity.ok(
-                ApiResponse.success(String.valueOf(HttpStatus.OK), orderService.purchaseV2(memberId, marketListingId)));
+                ApiResponse.success(String.valueOf(HttpStatus.OK), orderFacade.purchaseV2(memberId, marketListingId)));
     }
 
     /**

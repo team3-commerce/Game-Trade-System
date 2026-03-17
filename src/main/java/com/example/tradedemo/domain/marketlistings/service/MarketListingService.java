@@ -44,8 +44,6 @@ public class MarketListingService {
     private final MemberRepository memberRepository;
     private final MarketListingCacheService marketListingCacheService;
     private final PendingAssetRepository pendingAssetRepository;
-    private final WalletRepository walletRepository;
-    private final WalletHistoryRepository walletHistoryRepository;
 
     /**
      * 상품 등록
@@ -317,5 +315,12 @@ public class MarketListingService {
     @Transactional
     public SearchMarketListingResponse cancelMarketListingAdmin(PrincipalDetails details, Long marketListingId) {
         return cancelMarketListingImpl(details, true, marketListingId);
+    }
+
+    @Transactional(readOnly = true)
+    public MarketListing findMarketListing(Long marketListingId) {
+        return marketListingRepository.findById(marketListingId).orElseThrow(
+                () -> new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_FOUND)
+        );
     }
 }
