@@ -1,6 +1,6 @@
 name: SANITY-CHECK
 
-# build가 되고 포매팅이 적용 되었는지 확인합니다
+# build가 되는지 확인
 
 on:
   pull_request:
@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   build:
-    name: Check Build And Formatting
+    name: Check Build 
     runs-on: ubuntu-latest
 
     steps:
@@ -27,7 +27,7 @@ jobs:
           java-version: "17"
           cache: "gradle"
 
-      - name: check build and formatting
+      - name: check if builds
         run: |
           chmod +x gradlew
           ./gradlew build --no-daemon -x test -x spotlessCheck

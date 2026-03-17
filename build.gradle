@@ -27,6 +27,9 @@ repositories {
 
 // formatter 설정
 spotless {
+    // 나중에 몰아서 하기로 했기 때문에 평소에는 끄기
+    enforceCheck false 
+
     java {
         // windows는 다른 운영체제들과 다르게 줄바꿈 문자열을 다른 형식으로 저장합니다.
         // 이 설정은 이를 통합해 줍니다.

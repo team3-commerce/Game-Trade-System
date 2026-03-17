@@ -1,6 +1,8 @@
 package com.example.tradedemo.domain.wallet.entity;
 
 import com.example.tradedemo.common.entity.Base;
+import com.example.tradedemo.common.exception.ErrorEnum;
+import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.members.entity.Member;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -58,5 +60,11 @@ public class Wallet extends Base {
             throw new IllegalArgumentException("잔액 부족");
         }
         this.balance = this.balance.subtract(amount);
+    }
+
+    public void checkBalanceAvailable(BigDecimal amount) {
+        if (this.getBalance().compareTo(amount) < 0) {
+            throw new ServiceException(ErrorEnum.ERR_WALLET_INSUFFICIENT_BALANCE_BAD_REQUEST);
+        }
     }
 }
