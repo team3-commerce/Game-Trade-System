@@ -37,4 +37,21 @@ public class ItemController {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), res));
     }
+
+    @GetMapping("/api/v2/items/{itemId}")
+    public ResponseEntity<ApiResponse<GetItemResponse>> getItemV2(@PathVariable Long itemId) {
+        GetItemResponse res = itemService.getItemV2(itemId);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), res));
+    }
+
+    @GetMapping("/api/v2/items")
+    public ResponseEntity<ApiResponse<PageResponse<GetItemResponse>>> getManyItemV2(
+            @Valid @ModelAttribute SearchItemRequest req) {
+        PageResponse<GetItemResponse> res = itemService.getManyItemsV2(req);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), res));
+    }
 }

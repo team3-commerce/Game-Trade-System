@@ -30,6 +30,7 @@ public class Item extends Base {
      * 아이템 타입
      */
     @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ItemType itemType;
 

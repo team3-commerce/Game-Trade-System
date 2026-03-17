@@ -1,28 +1,26 @@
 package com.example.tradedemo.domain.coupon.dto;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
+@Setter
+@NoArgsConstructor
 public class DurationRequest {
 
-    private final long days;
-    private final long hours;
-    private final long minutes;
-    private final long seconds;
+    @PositiveOrZero(message = "days는 0 이상이어야 합니다")
+    private long days;
 
-    @JsonCreator
-    public DurationRequest(
-            @JsonProperty("days") long days,
-            @JsonProperty("hours") long hours,
-            @JsonProperty("minutes") long minutes,
-            @JsonProperty("seconds") long seconds) {
-        this.days = days;
-        this.hours = hours;
-        this.minutes = minutes;
-        this.seconds = seconds;
-    }
+    @PositiveOrZero(message = "hours는 0 이상이어야 합니다")
+    private long hours;
+
+    @PositiveOrZero(message = "hours는 0 이상이어야 합니다")
+    private long minutes;
+
+    @PositiveOrZero(message = "seconds는 0 이상이어야 합니다")
+    private long seconds;
 
     // 초 단위로 합산
     public long toSeconds() {

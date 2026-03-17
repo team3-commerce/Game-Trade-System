@@ -1,6 +1,8 @@
 package com.example.tradedemo.domain.marketlistings.entity;
 
 import com.example.tradedemo.common.entity.Base;
+import com.example.tradedemo.common.exception.ErrorEnum;
+import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.entity.MemberItem;
@@ -101,5 +103,11 @@ public class MarketListing extends Base {
      */
     public void updateStatus(MarketListingStatus newStatus) {
         this.status = newStatus;
+    }
+
+    public void validateSelling(){
+        if (this.getStatus() != MarketListingStatus.SELLING) {
+            throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_SELLING);
+        }
     }
 }

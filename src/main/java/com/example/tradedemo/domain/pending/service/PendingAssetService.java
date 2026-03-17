@@ -4,10 +4,12 @@ import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.item.entity.Item;
 import com.example.tradedemo.domain.item.repository.ItemRepository;
+import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.entity.MemberItem;
 import com.example.tradedemo.domain.members.repository.MemberItemRepository;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
+import com.example.tradedemo.domain.order.entity.Order;
 import com.example.tradedemo.domain.pending.dto.PendingAssetResponse;
 import com.example.tradedemo.domain.pending.entity.PendingAsset;
 import com.example.tradedemo.domain.pending.enums.PendingType;
@@ -26,6 +28,7 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -208,5 +211,37 @@ public class PendingAssetService {
 
         asset.setClaimed(true);
         asset.setClaimedAt(LocalDateTime.now());
+    }
+
+    @Transactional
+    public void createTradePendingAsset(MarketListing marketListing, Order order, Member buyer) {
+        PendingAsset sellerPending = PendingAsset.create(
+                PendingType.SALE_SUCCESS,
+                Type.MONEY,
+                marketListing.getTotalPrice(),
+                0L,
+                false,
+                null,
+                LocalDateTime.now().plusDays(1),
+                marketListing,
+                order,
+                marketListing.getMember()
+        );
+
+        PendingAsset buyerPending = PendingAsset.create(
+                PendingType.PURCHASE_SUCCESS,
+                Type.ITEM,
+                BigDecimal.ZERO,
+                marketListing.getQuantity(),
+                false,
+                null,
+                LocalDateTime.now().plusDays(1),
+                marketListing,
+                order,
+                buyer
+        );
+
+        pendingAssetRepository.save(sellerPending);
+        pendingAssetRepository.save(buyerPending);
     }
 }
