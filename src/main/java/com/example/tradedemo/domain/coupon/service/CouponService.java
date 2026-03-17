@@ -41,8 +41,6 @@ public class CouponService {
     private final CouponPolicyRepository couponPolicyRepository;
     private final MemberCouponRepository memberCouponRepository;
     private final CouponHistoryRepository couponHistoryRepository;
-    private final WalletRepository walletRepository;
-    private final WalletHistoryRepository walletHistoryRepository;
     private final LockService lockService;
     private final CouponIssueService couponIssueService;
 
@@ -320,8 +318,7 @@ public class CouponService {
         couponPolicy.increaseExpendQuantity();
     }
 
-    @Transactional(noRollbackFor = CouponExpiredException.class)
-    public void useCoupon(Long memberId, Long memberCouponId, Member member) {
+    public CouponHistory useCoupon(Long memberId, Long memberCouponId, Member member) {
         // 본인 쿠폰인지 조회
         MemberCoupon memberCoupon = memberCouponRepository
                 .findMemberCouponForUse(memberId, memberCouponId)
@@ -342,75 +339,8 @@ public class CouponService {
             throw new ServiceException(ErrorEnum.ERR_COUPON_NOT_USABLE);
         }
 
-        // 지갑 조회
-        Wallet wallet = walletRepository
-                .findByMemberId(memberId)
-                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_WALLET_NOT_FOUND));
-
         memberCoupon.updateUsedStatus();
-
-        CouponHistory couponHistory = couponHistoryRepository.save(CouponHistory.create(member, memberCoupon));
-
-        wallet.addBalance(memberCoupon.getCouponPolicy().getMoneyAmount());
-
-        walletHistoryRepository.save(WalletHistories.create(
-                memberCoupon.getCouponPolicy().getMoneyAmount(),
-                WalletStatus.COUPON,
-                wallet.getBalance(),
-                wallet,
-                couponHistory,
-                member,
-                null));
-    }
-
-    @Transactional(noRollbackFor = CouponExpiredException.class)
-    @Caching(evict = {
-            @CacheEvict(
-                    value = "memberCoupons",
-                    key = "'member:' + #memberId + ':coupon:' + #memberCouponId"),
-            @CacheEvict(value = "memberCoupons",   allEntries = true),
-            @CacheEvict(value = "couponHistories", allEntries = true)
-    })
-    public void useCouponV2(Long memberId, Long memberCouponId, Member member) {
-        // 본인 쿠폰인지 조회
-        MemberCoupon memberCoupon = memberCouponRepository
-                .findMemberCouponForUse(memberId, memberCouponId)
-                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_COUPON_NOT_FOUND));
-
-        // 만료일이 지난 경우 EXPIRED 처리
-        if (memberCoupon.isExpired()) {
-            memberCoupon.updateExpireStatus();
-            couponHistoryRepository.save(CouponHistory.createExpired(member, memberCoupon));
-            log.info("만료 처리 및 기록 추가 완료");
-        }
-        if (memberCoupon.getStatus() == CouponStatus.EXPIRED) {
-            throw new CouponExpiredException();
-        }
-
-        // 사용 가능 여부 체크
-        if (memberCoupon.getStatus() != CouponStatus.UNUSED) {
-            throw new ServiceException(ErrorEnum.ERR_COUPON_NOT_USABLE);
-        }
-
-        // 지갑 조회
-        Wallet wallet = walletRepository
-                .findByMemberId(memberId)
-                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_WALLET_NOT_FOUND));
-
-        memberCoupon.updateUsedStatus();
-
-        CouponHistory couponHistory = couponHistoryRepository.save(CouponHistory.create(member, memberCoupon));
-
-        wallet.addBalance(memberCoupon.getCouponPolicy().getMoneyAmount());
-
-        walletHistoryRepository.save(WalletHistories.create(
-                memberCoupon.getCouponPolicy().getMoneyAmount(),
-                WalletStatus.COUPON,
-                wallet.getBalance(),
-                wallet,
-                couponHistory,
-                member,
-                null));
+        return couponHistoryRepository.save(CouponHistory.create(member, memberCoupon));
     }
 
     @Transactional(readOnly = true)
