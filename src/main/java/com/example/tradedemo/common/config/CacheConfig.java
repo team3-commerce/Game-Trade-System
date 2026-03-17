@@ -24,6 +24,22 @@ public class CacheConfig {
     public CacheManager cacheManager() {
         SimpleCacheManager cacheManager = new SimpleCacheManager();
 
+        // items 캐시
+        CaffeineCache itemCache = new CaffeineCache(
+                "items",
+                Caffeine.newBuilder()
+                        .maximumSize(1000)
+                        .expireAfterWrite(Duration.ofMinutes(60))
+                        .build());
+
+        // itemsSearch 캐시
+        CaffeineCache itemsSearchCache = new CaffeineCache(
+                "itemsSearches",
+                Caffeine.newBuilder()
+                        .maximumSize(1000)
+                        .expireAfterWrite(Duration.ofMinutes(60))
+                        .build());
+
         // marketListings 캐시
         CaffeineCache marketListingsCache = new CaffeineCache(
                 "marketListings",
@@ -104,6 +120,8 @@ public class CacheConfig {
                         .build());
 
         cacheManager.setCaches(List.of(
+                itemCache,
+                itemsSearchCache,
                 marketListingsCache,
                 membersCache,
                 memberItemListCache,
