@@ -73,6 +73,10 @@ dependencies {
 
     // Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.redisson:redisson:3.45.0'
+
+    // spring boot test
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
     // Quartz
     implementation 'org.springframework.boot:spring-boot-starter-quartz'
@@ -80,4 +84,31 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+sourceSets {
+    tool {
+        java.srcDir 'src/main/java'
+        java.srcDir 'src/tool/java'
+    }
+}
+
+tasks.register('runDockerBuilder', JavaExec) {
+    classpath = sourceSets.tool.runtimeClasspath
+    mainClass = 'tool.TradeDockerBuilder'
+}
+
+configurations {
+    toolImplementation.extendsFrom implementation
+    toolCompileOnly.extendsFrom compileOnly
+    toolAnnotationProcessor.extendsFrom annotationProcessor
+    toolRuntimeOnly.extendsFrom runtimeOnly
+}
+
+dependencies {
+    toolImplementation sourceSets.main.output
+
+    toolImplementation 'com.github.docker-java:docker-java:3.7.0'
+    toolImplementation 'com.github.docker-java:docker-java-transport-httpclient5:3.7.0'
+    toolImplementation 'net.datafaker:datafaker:2.5.4'
 }

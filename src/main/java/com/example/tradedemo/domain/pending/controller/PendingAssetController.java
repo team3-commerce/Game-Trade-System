@@ -60,4 +60,19 @@ public class PendingAssetController {
         );
     }
 
+    @PostMapping("/api/v2/me/pending-assets/{pendingAssetId}")
+    public ResponseEntity<ApiResponse<Void>> settlementV2(
+            @AuthenticationPrincipal PrincipalDetails principalDetails,
+            @PathVariable Long pendingAssetId
+    ) {
+
+        Long memberId = principalDetails.getMember().getId();
+
+        pendingAssetService.claimPendingAssetV2(memberId, pendingAssetId);
+
+        return ResponseEntity.ok(
+                ApiResponse.success("200", null)
+        );
+    }
+
 }

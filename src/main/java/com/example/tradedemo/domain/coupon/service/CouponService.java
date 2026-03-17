@@ -1,5 +1,7 @@
 package com.example.tradedemo.domain.coupon.service;
 
+import com.example.tradedemo.common.annotation.RedisLock;
+import com.example.tradedemo.common.annotation.RedissonLock;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.coupon.constants.CouponDuration;
@@ -252,6 +254,71 @@ public class CouponService {
 
     }
 
+    /**
+     * Redis Lettuce + @RedisLock AOP 적용
+     */
+    @RedisLock(key = "'lock:coupon:' + #couponPolicyId")
+    @Transactional
+    public void issueFirstComeCouponV3_1(Long couponPolicyId, Member member) {
+
+        // FIRST_COME 정책 조회
+        CouponPolicy couponPolicy = couponPolicyRepository
+                .findByIdAndIssueType(couponPolicyId, IssueType.FIRST_COME)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_COUPON_POLICY_NOT_FOUND));
+
+        // 발급 가능 여부 체크
+        if (!couponPolicy.isIssuable()) {
+            throw new ServiceException(ErrorEnum.ERR_COUPON_POLICY_SOLD_OUT);
+        }
+
+        // 중복 발급 방지
+        if (memberCouponRepository.existsByMemberAndCouponPolicy(member, couponPolicy)) {
+            throw new ServiceException(ErrorEnum.ERR_COUPON_ALREADY_ISSUED);
+        }
+
+        // 발급 시점
+        LocalDateTime issuedAt = LocalDateTime.now();
+
+        // 쿠폰 만료일 = 발급 시점 + couponDuration
+        LocalDateTime expiredAt = issuedAt.plus(couponPolicy.getCouponDuration());
+
+        memberCouponRepository.save(MemberCoupon.create(member, couponPolicy, issuedAt, expiredAt));
+
+        couponPolicy.increaseExpendQuantity();
+    }
+
+    /**
+     * Redis Redisson + @RedissonLock AOP 적용
+     */
+    @RedissonLock(key = "'lock:coupon:' + #couponPolicyId")
+    @Transactional
+    public void issueFirstComeCouponV3_2(Long couponPolicyId, Member member) {
+
+        // FIRST_COME 정책 조회
+        CouponPolicy couponPolicy = couponPolicyRepository
+                .findByIdAndIssueType(couponPolicyId, IssueType.FIRST_COME)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_COUPON_POLICY_NOT_FOUND));
+
+        // 발급 가능 여부 체크
+        if (!couponPolicy.isIssuable()) {
+            throw new ServiceException(ErrorEnum.ERR_COUPON_POLICY_SOLD_OUT);
+        }
+
+        // 중복 발급 방지
+        if (memberCouponRepository.existsByMemberAndCouponPolicy(member, couponPolicy)) {
+            throw new ServiceException(ErrorEnum.ERR_COUPON_ALREADY_ISSUED);
+        }
+
+        // 발급 시점
+        LocalDateTime issuedAt = LocalDateTime.now();
+
+        // 쿠폰 만료일 = 발급 시점 + couponDuration
+        LocalDateTime expiredAt = issuedAt.plus(couponPolicy.getCouponDuration());
+
+        memberCouponRepository.save(MemberCoupon.create(member, couponPolicy, issuedAt, expiredAt));
+
+        couponPolicy.increaseExpendQuantity();
+    }
 
     @Transactional(noRollbackFor = CouponExpiredException.class)
     public void useCoupon(Long memberId, Long memberCouponId, Member member) {
