@@ -194,4 +194,10 @@ public class MemberService {
 
         member.suspend(request.reason());
     }
+
+    @Transactional(readOnly = true)
+    public Member findMember(Long memberId) {
+
+        return memberRepository.findById(memberId).orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
+    }
 }
