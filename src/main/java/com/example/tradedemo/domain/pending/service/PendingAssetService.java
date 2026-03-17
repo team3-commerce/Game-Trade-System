@@ -46,6 +46,8 @@ public class PendingAssetService {
 
     private final CacheManager cacheManager;
 
+    private final PendingAssetLockService pendingAssetLockService;
+
     /**
      * 수령 대기 테이블 조회
      * memberId 기준으로 아직 수령하지 않은 것(돈/아이템)을 조회한다.
@@ -151,66 +153,80 @@ public class PendingAssetService {
         asset.setClaimedAt(LocalDateTime.now());
     }
 
+    /**
+     * Redis 락
+     * @param memberId
+     * @param pendingAssetId
+     */
     @Transactional
     @CacheEvict(cacheNames = "inventoryList", allEntries = true)
     public void claimPendingAssetV2(Long memberId, Long pendingAssetId) {
-        PendingAsset asset = pendingAssetRepository
-                .findByIdAndMemberIdWithLock(pendingAssetId, memberId)
-                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FORBIDDEN));
+        /**
+         * Redis 락
+         * @param lockKey 락 키 (예: "pending-asset:1")
+         * @param action  락 안에서 실행할 비즈니스 로직 = 기존 비관적 락 V2
+         */
+        String lockKey = "pending-asset:" + pendingAssetId;
+        pendingAssetLockService.executeWithLock(lockKey, () -> {
 
-        if (asset.getIsClaimed()) {
-            throw new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FOUND_EXCEPTION);
-        }
+            PendingAsset asset = pendingAssetRepository
+                    .findByIdAndMemberIdWithLock(pendingAssetId, memberId)
+                    .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FORBIDDEN));
 
-        if (asset.getType() == Type.MONEY) {
-            Wallet wallet = walletRepository.findByMemberId(memberId)
-                    .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_WALLET_NOT_FOUND));
-
-            wallet.addBalance(asset.getMoneyAmount());
-
-            walletHistoryRepository.save(WalletHistories.create(
-                            asset.getMoneyAmount(),
-                            WalletStatus.PURCHASE,
-                            wallet.getBalance(),
-                            wallet,
-                            null,
-                            wallet.getMember(),
-                            asset.getOrder()
-                    )
-            );
-        }
-
-        if (asset.getType() == Type.ITEM) {
-            Long itemId = asset.getMarketListing()
-                    .getMemberItem()
-                    .getItem()
-                    .getId();
-
-            Long quantity = asset.getItemQuantity();
-
-            MemberItem memberItem = memberItemRepository
-                    .findByMemberIdAndItemId(memberId, itemId)
-                    .orElse(null);
-
-            if (memberItem != null) {
-                memberItem.increase(quantity);
-            } else {
-                Member member = memberRepository.getReferenceById(memberId);
-                Item item = itemRepository.getReferenceById(itemId);
-
-                memberItem = MemberItem.create(member, item, LocalDateTime.now(), quantity);
-                memberItemRepository.save(memberItem);
+            if (asset.getIsClaimed()) {
+                throw new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FOUND_EXCEPTION);
             }
 
-            Cache cache = cacheManager.getCache("inventoryItem");
-            if(cache != null){
-                String key = "member:" + memberId + ":item:" + memberItem.getId();
-                cache.evict(key);
-            }
-        }
+            if (asset.getType() == Type.MONEY) {
+                Wallet wallet = walletRepository.findByMemberId(memberId)
+                        .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_WALLET_NOT_FOUND));
 
-        asset.setClaimed(true);
-        asset.setClaimedAt(LocalDateTime.now());
+                wallet.addBalance(asset.getMoneyAmount());
+
+                walletHistoryRepository.save(WalletHistories.create(
+                                asset.getMoneyAmount(),
+                                WalletStatus.PURCHASE,
+                                wallet.getBalance(),
+                                wallet,
+                                null,
+                                wallet.getMember(),
+                                asset.getOrder()
+                        )
+                );
+            }
+
+            if (asset.getType() == Type.ITEM) {
+                Long itemId = asset.getMarketListing()
+                        .getMemberItem()
+                        .getItem()
+                        .getId();
+
+                Long quantity = asset.getItemQuantity();
+
+                MemberItem memberItem = memberItemRepository
+                        .findByMemberIdAndItemId(memberId, itemId)
+                        .orElse(null);
+
+                if (memberItem != null) {
+                    memberItem.increase(quantity);
+                } else {
+                    Member member = memberRepository.getReferenceById(memberId);
+                    Item item = itemRepository.getReferenceById(itemId);
+
+                    memberItem = MemberItem.create(member, item, LocalDateTime.now(), quantity);
+                    memberItemRepository.save(memberItem);
+                }
+
+                Cache cache = cacheManager.getCache("inventoryItem");
+                if (cache != null) {
+                    String key = "member:" + memberId + ":item:" + memberItem.getId();
+                    cache.evict(key);
+                }
+            }
+
+            asset.setClaimed(true);
+            asset.setClaimedAt(LocalDateTime.now());
+        });
     }
 
     @Transactional
