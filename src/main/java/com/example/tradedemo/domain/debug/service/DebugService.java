@@ -9,27 +9,32 @@ import com.example.tradedemo.domain.members.dto.GetMemberItemResponse;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.entity.MemberItem;
 import com.example.tradedemo.domain.members.repository.MemberItemRepository;
-import com.example.tradedemo.domain.members.service.MemberService;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.tradedemo.domain.members.repository.MemberRepository;
 
 @Service
 @RequiredArgsConstructor
 @Profile("!prod")
 @ConditionalOnProperty(name = "app.debug-api.enabled", havingValue = "true")
 public class DebugService {
-    private final MemberService memberService;
+    private final MemberRepository memberRepository;
     private final MemberItemRepository memberItemRepository;
     private final ItemRepository itemRepository;
 
     @Transactional
-    public GetMemberItemResponse giveMemberItem(Long memberId, GiveMemberItemRequest req) {
+    public GetMemberItemResponse giveMemberItem(GiveMemberItemRequest req) {
+        Member member = memberRepository
+            .findByEmail(req.getMemberEmail()).orElseThrow(
+                    () -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND)
+            );
+
         MemberItem memberItem = memberItemRepository
-                .findByMemberIdAndItemId(memberId, req.getItemId())
+                .findByMemberIdAndItemId(member.getId(), req.getItemId())
                 .orElse(null);
 
         if (memberItem != null) {
@@ -41,7 +46,6 @@ public class DebugService {
                 acquiredAt = LocalDateTime.now();
             }
 
-            Member member = memberService.findMember(memberId);
             Item item = itemRepository
                     .findById(req.getItemId())
                     .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_ITEM_NOT_FOUND));

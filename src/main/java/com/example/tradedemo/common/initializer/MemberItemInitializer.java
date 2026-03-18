@@ -48,13 +48,14 @@ public class MemberItemInitializer implements ApplicationRunner {
 
         // 모모한테 총과 마법 지팡이를 선물
         GiveMemberItemRequest req = new GiveMemberItemRequest();
+        req.setMemberEmail(momo.getEmail());
 
         req.setItemId(gun.getId());
         req.setQuantity(10L);
-        debugService.giveMemberItem(momo.getId(), req);
+        debugService.giveMemberItem(req);
 
         req.setItemId(wand.getId());
         req.setQuantity(5L);
-        debugService.giveMemberItem(momo.getId(), req);
+        debugService.giveMemberItem(req);
     }
 }

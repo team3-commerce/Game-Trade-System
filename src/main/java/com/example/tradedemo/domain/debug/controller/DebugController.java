@@ -21,11 +21,11 @@ public class DebugController {
 
     private final DebugService debugService;
     
-    @PostMapping("/members/{memberId}/inventory")
+    @PostMapping("/give-member-item")
     public ResponseEntity<ApiResponse<GetMemberItemResponse>> getItem(
-            @PathVariable Long memberId, @Valid @RequestBody GiveMemberItemRequest request) {
+            @Valid @RequestBody GiveMemberItemRequest request) {
 
-        GetMemberItemResponse res = debugService.giveMemberItem(memberId, request);
+        GetMemberItemResponse res = debugService.giveMemberItem(request);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), res));
