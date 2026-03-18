@@ -43,6 +43,7 @@ public class PendingAssetService {
 
     private final PendingAssetLockService pendingAssetLockService;
     private final PendingAssetTransactionalService pendingAssetTransactionalService;
+    private final MemberItemCacheService memberItemCacheService;
 
     /**
      * 수령 대기 테이블 조회
@@ -178,14 +179,13 @@ public class PendingAssetService {
 
     /**
      * 상품 구매
-     * @param marketListing
-     * @param order
-     * @param buyer
+     * @param memberId
+     * @param pendingAssetId
      */
     @Transactional
     public void claimPendingAssetV3(Long memberId, Long pendingAssetId) {
         PendingAsset asset = pendingAssetRepository
-                .findByIdAndMemberId(pendingAssetId, memberId)
+                .findByIdAndMemberIdWithLock(pendingAssetId, memberId)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FORBIDDEN));
 
         if (asset.getIsClaimed()) {
