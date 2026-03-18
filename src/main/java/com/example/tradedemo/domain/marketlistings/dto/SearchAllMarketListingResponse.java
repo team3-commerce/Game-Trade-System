@@ -5,16 +5,20 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
+@Setter
 @AllArgsConstructor
+@NoArgsConstructor
 public class SearchAllMarketListingResponse {
-    private final Long marketListingId;
-    private final String itemName;
-    private final BigDecimal totalPrice;
-    private final Long quantity;
-    private final MarketListingStatus status;
-    private final LocalDateTime saleEndAt;
-    private final LocalDateTime createdAt;
-    private final LocalDateTime modifiedAt;
+    private Long marketListingId;
+    private String itemName;
+    private BigDecimal totalPrice;
+    private Long quantity;
+    private MarketListingStatus status;
+    private LocalDateTime saleEndAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime modifiedAt;
 }

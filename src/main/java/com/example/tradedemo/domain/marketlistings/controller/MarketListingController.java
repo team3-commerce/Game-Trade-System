@@ -54,8 +54,6 @@ public class MarketListingController {
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), res));
     }
 
-
-
     /**
      *  본인 마켓 상품 전체 조회
      *  sortTotalPrice, sortSaleEndAt 값을 asc/desc 로 전달하여 정렬 조건 추가 가능
@@ -114,6 +112,22 @@ public class MarketListingController {
                         details.getMember().getId(), keyword, sortTotalPrice, sortSaleEndAt, pageable)));
     }
 
+    @GetMapping("/api/v3/market-listings")
+    public ResponseEntity<ApiResponse<PageResponse<SearchAllMarketListingResponse>>> getAllMarketListingV3(
+            @AuthenticationPrincipal PrincipalDetails details,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String sortTotalPrice,
+            @RequestParam(required = false) String sortSaleEndAt,
+            @RequestParam(defaultValue = "0") int page) {
+
+        Pageable pageable = PageRequest.of(page, 10);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                String.valueOf(HttpStatus.OK.value()),
+                marketListingService.getAllMarketListingV3(
+                        details.getMember().getId(), keyword, sortTotalPrice, sortSaleEndAt, pageable)));
+    }
+
     /**
      * 마켓 상품 단건 조회
      */
@@ -129,6 +143,13 @@ public class MarketListingController {
             @PathVariable Long marketListingId) {
         return ResponseEntity.ok(ApiResponse.success(
                 String.valueOf(HttpStatus.OK), marketListingService.getMarketListingV2(marketListingId)));
+    }
+
+    @GetMapping("/api/v3/market-listings/{marketListingId}")
+    public ResponseEntity<ApiResponse<SearchMarketListingResponse>> getMarketListingV3(
+            @PathVariable Long marketListingId) {
+        return ResponseEntity.ok(ApiResponse.success(
+                String.valueOf(HttpStatus.OK), marketListingService.getMarketListingV3(marketListingId)));
     }
 
     /**
@@ -159,6 +180,14 @@ public class MarketListingController {
     public ResponseEntity<ApiResponse<SearchMarketListingResponse>> cancelMarketListingV2(
             @AuthenticationPrincipal PrincipalDetails details, @PathVariable Long marketListingId) {
         SearchMarketListingResponse res = marketListingService.cancelMarketListingV2(details, marketListingId);
+
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK), res));
+    }
+
+    @PatchMapping("/api/v3/market-listings/{marketListingId}")
+    public ResponseEntity<ApiResponse<SearchMarketListingResponse>> cancelMarketListingV3(
+            @AuthenticationPrincipal PrincipalDetails details, @PathVariable Long marketListingId) {
+        SearchMarketListingResponse res = marketListingService.cancelMarketListingV3(details, marketListingId);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK), res));
     }
