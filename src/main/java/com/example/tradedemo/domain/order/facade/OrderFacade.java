@@ -5,6 +5,7 @@ import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
+import com.example.tradedemo.domain.marketlistings.service.MarketListingCacheService;
 import com.example.tradedemo.domain.marketlistings.service.MarketListingService;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.service.MemberService;
@@ -38,6 +39,7 @@ public class OrderFacade {
     private final MemberService memberService;
     private final PendingAssetService pendingAssetService;
     private final MarketListingService marketListingService;
+    private final MarketListingCacheService  marketListingCacheService;
 
     @Transactional
     public void purchase(Long buyerId, Long marketListingId) {
@@ -78,6 +80,28 @@ public class OrderFacade {
         pendingAssetService.createTradePendingAsset(marketListing, order, buyer);
 
         marketListing.updateStatus(MarketListingStatus.SOLD);
+
+        return CreateOrderResponse.create(order, marketListing.getItemName());
+    }
+
+    @Transactional
+    public CreateOrderResponse purchaseV3(Long buyerId, Long marketListingId) {
+        Member buyer = memberService.findMember(buyerId);
+        Wallet wallet = walletService.findWallet(buyerId);
+        MarketListing marketListing = marketListingService.findMarketListing(marketListingId);
+
+        marketListing.validateSelling();
+        wallet.checkBalanceAvailable(marketListing.getTotalPrice());
+
+        Order order = orderService.createOrder(buyer, marketListing);
+
+        walletService.payForOrder(wallet, marketListing, order);
+        pendingAssetService.createTradePendingAsset(marketListing, order, buyer);
+
+        marketListing.updateStatus(MarketListingStatus.SOLD);
+
+        marketListingCacheService.deleteMarketListingFirstPage();
+        marketListingCacheService.deleteMarketListingItem(marketListingId);
 
         return CreateOrderResponse.create(order, marketListing.getItemName());
     }
