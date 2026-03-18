@@ -2,10 +2,7 @@ package com.example.tradedemo.auth.controller;
 
 import static com.example.tradedemo.auth.consts.AuthConst.BEARER_PREFIX;
 
-import com.example.tradedemo.auth.dto.LoginAuthRequest;
-import com.example.tradedemo.auth.dto.PrincipalDetails;
-import com.example.tradedemo.auth.dto.SignupAuthRequest;
-import com.example.tradedemo.auth.dto.TokenAuthResponse;
+import com.example.tradedemo.auth.dto.*;
 import com.example.tradedemo.auth.service.AuthService;
 import com.example.tradedemo.common.dto.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,10 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api")
@@ -77,5 +71,34 @@ public class AuthController {
         TokenAuthResponse tokenResponse =
                 authService.reissueV2(principalDetails.getEmail(), tokenAuthRequest.refreshToken());
         return ResponseEntity.ok(ApiResponse.success("200", tokenResponse));
+    }
+
+    /**
+     * 소셜 가입자 비밀번호 설정 (V2)
+     */
+    @PatchMapping("/v2/auth/password")
+    public ResponseEntity<ApiResponse<Void>> setPassword(
+            @AuthenticationPrincipal PrincipalDetails principalDetails, @Valid @RequestBody SetPasswordRequest request) {
+        authService.setPassword(principalDetails.getEmail(), request);
+        return ResponseEntity.ok(ApiResponse.success("200", null));
+    }
+
+    /**
+     * 소셜 연동 해제 (V2)
+     */
+    @DeleteMapping("/v2/auth/social")
+    public ResponseEntity<ApiResponse<Void>> unlinkSocial(
+            @AuthenticationPrincipal PrincipalDetails principalDetails, @Valid @RequestBody UnlinkSocialRequest request) {
+        authService.unlinkSocial(principalDetails.getEmail(), request);
+        return ResponseEntity.ok(ApiResponse.success("200", null));
+    }
+
+    /**
+     * 소셜 로그인 성공 후 토큰 확인용 임시 엔드포인트
+     */
+    @GetMapping("/v2/auth/oauth-success")
+    public ResponseEntity<ApiResponse<TokenAuthResponse>> oauthSuccess(
+            @RequestParam String accessToken, @RequestParam String refreshToken) {
+        return ResponseEntity.ok(ApiResponse.success("200", new TokenAuthResponse(accessToken, refreshToken)));
     }
 }
