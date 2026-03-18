@@ -20,6 +20,7 @@ import com.example.tradedemo.domain.wallet.repository.WalletHistoryRepository;
 import com.example.tradedemo.domain.wallet.repository.WalletRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -123,7 +124,8 @@ class PendingAssetServiceTest {
     }
 
     @Test
-    void 수령하기_연속_2번_클릭() throws InterruptedException {
+    @DisplayName("V1 비관적 락 - 수령하기 동시 2번 클릭")
+    void 수령하기_비관적락_V1() throws InterruptedException {
         int threadCount = 2;
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
@@ -160,6 +162,49 @@ class PendingAssetServiceTest {
     /*
     ========================================
     비관적 락
+    동시 요청 수: 2(100원 수령하기 2번 누름)
+    최종 잔액:    100.00
+    예상 잔액:    100
+    ========================================
+    */
+
+    @Test
+    @DisplayName("V2 Redis 분산락 - 수령하기 동시 2번 클릭")
+    void 수령하기_Redis_분산락_V2() throws InterruptedException {
+        int threadCount = 2;
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        Runnable task = () -> {
+            try {
+                // V2는 내부에서 트랜잭션 처리하므로 TransactionTemplate 불필요
+                pendingAssetService.claimPendingAssetV2(buyer.getId(), pendingAsset.getId());
+            } catch (Exception e) {
+                System.out.println("Exception caught: " + e.getMessage());
+            } finally {
+                latch.countDown();
+            }
+        };
+
+        for (int i = 0; i < threadCount; i++) {
+            executor.submit(task);
+        }
+
+        latch.await();
+        executor.shutdown();
+
+        PendingAsset assetFromDb = pendingAssetRepository.findById(pendingAsset.getId())
+                .orElseThrow();
+        assertTrue(assetFromDb.getIsClaimed(), "PendingAsset은 반드시 수령 처리되어야 함");
+
+        Wallet walletFromDb = walletRepository.findByMemberId(buyer.getId())
+                .orElseThrow();
+        assertEquals(0, BigDecimal.valueOf(100).compareTo(walletFromDb.getBalance()),
+                "Wallet 잔액은 100이어야 함 (중복 수령 방지)");
+    }
+    /*
+    ========================================
+    Redis 분산 락
     동시 요청 수: 2(100원 수령하기 2번 누름)
     최종 잔액:    100.00
     예상 잔액:    100

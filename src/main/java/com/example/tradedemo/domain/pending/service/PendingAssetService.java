@@ -44,8 +44,6 @@ public class PendingAssetService {
     private final ItemRepository itemRepository;
     private final WalletHistoryRepository walletHistoryRepository;
 
-    private final CacheManager cacheManager;
-
     private final PendingAssetLockService pendingAssetLockService;
 
     /**
@@ -159,7 +157,6 @@ public class PendingAssetService {
      * @param memberId
      * @param pendingAssetId
      */
-    @Transactional
     public void claimPendingAssetV2(Long memberId, Long pendingAssetId) {
         /**
          * Redis 락
@@ -169,79 +166,17 @@ public class PendingAssetService {
         String lockKey = "pending-asset:" + pendingAssetId;
 
         pendingAssetLockService.executeWithLock(lockKey, () ->
-            executeWithLockclaimPendingAssetV2Internal(memberId, pendingAssetId)
+                /**
+                 * 트랜젝션 -> 락 구조를 피하기 위해 PendingAssetLockService로 비즈니스로직을 옮겼다.
+                 * 다른 클래스에 있어야 락(executeWithLock) -> 트랜젝션
+                 */
+                pendingAssetLockService.executeWithLockclaimPendingAssetV2Internal(memberId, pendingAssetId)
         );
     }
-
     /**
-     * Redis 락의 executeWithLock의 비즈니스 로직 : action
-     * @param memberId
-     * @param pendingAssetId
+     * executeWithLockclaimPendingAssetV2Internal 있던 자리
+     * 여기에 있던 거 그대로 복사해서 PendingAssetLockService에 옮김
      */
-    @CacheEvict(cacheNames = "inventoryList", allEntries = true)
-    public void executeWithLockclaimPendingAssetV2Internal(Long memberId, Long pendingAssetId) {
-
-        /**
-         * 비관적 락
-         */
-        PendingAsset asset = pendingAssetRepository
-                .findByIdAndMemberIdWithLock(pendingAssetId, memberId)
-                   .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FORBIDDEN));
-
-        if (asset.getIsClaimed()) {
-            throw new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FOUND_EXCEPTION);
-        }
-
-        if (asset.getType() == Type.MONEY) {
-            Wallet wallet = walletRepository.findByMemberId(memberId)
-                    .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_WALLET_NOT_FOUND));
-
-            wallet.addBalance(asset.getMoneyAmount());
-
-               walletHistoryRepository.save(WalletHistories.create(
-                       asset.getMoneyAmount(),
-                       WalletStatus.PURCHASE,
-                       wallet.getBalance(),
-                       wallet,
-                       null,
-                       wallet.getMember(),
-                       asset.getOrder()
-                       )
-               );
-        }
-
-        if (asset.getType() == Type.ITEM) {
-            Long itemId = asset.getMarketListing()
-                    .getMemberItem()
-                    .getItem()
-                    .getId();
-
-            Long quantity = asset.getItemQuantity();
-
-            MemberItem memberItem = memberItemRepository
-                    .findByMemberIdAndItemId(memberId, itemId)
-                    .orElse(null);
-
-            if (memberItem != null) {
-                memberItem.increase(quantity);
-            } else {
-                Member member = memberRepository.getReferenceById(memberId);
-                Item item = itemRepository.getReferenceById(itemId);
-
-                memberItem = MemberItem.create(member, item, LocalDateTime.now(), quantity);
-                memberItemRepository.save(memberItem);
-            }
-
-            Cache cache = cacheManager.getCache("inventoryItem");
-            if (cache != null) {
-                String key = "member:" + memberId + ":item:" + memberItem.getId();
-                cache.evict(key);
-            }
-        }
-
-        asset.setClaimed(true);
-        asset.setClaimedAt(LocalDateTime.now());
-    }
 
     /**
      * 상품 구매
