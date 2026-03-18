@@ -235,12 +235,10 @@ public class MarketListingService {
 
         boolean isDefaultFirstPage = isDefaultFirstPage(keyword, sortTotalPrice, sortSaleEndAt, pageable);
 
-        System.out.println(isDefaultFirstPage);
-
         // 캐시에 찾는 데이터가 있는지 먼저 확인
         if(isDefaultFirstPage) {
             PageResponse<SearchAllMarketListingResponse> cached = marketListingCacheService.getMarketListingFirstPage();
-            System.out.println(cached);
+
             if(cached!=null){
                 return cached;
             }
@@ -252,7 +250,6 @@ public class MarketListingService {
 
         if(isDefaultFirstPage) {
             marketListingCacheService.setMarketListingFirstPage(result);
-            System.out.println(result);
         }
 
         return result;
