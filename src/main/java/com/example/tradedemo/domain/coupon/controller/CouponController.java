@@ -42,6 +42,14 @@ public class CouponController {
                 .body(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
     }
 
+    @PostMapping("/api/v3/admin/coupon-policies")
+    public ResponseEntity<ApiResponse<CreateCouponPolicyResponse>> createCouponPolicyV3(
+            @Valid @RequestBody CreateCouponPolicyRequest request) {
+        CreateCouponPolicyResponse response = couponService.createCouponPolicyV3(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
+    }
+
 
     /**
      * 쿠폰 정책 조회
@@ -49,7 +57,7 @@ public class CouponController {
      * issueType 값을 FIRST_COME/AUTO_SIGNUP 으로 전달하여 정렬 조건 추가 가능
      * issueType FIRST_COME/AUTO_SIGNUP 외 다른 값 입력 시 무시 -> 조건 추가 X
      */
-    @GetMapping("/api/v1/coupon-policies")
+    @GetMapping("/api/v1/couponPolicies")
     public ResponseEntity<ApiResponse<PageResponse<SearchAllCouponPolicyResponse>>> searchAllCouponPolicies(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(required = false) String sortCreatedAt,
@@ -58,12 +66,12 @@ public class CouponController {
         Pageable pageable = PageRequest.of(page, 10);
 
         PageResponse<SearchAllCouponPolicyResponse> response =
-                PageResponse.of(couponService.searchAllCouponPolicies(sortCreatedAt, issueType, pageable));
+                couponService.searchAllCouponPolicies(sortCreatedAt, issueType, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
     }
 
-    @GetMapping("/api/v2/coupon-policies")
+    @GetMapping("/api/v2/couponPolicies")
     public ResponseEntity<ApiResponse<PageResponse<SearchAllCouponPolicyResponse>>> searchAllCouponPoliciesV2(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(required = false) String sortCreatedAt,
@@ -72,7 +80,21 @@ public class CouponController {
         Pageable pageable = PageRequest.of(page, 10);
 
         PageResponse<SearchAllCouponPolicyResponse> response =
-                PageResponse.of(couponService.searchAllCouponPoliciesV2(sortCreatedAt, issueType, pageable));
+                couponService.searchAllCouponPoliciesV2(sortCreatedAt, issueType, pageable);
+
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
+    }
+
+    @GetMapping("/api/v3/couponPolicies")
+    public ResponseEntity<ApiResponse<PageResponse<SearchAllCouponPolicyResponse>>> searchAllCouponPoliciesV3(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) String sortCreatedAt,
+            @RequestParam(required = false) String issueType) {
+
+        Pageable pageable = PageRequest.of(page, 10);
+
+        PageResponse<SearchAllCouponPolicyResponse> response =
+                couponService.searchAllCouponPoliciesV3(sortCreatedAt, issueType, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
     }
@@ -91,7 +113,7 @@ public class CouponController {
         Pageable pageable = PageRequest.of(page, 10);
         Long memberId = principalDetails.getMember().getId();
         PageResponse<SearchAllMemberCouponResponse> response =
-                PageResponse.of(couponService.getAllMemberCoupon(memberId, status, pageable));
+                couponService.getAllMemberCoupon(memberId, status, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
     }
@@ -105,7 +127,21 @@ public class CouponController {
         Pageable pageable = PageRequest.of(page, 10);
         Long memberId = principalDetails.getMember().getId();
         PageResponse<SearchAllMemberCouponResponse> response =
-                PageResponse.of(couponService.getAllMemberCouponV2(memberId, status, pageable));
+                couponService.getAllMemberCouponV2(memberId, status, pageable);
+
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
+    }
+
+    @GetMapping("/api/v3/me/coupons")
+    public ResponseEntity<ApiResponse<PageResponse<SearchAllMemberCouponResponse>>> getAllMemberCouponV3(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) String status,
+            @AuthenticationPrincipal PrincipalDetails principalDetails) {
+
+        Pageable pageable = PageRequest.of(page, 10);
+        Long memberId = principalDetails.getMember().getId();
+        PageResponse<SearchAllMemberCouponResponse> response =
+                couponService.getAllMemberCouponV3(memberId, status, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
     }
@@ -131,6 +167,16 @@ public class CouponController {
         Long memberId = principalDetails.getMember().getId();
 
         SearchAllMemberCouponResponse response = couponService.getMemberCouponV2(memberId, couponId);
+
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
+    }
+
+    @GetMapping("/api/v3/me/coupons/{couponId}")
+    public ResponseEntity<ApiResponse<SearchAllMemberCouponResponse>> getMemberCouponV3(
+            @PathVariable Long couponId, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+
+        Long memberId = principalDetails.getMember().getId();
+        SearchAllMemberCouponResponse response = couponService.getMemberCouponV3(memberId, couponId);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
     }
@@ -207,6 +253,17 @@ public class CouponController {
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), CouponMessage.COUPON_USED));
     }
 
+    @PostMapping("/api/v3/me/coupons/{memberCouponId}/use")
+    public ResponseEntity<ApiResponse<String>> useCouponV3(
+            @PathVariable Long memberCouponId, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+
+        Long memberId = principalDetails.getMember().getId();
+        Member member = principalDetails.getMember();
+        couponFacade.useCouponV3(memberId, memberCouponId, member);
+
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), CouponMessage.COUPON_USED));
+    }
+
     /**
      * 내 쿠폰 사용 내역 조회
      * status 값을 USED/EXPIRED 로 전달하여 필터 조건 추가 가능
@@ -222,7 +279,7 @@ public class CouponController {
         Pageable pageable = PageRequest.of(page, 10);
         Long memberId = principalDetails.getMember().getId();
         PageResponse<SearchAllCouponHistoryResponse> response =
-                PageResponse.of(couponService.getAllCouponHistory(memberId, status, sortCreatedAt, pageable));
+                couponService.getAllCouponHistory(memberId, status, sortCreatedAt, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
     }
@@ -237,7 +294,22 @@ public class CouponController {
         Pageable pageable = PageRequest.of(page, 10);
         Long memberId = principalDetails.getMember().getId();
         PageResponse<SearchAllCouponHistoryResponse> response =
-                PageResponse.of(couponService.getAllCouponHistoryV2(memberId, status, sortCreatedAt, pageable));
+                couponService.getAllCouponHistoryV2(memberId, status, sortCreatedAt, pageable);
+
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
+    }
+
+    @GetMapping("/api/v3/me/coupons-histories")
+    public ResponseEntity<ApiResponse<PageResponse<SearchAllCouponHistoryResponse>>> getAllCouponHistoryV3(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String sortCreatedAt,
+            @AuthenticationPrincipal PrincipalDetails principalDetails) {
+
+        Pageable pageable = PageRequest.of(page, 10);
+        Long memberId = principalDetails.getMember().getId();
+        PageResponse<SearchAllCouponHistoryResponse> response =
+                couponService.getAllCouponHistoryV3(memberId, status, sortCreatedAt, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
     }
