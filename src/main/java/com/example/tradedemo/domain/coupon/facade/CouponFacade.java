@@ -2,6 +2,7 @@ package com.example.tradedemo.domain.coupon.facade;
 
 import com.example.tradedemo.domain.coupon.entity.CouponHistory;
 import com.example.tradedemo.domain.coupon.exception.CouponExpiredException;
+import com.example.tradedemo.domain.coupon.service.CouponCacheService;
 import com.example.tradedemo.domain.coupon.service.CouponService;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.wallet.entity.Wallet;
@@ -18,6 +19,7 @@ public class CouponFacade {
 
     private final CouponService couponService;
     private final WalletService walletService;
+    private final CouponCacheService couponCacheService;
 
     @Transactional(noRollbackFor = CouponExpiredException.class)
     public void useCoupon(Long memberId, Long memberCouponId, Member member) {
@@ -48,5 +50,18 @@ public class CouponFacade {
 
         // 지갑 잔액 추가 + 지갑 히스토리 저장
         walletService.addCouponBalance(wallet, couponHistory, member);
+    }
+
+    @Transactional(noRollbackFor = CouponExpiredException.class)
+    public void useCouponV3(Long memberId, Long memberCouponId, Member member) {
+        CouponHistory couponHistory = couponService.useCoupon(memberId, memberCouponId, member);
+
+        Wallet wallet = walletService.findWallet(memberId);
+        walletService.addCouponBalance(wallet, couponHistory, member);
+
+        // Redis 캐시 무효화
+        couponCacheService.evictAllMemberCoupons(memberId);
+        couponCacheService.evictMemberCouponItem(memberId, memberCouponId);
+        couponCacheService.evictAllCouponHistories(memberId);
     }
 }
