@@ -9,6 +9,7 @@ import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.entity.MemberItem;
 import com.example.tradedemo.domain.members.repository.MemberItemRepository;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
+import com.example.tradedemo.domain.members.service.MemberItemCacheService;
 import com.example.tradedemo.domain.order.entity.Order;
 import com.example.tradedemo.domain.pending.dto.PendingAssetResponse;
 import com.example.tradedemo.domain.pending.entity.PendingAsset;
@@ -181,6 +182,64 @@ public class PendingAssetService {
      * @param order
      * @param buyer
      */
+    @Transactional
+    public void claimPendingAssetV3(Long memberId, Long pendingAssetId) {
+        PendingAsset asset = pendingAssetRepository
+                .findByIdAndMemberId(pendingAssetId, memberId)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FORBIDDEN));
+
+        if (asset.getIsClaimed()) {
+            throw new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FOUND_EXCEPTION);
+        }
+
+        if (asset.getType() == Type.MONEY) {
+            Wallet wallet = walletRepository.findByMemberId(memberId)
+                    .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_WALLET_NOT_FOUND));
+
+            wallet.addBalance(asset.getMoneyAmount());
+
+            walletHistoryRepository.save(WalletHistories.create(
+                            asset.getMoneyAmount(),
+                            WalletStatus.PURCHASE,
+                            wallet.getBalance(),
+                            wallet,
+                            null,
+                            wallet.getMember(),
+                            asset.getOrder()
+                    )
+            );
+        }
+
+        if (asset.getType() == Type.ITEM) {
+            Long itemId = asset.getMarketListing()
+                    .getMemberItem()
+                    .getItem()
+                    .getId();
+
+            Long quantity = asset.getItemQuantity();
+
+            MemberItem memberItem = memberItemRepository
+                    .findByMemberIdAndItemId(memberId, itemId)
+                    .orElse(null);
+
+            if (memberItem != null) {
+                memberItem.increase(quantity);
+            } else {
+                Member member = memberRepository.getReferenceById(memberId);
+                Item item = itemRepository.getReferenceById(itemId);
+
+                memberItem = MemberItem.create(member, item, LocalDateTime.now(), quantity);
+                memberItemRepository.save(memberItem);
+            }
+
+            memberItemCacheService.deleteMemberItem(memberId, memberItem.getId());
+            memberItemCacheService.deleteMemberItemList(memberId);
+        }
+
+        asset.setClaimed(true);
+        asset.setClaimedAt(LocalDateTime.now());
+    }
+
     @Transactional
     public void createTradePendingAsset(MarketListing marketListing, Order order, Member buyer) {
         PendingAsset sellerPending = PendingAsset.create(
