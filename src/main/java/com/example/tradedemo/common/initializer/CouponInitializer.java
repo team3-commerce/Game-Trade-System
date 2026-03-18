@@ -34,13 +34,11 @@ public class CouponInitializer implements ApplicationRunner {
     private final CouponService couponService;
 
     public void run(ApplicationArguments args) throws Exception {
-        couponService.createCouponPolicyV2(CreateCouponPolicyRequest.of(
-            "회원가입 웰컴 쿠폰",
-            new BigDecimal(20000),
-            IssueType.AUTO_SIGNUP,
-            null,
-            null,
-            null
-        ));
+        CreateCouponPolicyRequest req = new CreateCouponPolicyRequest();
+        req.setName("회원가입 웰컴 쿠폰");
+        req.setMoneyAmount(new BigDecimal(20000));
+        req.setIssueType(IssueType.AUTO_SIGNUP);
+
+        couponService.createCouponPolicyV2(req);
     }
 }
