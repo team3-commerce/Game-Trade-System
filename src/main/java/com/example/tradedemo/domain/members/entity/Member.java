@@ -62,7 +62,7 @@ public class Member extends Base {
     }
 
     public static Member createSocial(String email, String nickname, MemberRole role) {
-        return new Member(email, "SOCIAL_USER", nickname, role);
+        return new Member(email, null, nickname, role);
     }
 
     // 로그인 시 시간 업데이트

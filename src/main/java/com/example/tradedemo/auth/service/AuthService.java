@@ -147,6 +147,10 @@ public class AuthService {
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
 
+        if (member.getPassword() != null) {
+            throw new ServiceException(ErrorEnum.ERR_AUTH_PASSWORD_ALREADY_EXISTS);
+        }
+
         member.updatePassword(passwordEncoder.encode(request.newPassword()));
     }
 
