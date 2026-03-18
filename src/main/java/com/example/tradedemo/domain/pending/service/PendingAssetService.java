@@ -21,10 +21,6 @@ import com.example.tradedemo.domain.wallet.enums.WalletStatus;
 import com.example.tradedemo.domain.wallet.repository.WalletHistoryRepository;
 import com.example.tradedemo.domain.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +41,7 @@ public class PendingAssetService {
     private final WalletHistoryRepository walletHistoryRepository;
 
     private final PendingAssetLockService pendingAssetLockService;
+    private final PendingAssetTransactionalService pendingAssetTransactionalService;
 
     /**
      * 수령 대기 테이블 조회
@@ -170,7 +167,7 @@ public class PendingAssetService {
                  * 트랜젝션 -> 락 구조를 피하기 위해 PendingAssetLockService로 비즈니스로직을 옮겼다.
                  * 다른 클래스에 있어야 락(executeWithLock) -> 트랜젝션
                  */
-                pendingAssetLockService.executeWithLockclaimPendingAssetV2Internal(memberId, pendingAssetId)
+                pendingAssetTransactionalService.executeWithLockclaimPendingAssetV2Internal(memberId, pendingAssetId)
         );
     }
     /**
