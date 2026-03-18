@@ -5,6 +5,7 @@ import com.example.tradedemo.common.dto.ApiResponse;
 import com.example.tradedemo.common.dto.PageResponse;
 import com.example.tradedemo.domain.coupon.constants.CouponMessage;
 import com.example.tradedemo.domain.coupon.dto.*;
+import com.example.tradedemo.domain.coupon.facade.CouponFacade;
 import com.example.tradedemo.domain.coupon.service.CouponService;
 import com.example.tradedemo.domain.members.entity.Member;
 import jakarta.validation.Valid;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class CouponController {
     private final CouponService couponService;
+    private final CouponFacade couponFacade;
 
     /**
      * 쿠폰 정책 생성
@@ -189,7 +191,7 @@ public class CouponController {
 
         Long memberId = principalDetails.getMember().getId();
         Member member = principalDetails.getMember();
-        couponService.useCoupon(memberId, memberCouponId, member);
+        couponFacade.useCoupon(memberId, memberCouponId, member);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), CouponMessage.COUPON_USED));
     }
@@ -200,7 +202,7 @@ public class CouponController {
 
         Long memberId = principalDetails.getMember().getId();
         Member member = principalDetails.getMember();
-        couponService.useCouponV2(memberId, memberCouponId, member);
+        couponFacade.useCouponV2(memberId, memberCouponId, member);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), CouponMessage.COUPON_USED));
     }

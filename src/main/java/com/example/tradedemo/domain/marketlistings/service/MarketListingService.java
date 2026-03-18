@@ -13,11 +13,13 @@ import com.example.tradedemo.domain.marketlistings.dto.SearchTrendingKeywordResp
 import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepository;
+import com.example.tradedemo.domain.members.consts.MemberItemConst;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.entity.MemberItem;
 import com.example.tradedemo.domain.members.enums.MemberRole;
 import com.example.tradedemo.domain.members.repository.MemberItemRepository;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
+import com.example.tradedemo.domain.members.service.MemberItemCacheService;
 import com.example.tradedemo.domain.pending.entity.PendingAsset;
 import com.example.tradedemo.domain.pending.enums.PendingType;
 import com.example.tradedemo.domain.pending.enums.Type;
@@ -44,6 +46,8 @@ public class MarketListingService {
     private final MemberRepository memberRepository;
     private final MarketListingCacheService marketListingCacheService;
     private final PendingAssetRepository pendingAssetRepository;
+
+    private final MemberItemCacheService memberItemCacheService;
 
     /**
      * 상품 등록
@@ -141,6 +145,47 @@ public class MarketListingService {
 
         return GetMarketListingResponse.create(marketListing, memberItem.getItem());
     }
+
+    @Transactional
+    public GetMarketListingResponse createV3(Long memberId, CreateMarketListingRequest request) {
+        Member member = memberRepository
+                .findById(memberId)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
+
+        MemberItem memberItem = memberItemRepository
+                .findById(request.getMemberItemId())
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_ITEM_NOT_FOUND));
+
+        if (!memberItem.getMember().getId().equals(member.getId())) {
+            throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_OWNER_MISMATCH);
+        }
+
+        if (memberItem.getQuantity() < request.getQuantity()) {
+            throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_OVER_SELLING);
+        }
+
+        memberItem.decrease(request.getQuantity());
+
+        BigDecimal unitPrice = request.getTotalPrice()
+                .divide(BigDecimal.valueOf(request.getQuantity()), 0, RoundingMode.DOWN); // 0 방향으로 반내림
+
+        MarketListing marketListing = MarketListing.create(
+                memberItem.getItem().getName(),
+                request.getTotalPrice(),
+                unitPrice,
+                request.getQuantity(),
+                request.getSalesDuration().getDuration(),
+                memberItem,
+                member);
+
+        marketListingRepository.saveAndFlush(marketListing);
+
+        memberItemCacheService.deleteMemberItemList(memberId);
+        memberItemCacheService.deleteMemberItem(memberId, memberItem.getId());
+
+        return GetMarketListingResponse.create(marketListing, memberItem.getItem());
+    }
+
 
     /**
      * 마켓 상품 전체 조회
