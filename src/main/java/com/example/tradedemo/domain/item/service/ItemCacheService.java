@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.jspecify.annotations.Nullable;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -27,22 +29,24 @@ public class ItemCacheService {
         redisTemplate.opsForValue().set(key, result, ItemConst.ITEM_CACHE_LIST_TTL);
     }
 
-    public Optional<GetItemResponse> getItem(String key) {
+    @Nullable
+    public GetItemResponse getItem(String key) {
         Object value = redisTemplate.opsForValue().get(key);
         if (value == null) {
-            return Optional.empty();
+            return null;
         }
 
-        return Optional.of(objectMapper.convertValue(value, new TypeReference<GetItemResponse>() {}));
+        return objectMapper.convertValue(value, new TypeReference<GetItemResponse>() {});
     }
 
-    public Optional<PageResponse<GetItemResponse>> getItemList(String key) {
+    @Nullable
+    public PageResponse<GetItemResponse> getItemList(String key) {
         Object value = redisTemplate.opsForValue().get(key);
         if (value == null) {
-            return Optional.empty();
+            return null;
         }
 
-        return Optional.of(objectMapper.convertValue(value, new TypeReference<PageResponse<GetItemResponse>>() {}));
+        return objectMapper.convertValue(value, new TypeReference<PageResponse<GetItemResponse>>() {});
     }
 
     public boolean shouldCacheSearchItemRequest(SearchItemRequest req) {

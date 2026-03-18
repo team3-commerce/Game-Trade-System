@@ -6,8 +6,6 @@ import com.example.tradedemo.domain.item.entity.Item;
 import com.example.tradedemo.domain.item.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
 
-import java.util.Optional;
-
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
@@ -66,9 +64,9 @@ public class ItemService {
     public GetItemResponse getItemV3(Long itemId) {
         String cacheKey = itemCacheService.getItemIdCacheKey(itemId);
 
-        Optional<GetItemResponse> cached = itemCacheService.getItem(cacheKey);
-        if (cached.isPresent()) {
-            return cached.get();
+        GetItemResponse cached = itemCacheService.getItem(cacheKey);
+        if (cached != null) {
+            return cached;
         }
 
         Item item = itemRepository.findById(itemId).orElseThrow(
@@ -93,9 +91,9 @@ public class ItemService {
 
         String cacheKey = itemCacheService.getSearchItemRequestCacheKey(req);
 
-        Optional<PageResponse<GetItemResponse>> cached = itemCacheService.getItemList(cacheKey);
-        if (cached.isPresent()) {
-            return cached.get();
+        PageResponse<GetItemResponse> cached = itemCacheService.getItemList(cacheKey);
+        if (cached != null) {
+            return cached;
         }
 
         Page<Item> items = itemRepository.searchItem(req);
