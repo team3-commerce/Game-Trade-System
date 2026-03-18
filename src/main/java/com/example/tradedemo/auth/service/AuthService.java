@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -32,7 +33,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final CouponService couponService;
     private final WalletRepository walletRepository;
-    private final org.springframework.cache.CacheManager cacheManager;
+    private final CacheManager cacheManager;
 
     /**
      * 회원가입
