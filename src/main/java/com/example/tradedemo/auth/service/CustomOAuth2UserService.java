@@ -34,6 +34,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
         SocialProvider provider = SocialProvider.from(registrationId);
+
+        log.info("Social login attempt - provider: {}, registrationId: {}", provider, registrationId);
         
         if (provider == null) {
             throw new OAuth2AuthenticationException(ErrorEnum.ERR_AUTH_SOCIAL_UNSUPPORTED_PROVIDER.getErrorMessage());
@@ -45,6 +47,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String email = userInfo.getEmail();
         if (email == null || email.trim().isEmpty()) {
             email = userInfo.getId() + "@" + provider.name().toLowerCase() + ".com";
+            log.info("Social login email is empty, generated virtual email: {}", email);
         }
 
         Member member = processOAuth2User(provider, userInfo, email);
