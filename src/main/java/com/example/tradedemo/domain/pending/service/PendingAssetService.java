@@ -22,10 +22,6 @@ import com.example.tradedemo.domain.wallet.enums.WalletStatus;
 import com.example.tradedemo.domain.wallet.repository.WalletHistoryRepository;
 import com.example.tradedemo.domain.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,7 +41,8 @@ public class PendingAssetService {
     private final ItemRepository itemRepository;
     private final WalletHistoryRepository walletHistoryRepository;
 
-    private final CacheManager cacheManager;
+    private final PendingAssetLockService pendingAssetLockService;
+    private final PendingAssetTransactionalService pendingAssetTransactionalService;
     private final MemberItemCacheService memberItemCacheService;
 
     /**
@@ -73,7 +70,7 @@ public class PendingAssetService {
          * 동시에 본인의 자산인지 확인
          */
         PendingAsset asset = pendingAssetRepository
-                        .findByIdAndMemberId(pendingAssetId, memberId)
+                        .findByIdAndMemberIdWithLock(pendingAssetId, memberId)
                         .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FORBIDDEN));
         /**
          * 수령 여부 확인
@@ -153,68 +150,38 @@ public class PendingAssetService {
         asset.setClaimedAt(LocalDateTime.now());
     }
 
-    @Transactional
-    @CacheEvict(cacheNames = "inventoryList", allEntries = true)
+    /**
+     * Redis 락 안에 비관적 락 먹어야 한다.
+     * 경쟁조건 : 락 > 트랜젝션
+     * @param memberId
+     * @param pendingAssetId
+     */
     public void claimPendingAssetV2(Long memberId, Long pendingAssetId) {
-        PendingAsset asset = pendingAssetRepository
-                .findByIdAndMemberId(pendingAssetId, memberId)
-                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FORBIDDEN));
+        /**
+         * Redis 락
+         * @param lockKey 락 키 (예: "pending-asset:1")
+         * @param action  락 안에서 실행할 비즈니스 로직 = 기존 비관적 락 V2
+         */
+        String lockKey = "pending-asset:" + pendingAssetId;
 
-        if (asset.getIsClaimed()) {
-            throw new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FOUND_EXCEPTION);
-        }
-
-        if (asset.getType() == Type.MONEY) {
-            Wallet wallet = walletRepository.findByMemberId(memberId)
-                    .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_WALLET_NOT_FOUND));
-
-            wallet.addBalance(asset.getMoneyAmount());
-
-            walletHistoryRepository.save(WalletHistories.create(
-                            asset.getMoneyAmount(),
-                            WalletStatus.PURCHASE,
-                            wallet.getBalance(),
-                            wallet,
-                            null,
-                            wallet.getMember(),
-                            asset.getOrder()
-                    )
-            );
-        }
-
-        if (asset.getType() == Type.ITEM) {
-            Long itemId = asset.getMarketListing()
-                    .getMemberItem()
-                    .getItem()
-                    .getId();
-
-            Long quantity = asset.getItemQuantity();
-
-            MemberItem memberItem = memberItemRepository
-                    .findByMemberIdAndItemId(memberId, itemId)
-                    .orElse(null);
-
-            if (memberItem != null) {
-                memberItem.increase(quantity);
-            } else {
-                Member member = memberRepository.getReferenceById(memberId);
-                Item item = itemRepository.getReferenceById(itemId);
-
-                memberItem = MemberItem.create(member, item, LocalDateTime.now(), quantity);
-                memberItemRepository.save(memberItem);
-            }
-
-            Cache cache = cacheManager.getCache("inventoryItem");
-            if(cache != null){
-                String key = "member:" + memberId + ":item:" + memberItem.getId();
-                cache.evict(key);
-            }
-        }
-
-        asset.setClaimed(true);
-        asset.setClaimedAt(LocalDateTime.now());
+        pendingAssetLockService.executeWithLock(lockKey, () ->
+                /**
+                 * 트랜젝션 -> 락 구조를 피하기 위해 PendingAssetLockService로 비즈니스로직을 옮겼다.
+                 * 다른 클래스에 있어야 락(executeWithLock) -> 트랜젝션
+                 */
+                pendingAssetTransactionalService.executeWithLockclaimPendingAssetV2Internal(memberId, pendingAssetId)
+        );
     }
+    /**
+     * executeWithLockclaimPendingAssetV2Internal 있던 자리
+     * 여기에 있던 거 그대로 복사해서 PendingAssetLockService에 옮김
+     */
 
+    /**
+     * 상품 구매
+     * @param memberId
+     * @param pendingAssetId
+     */
     @Transactional
     public void claimPendingAssetV3(Long memberId, Long pendingAssetId) {
         PendingAsset asset = pendingAssetRepository

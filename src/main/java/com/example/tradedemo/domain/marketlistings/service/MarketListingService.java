@@ -59,7 +59,7 @@ public class MarketListingService {
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
 
         MemberItem memberItem = memberItemRepository
-                .findById(request.getMemberItemId())
+                .findByIdForUpdate(request.getMemberItemId())
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_ITEM_NOT_FOUND));
         /**
          * 판매자 검증
@@ -97,7 +97,7 @@ public class MarketListingService {
                 memberItem,
                 member);
 
-        marketListingRepository.saveAndFlush(marketListing);
+        marketListingRepository.save(marketListing);
 
         return GetMarketListingResponse.create(marketListing, memberItem.getItem());
     }
@@ -244,8 +244,6 @@ public class MarketListingService {
         MarketListing marketListing = marketListingRepository
                 .findById(marketListingId)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_FOUND));
-
-        expireMarketListings();
 
         return SearchMarketListingResponse.of(marketListing);
     }

@@ -49,10 +49,12 @@ public final class ErrorMessage {
     public static final String MSG_COUPON_LOCK_CONFLICT = "현재 요청이 많아 잠시 후 다시 시도해주세요";
 
     // pending
-    public static final String MSG_PENDING_ASSET_FOUND_EXCEPTION = "수령 대기 자산이 없습니다.";
+    public static final String MSG_PENDING_ASSET_FOUND_EXCEPTION = "수령 할 자산이 없습니다.";
     public static final String MSG_PENDING_ASSET_ALREADY_CLAIMED = "이미 수령한 자산입니다";
     public static final String MSG_PENDING_ASSET_FORBIDDEN = "본인의 수령 대기 자산만 수령할 수 있습니다";
     public static final String MSG_PENDING_ASSET_EXPIRED_EXCEPTION = "수령 대기 기간 만료 상태입니다";
+    public static final String MSG_LOCK_INTERRUPTED = "Redis 락을 얻는 도중 작업이 중단되었습니다";
+    public static final String MSG_LOCK_ACQUIRE_FAILED = "Redis 락 획득에 실패하였습니다.";
 
 
 
