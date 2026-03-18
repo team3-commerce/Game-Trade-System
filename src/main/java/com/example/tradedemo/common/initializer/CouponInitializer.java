@@ -1,15 +1,17 @@
 package com.example.tradedemo.common.initializer;
 
-import com.example.tradedemo.domain.item.entity.Item;
-import com.example.tradedemo.domain.item.enums.ItemType;
-import com.example.tradedemo.domain.item.repository.ItemRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+
+import java.math.BigDecimal;
+
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
+import com.example.tradedemo.domain.coupon.service.CouponService;
+import com.example.tradedemo.domain.coupon.enums.IssueType;
+import com.example.tradedemo.domain.coupon.dto.CreateCouponPolicyRequest;
 
 /**
  * 초기 item들을 생성해주는 class입니다.
@@ -25,18 +27,18 @@ import org.springframework.stereotype.Component;
  * 로 설정되어 있을 경우 test item들을 추가해 줍니다.
  */
 @Component()
-@ConditionalOnProperty(name = "app.add-test-items", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(name = "app.add-test-signup-coupon", havingValue = "true", matchIfMissing = false)
 @Profile("!prod")
 @RequiredArgsConstructor
-public class ItemInitializer implements ApplicationRunner {
-    private final ItemRepository itemRepository;
+public class CouponInitializer implements ApplicationRunner {
+    private final CouponService couponService;
 
-    @Transactional
     public void run(ApplicationArguments args) throws Exception {
-        itemRepository.save(Item.create("검", ItemType.EQUIPMENT));
-        itemRepository.save(Item.create("갑옷", ItemType.EQUIPMENT));
+        CreateCouponPolicyRequest req = new CreateCouponPolicyRequest();
+        req.setName("회원가입 웰컴 쿠폰");
+        req.setMoneyAmount(new BigDecimal(20000));
+        req.setIssueType(IssueType.AUTO_SIGNUP);
 
-        itemRepository.save(Item.create("치유 물약", ItemType.CONSUMABLE));
-        itemRepository.save(Item.create("폭탄", ItemType.CONSUMABLE));
+        couponService.createCouponPolicyV2(req);
     }
 }
