@@ -185,7 +185,7 @@ public class PendingAssetService {
     @Transactional
     public void claimPendingAssetV3(Long memberId, Long pendingAssetId) {
         PendingAsset asset = pendingAssetRepository
-                .findByIdAndMemberIdWithLock(pendingAssetId, memberId)
+                .findByIdAndMemberId(pendingAssetId, memberId)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FORBIDDEN));
 
         if (asset.getIsClaimed()) {

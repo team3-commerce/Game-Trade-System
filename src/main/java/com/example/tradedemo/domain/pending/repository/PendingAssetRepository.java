@@ -44,4 +44,6 @@ public interface PendingAssetRepository extends JpaRepository<PendingAsset, Long
         @Param("pendingAssetId") Long pendingAssetId,
         @Param("memberId") Long memberId
     );
+
+    Optional<PendingAsset> findByIdAndMemberId( Long pendingAssetId, Long memberId);
 }
