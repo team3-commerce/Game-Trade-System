@@ -54,6 +54,21 @@ public class MarketListingController {
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), res));
     }
 
+    /**
+     * Redis + 캐시
+     * @param details
+     * @param request
+     * @return
+     */
+    @PostMapping("/api/v4/market-listings")
+    public ResponseEntity<ApiResponse<GetMarketListingResponse>> createMarketListingV4(
+            @AuthenticationPrincipal PrincipalDetails details, @RequestBody CreateMarketListingRequest request) {
+        GetMarketListingResponse res =
+                marketListingService.createV3(details.getMember().getId(), request);
+
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), res));
+    }
+
 
 
     /**

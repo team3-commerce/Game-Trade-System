@@ -31,7 +31,7 @@ public interface PendingAssetRepository extends JpaRepository<PendingAsset, Long
     List<PendingAsset> findByExpiredAtBeforeAndIsClaimedFalse(LocalDateTime now);
 
     /**
-     * 비관적 락(개별수령조회에 락 걸었음)
+     * 비관적 락(개별수령조회에 락 걸었음) : V1에서 사용함
      * @param pendingAssetId
      * @param memberId
      * @return
@@ -45,5 +45,11 @@ public interface PendingAssetRepository extends JpaRepository<PendingAsset, Long
         @Param("memberId") Long memberId
     );
 
+    /**
+     * 수령 개별조회
+     * @param pendingAssetId
+     * @param memberId
+     * @return
+     */
     Optional<PendingAsset> findByIdAndMemberId( Long pendingAssetId, Long memberId);
 }

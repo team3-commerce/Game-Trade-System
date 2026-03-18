@@ -1,6 +1,7 @@
 package com.example.tradedemo.domain.marketlistings.service;
 
 import com.example.tradedemo.auth.dto.PrincipalDetails;
+import com.example.tradedemo.common.annotation.RedisLock;
 import com.example.tradedemo.common.dto.PageResponse;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
@@ -180,6 +181,71 @@ public class MarketListingService {
 
         marketListingRepository.saveAndFlush(marketListing);
 
+        memberItemCacheService.deleteMemberItemList(memberId);
+        memberItemCacheService.deleteMemberItem(memberId, memberItem.getId());
+
+        return GetMarketListingResponse.create(marketListing, memberItem.getItem());
+    }
+    /**
+     * 둘 다 락 없음 : 형우님이 인메모리캐시/케시 이벤트 할 때 쓴 걸로 추정
+     * 인벤토리 조회에 캐싱을 사용 : 속도 향상을 위해
+     * 인벤토리 조회 -> 조회된 아이템 (10개) 캐시 저장 
+     * -> 상품 5개 등록 -> 실제 개수 5개 -> 캐시 삭제 실패 시 보이는 개수 10개
+     * -> 실제 개수와 보이는 개수가 달라지기에 삭제가 필수
+     * V2 : 로컬메모리캐시(@CacheEvict)
+     * V3 : Redis캐시(memberItemCacheService)
+     */
+
+    /**
+     * 상품 등록 V4 - Redis 분산 락 + Redis 캐시
+     * @RedisLock : 락 획득 → 트랜잭션 → 락 해제 순서 보장
+     * @Transactional : 락 안에서 트랜잭션 실행
+     * 사용자ID와 인벤토리 ID(인벤토리에저장된도감번호)
+     */
+    @RedisLock(key = "'market-listing:member:' + #memberId + ':item:' + #request.getMemberItemId()")
+    @Transactional
+    public GetMarketListingResponse createV4(Long memberId, CreateMarketListingRequest request) {
+        Member member = memberRepository
+                .findById(memberId)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
+        /**
+         * Redis 락이 동시성 보장 : findById 이거면 충분하다
+         */
+        MemberItem memberItem = memberItemRepository
+                .findById(request.getMemberItemId())
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_ITEM_NOT_FOUND));
+
+        if (!memberItem.getMember().getId().equals(member.getId())) {
+            throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_OWNER_MISMATCH);
+        }
+
+        if (memberItem.getQuantity() < request.getQuantity()) {
+            throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_OVER_SELLING);
+        }
+
+        /**
+         * 상품 등록 후 인벤토리 내 수량만큼 삭제(삭제 후에 등록)
+         */
+        memberItem.decrease(request.getQuantity());
+
+        BigDecimal unitPrice = request.getTotalPrice()
+                .divide(BigDecimal.valueOf(request.getQuantity()), 0, RoundingMode.DOWN);
+        /**
+         * 거래소(MarketListing)에 상품 등록
+         */
+        MarketListing marketListing = MarketListing.create(
+                memberItem.getItem().getName(),
+                request.getTotalPrice(),
+                unitPrice,
+                request.getQuantity(),
+                request.getSalesDuration().getDuration(),
+                memberItem,
+                member
+        );
+
+        marketListingRepository.saveAndFlush(marketListing);
+
+        // Redis 캐시 삭제
         memberItemCacheService.deleteMemberItemList(memberId);
         memberItemCacheService.deleteMemberItem(memberId, memberItem.getId());
 
