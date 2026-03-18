@@ -3,14 +3,18 @@ package com.example.tradedemo.domain.members.dto;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
+@Setter
 @AllArgsConstructor
+@NoArgsConstructor
 public class GetMemberItemResponse {
-    private final Long memberItemId;
-    private final String itemName;
-    private final Long quantity;
-    private final LocalDateTime acquiredAt;
-    private final LocalDateTime createdAt;
-    private final LocalDateTime modifiedAt;
+    private Long memberItemId;
+    private String itemName;
+    private Long quantity;
+    private LocalDateTime acquiredAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime modifiedAt;
 }
