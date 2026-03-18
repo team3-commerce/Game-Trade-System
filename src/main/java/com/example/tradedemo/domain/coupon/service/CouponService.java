@@ -2,6 +2,7 @@ package com.example.tradedemo.domain.coupon.service;
 
 import com.example.tradedemo.common.annotation.RedisLock;
 import com.example.tradedemo.common.annotation.RedissonLock;
+import com.example.tradedemo.common.dto.PageResponse;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.coupon.constants.CouponDuration;
@@ -16,11 +17,7 @@ import com.example.tradedemo.domain.coupon.repository.CouponHistoryRepository;
 import com.example.tradedemo.domain.coupon.repository.CouponPolicyRepository;
 import com.example.tradedemo.domain.coupon.repository.MemberCouponRepository;
 import com.example.tradedemo.domain.members.entity.Member;
-import com.example.tradedemo.domain.wallet.entity.Wallet;
-import com.example.tradedemo.domain.wallet.entity.WalletHistories;
-import com.example.tradedemo.domain.wallet.enums.WalletStatus;
-import com.example.tradedemo.domain.wallet.repository.WalletHistoryRepository;
-import com.example.tradedemo.domain.wallet.repository.WalletRepository;
+
 import jakarta.validation.Valid;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -29,7 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -159,7 +155,7 @@ public class CouponService {
     }
 
     @Transactional(readOnly = true)
-    public Page<SearchAllCouponPolicyResponse> searchAllCouponPolicies(
+    public PageResponse<SearchAllCouponPolicyResponse> searchAllCouponPolicies(
             String sortCreatedAt, String issueType, Pageable pageable) {
         return couponPolicyRepository.getAllCouponPolicy(sortCreatedAt, issueType, pageable);
     }
@@ -168,15 +164,15 @@ public class CouponService {
     @Cacheable(
             value = "couponPolicies",
             key = "'page:' + #pageable.pageNumber + ':sort:' + #sortCreatedAt + ':type:' + #issueType",
-            unless = "#result.isEmpty()")
-    public Page<SearchAllCouponPolicyResponse> searchAllCouponPoliciesV2(
+            unless = "#result.content.isEmpty()")
+    public PageResponse<SearchAllCouponPolicyResponse> searchAllCouponPoliciesV2(
             String sortCreatedAt, String issueType, Pageable pageable) {
         return couponPolicyRepository.getAllCouponPolicy(sortCreatedAt, issueType, pageable);
     }
 
 
     @Transactional(readOnly = true)
-    public Page<SearchAllMemberCouponResponse> getAllMemberCoupon(Long memberId, String status, Pageable pageable) {
+    public PageResponse<SearchAllMemberCouponResponse> getAllMemberCoupon(Long memberId, String status, Pageable pageable) {
         return memberCouponRepository.findAllMemberCouponByMemberId(memberId, status, pageable);
     }
 
@@ -184,8 +180,8 @@ public class CouponService {
     @Cacheable(
             value = "memberCoupons",
             key = "'member:' + #memberId + ':page:' + #pageable.pageNumber + ':status:' + #status",
-            unless = "#result.isEmpty()")
-    public Page<SearchAllMemberCouponResponse> getAllMemberCouponV2(Long memberId, String status, Pageable pageable) {
+            unless = "#result.content.isEmpty()")
+    public PageResponse<SearchAllMemberCouponResponse> getAllMemberCouponV2(Long memberId, String status, Pageable pageable) {
         return memberCouponRepository.findAllMemberCouponByMemberId(memberId, status, pageable);
     }
 
@@ -344,7 +340,7 @@ public class CouponService {
     }
 
     @Transactional(readOnly = true)
-    public Page<SearchAllCouponHistoryResponse> getAllCouponHistory(
+    public PageResponse<SearchAllCouponHistoryResponse> getAllCouponHistory(
             Long memberId, String status, String sortCreatedAt, Pageable pageable) {
         return couponHistoryRepository.findAllCouponHistoryByMemberId(memberId, status, sortCreatedAt, pageable);
     }
@@ -353,8 +349,8 @@ public class CouponService {
     @Cacheable(
             value = "couponHistories",
             key = "'member:' + #memberId + ':page:' + #pageable.pageNumber + ':status:' + #status + ':sort:' + #sortCreatedAt",
-            unless = "#result.isEmpty()")
-    public Page<SearchAllCouponHistoryResponse> getAllCouponHistoryV2(
+            unless = "#result.content.isEmpty()")
+    public PageResponse<SearchAllCouponHistoryResponse> getAllCouponHistoryV2(
             Long memberId, String status, String sortCreatedAt, Pageable pageable) {
         return couponHistoryRepository.findAllCouponHistoryByMemberId(memberId, status, sortCreatedAt, pageable);
     }

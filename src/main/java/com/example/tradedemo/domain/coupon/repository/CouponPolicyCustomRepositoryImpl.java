@@ -2,6 +2,7 @@ package com.example.tradedemo.domain.coupon.repository;
 
 import static com.example.tradedemo.domain.coupon.entity.QCouponPolicy.couponPolicy;
 
+import com.example.tradedemo.common.dto.PageResponse;
 import com.example.tradedemo.domain.coupon.dto.SearchAllCouponPolicyResponse;
 import com.example.tradedemo.domain.coupon.entity.CouponPolicy;
 import com.example.tradedemo.domain.coupon.enums.IssueType;
@@ -10,7 +11,6 @@ import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
@@ -20,7 +20,7 @@ public class CouponPolicyCustomRepositoryImpl implements CouponPolicyCustomRepos
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<SearchAllCouponPolicyResponse> getAllCouponPolicy(
+    public PageResponse<SearchAllCouponPolicyResponse> getAllCouponPolicy(
             String sortCreatedAt, String issueType, Pageable pageable) {
 
         // issueType 필터
@@ -50,7 +50,7 @@ public class CouponPolicyCustomRepositoryImpl implements CouponPolicyCustomRepos
                 .where(builder)
                 .fetchOne();
 
-        return new PageImpl<>(
-                content.stream().map(SearchAllCouponPolicyResponse::of).toList(), pageable, total == null ? 0 : total);
+        return PageResponse.of(new PageImpl<>(
+                content.stream().map(SearchAllCouponPolicyResponse::of).toList(), pageable, total == null ? 0 : total));
     }
 }

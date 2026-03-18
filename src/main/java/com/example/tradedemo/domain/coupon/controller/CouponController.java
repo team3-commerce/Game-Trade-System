@@ -58,7 +58,7 @@ public class CouponController {
         Pageable pageable = PageRequest.of(page, 10);
 
         PageResponse<SearchAllCouponPolicyResponse> response =
-                PageResponse.of(couponService.searchAllCouponPolicies(sortCreatedAt, issueType, pageable));
+                couponService.searchAllCouponPolicies(sortCreatedAt, issueType, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
     }
@@ -72,7 +72,7 @@ public class CouponController {
         Pageable pageable = PageRequest.of(page, 10);
 
         PageResponse<SearchAllCouponPolicyResponse> response =
-                PageResponse.of(couponService.searchAllCouponPoliciesV2(sortCreatedAt, issueType, pageable));
+                couponService.searchAllCouponPoliciesV2(sortCreatedAt, issueType, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
     }
@@ -91,7 +91,7 @@ public class CouponController {
         Pageable pageable = PageRequest.of(page, 10);
         Long memberId = principalDetails.getMember().getId();
         PageResponse<SearchAllMemberCouponResponse> response =
-                PageResponse.of(couponService.getAllMemberCoupon(memberId, status, pageable));
+                couponService.getAllMemberCoupon(memberId, status, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
     }
@@ -105,7 +105,7 @@ public class CouponController {
         Pageable pageable = PageRequest.of(page, 10);
         Long memberId = principalDetails.getMember().getId();
         PageResponse<SearchAllMemberCouponResponse> response =
-                PageResponse.of(couponService.getAllMemberCouponV2(memberId, status, pageable));
+                couponService.getAllMemberCouponV2(memberId, status, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
     }
@@ -222,7 +222,7 @@ public class CouponController {
         Pageable pageable = PageRequest.of(page, 10);
         Long memberId = principalDetails.getMember().getId();
         PageResponse<SearchAllCouponHistoryResponse> response =
-                PageResponse.of(couponService.getAllCouponHistory(memberId, status, sortCreatedAt, pageable));
+                couponService.getAllCouponHistory(memberId, status, sortCreatedAt, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
     }
@@ -237,7 +237,7 @@ public class CouponController {
         Pageable pageable = PageRequest.of(page, 10);
         Long memberId = principalDetails.getMember().getId();
         PageResponse<SearchAllCouponHistoryResponse> response =
-                PageResponse.of(couponService.getAllCouponHistoryV2(memberId, status, sortCreatedAt, pageable));
+                couponService.getAllCouponHistoryV2(memberId, status, sortCreatedAt, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), response));
     }
