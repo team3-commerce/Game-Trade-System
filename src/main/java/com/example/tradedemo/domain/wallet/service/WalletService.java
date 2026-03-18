@@ -2,7 +2,9 @@ package com.example.tradedemo.domain.wallet.service;
 
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
+import com.example.tradedemo.domain.coupon.entity.CouponHistory;
 import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
+import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.order.entity.Order;
 import com.example.tradedemo.domain.wallet.dto.WalletResponse;
 import com.example.tradedemo.domain.wallet.entity.Wallet;
@@ -53,5 +55,19 @@ public class WalletService {
                         order
                 )
         );
+    }
+
+    @Transactional
+    public void addCouponBalance(Wallet wallet, CouponHistory couponHistory, Member member) {
+        wallet.addBalance(couponHistory.getMoneyAmount());
+
+        walletHistoryRepository.save(WalletHistories.create(
+                couponHistory.getMoneyAmount(),
+                WalletStatus.COUPON,
+                wallet.getBalance(),
+                wallet,
+                couponHistory,
+                member,
+                null));
     }
 }

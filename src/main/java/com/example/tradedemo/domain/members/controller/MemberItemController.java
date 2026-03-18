@@ -48,6 +48,16 @@ public class MemberItemController {
                 String.valueOf(HttpStatus.OK), memberItemService.getAllMemberItemV2(memberId, pageable)));
     }
 
+    @GetMapping("/api/v3/me/items")
+    public ResponseEntity<ApiResponse<PageResponse<GetAllMemberItemResponse>>> getAllMemberItemV3(
+            @RequestParam(defaultValue = "0") int page, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        Pageable pageable = PageRequest.of(page, 10);
+        Long memberId = principalDetails.getMember().getId();
+
+        return ResponseEntity.ok(ApiResponse.success(
+                String.valueOf(HttpStatus.OK), memberItemService.getAllMemberItemV3(memberId, pageable)));
+    }
+
     /**
      * 내 인벤토리 아이템 단건 조회
      */
@@ -67,5 +77,14 @@ public class MemberItemController {
 
         return ResponseEntity.ok(ApiResponse.success(
                 String.valueOf(HttpStatus.OK), memberItemService.getMemberItemV2(memberId, memberItemId)));
+    }
+
+    @GetMapping("/api/v3/me/items/{memberItemId}")
+    public ResponseEntity<ApiResponse<GetMemberItemResponse>> getMemberItemV3(
+            @AuthenticationPrincipal PrincipalDetails principalDetails, @PathVariable Long memberItemId) {
+        Long memberId = principalDetails.getMember().getId();
+
+        return ResponseEntity.ok(ApiResponse.success(
+                String.valueOf(HttpStatus.OK), memberItemService.getMemberItemV3(memberId, memberItemId)));
     }
 }
