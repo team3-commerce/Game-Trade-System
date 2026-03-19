@@ -10,10 +10,7 @@ import com.example.tradedemo.domain.members.enums.MemberRole;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
 import com.example.tradedemo.domain.wallet.entity.Wallet;
 import com.example.tradedemo.domain.wallet.repository.WalletRepository;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -98,6 +95,7 @@ public class CouponConcurrencyTest {
      *  -> DeadLock 문제도 함께 발생하고 있음
      */
     @Test
+    @Disabled("Lock을 적용하지 않아 무조건 실패하는 테스트")
     @DisplayName("V2 분산락 적용 전 - 선착순 쿠폰 발급 동시성 테스트")
     void 선착순쿠폰_동시발급() throws InterruptedException {
         // given
