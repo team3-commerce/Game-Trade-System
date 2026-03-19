@@ -36,6 +36,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -571,6 +572,15 @@ public class MarketListingService {
      * @return
      */
     @Transactional
+    public SearchMarketListingResponse cancelMarketListingV3(PrincipalDetails details, Long marketListingId) {
+
+        marketListingCacheService.deleteMarketListingFirstPage();
+        marketListingCacheService.deleteMarketListingItem(marketListingId);
+
+        return cancelMarketListingImpl(details, false, marketListingId);
+    }
+
+    @Transactional
     public SearchMarketListingResponse cancelMarketListingAdmin(PrincipalDetails details, Long marketListingId) {
         return cancelMarketListingImpl(details, true, marketListingId);
     }
@@ -586,4 +596,16 @@ public class MarketListingService {
                 () -> new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_FOUND)
         );
     }
+
+    private boolean isDefaultFirstPage(String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
+        return pageable.getPageNumber() == 0
+                && isBlank(keyword)
+                && isBlank(sortTotalPrice)
+                && isBlank(sortSaleEndAt);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
 }

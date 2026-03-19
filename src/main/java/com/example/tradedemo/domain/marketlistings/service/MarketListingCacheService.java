@@ -11,6 +11,8 @@ import java.util.*;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.concurrent.TimeUnit;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Range;
@@ -23,6 +25,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class MarketListingCacheService {
     private final RedisTemplate<String, String> redisTemplate;
+    private final RedisTemplate<String, Object> objRedisTemplate;
 
     private final RedisTemplate<String, Object> objectRedisTemplate;
     private final ObjectMapper objectMapper;
@@ -32,6 +35,9 @@ public class MarketListingCacheService {
     private static final Long MARKET_LISTING_CACHE_GET = 10L;
 
 
+    /**
+     * 검색한 키워드를 카운트해서 캐시에 저장하는 메서드
+     */
     public void cacheSearchKeyword(Long memberId, String keyword) {
 
         if (keyword == null || keyword.isBlank()) {
@@ -53,17 +59,11 @@ public class MarketListingCacheService {
         String normalizedKeyword = keyword.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
 
         /**
-         * 동일 검색어 어뷰징 방지용
+         * 동일 유저가 동일 검색어 중복 검색하는 경우 제외
          */
-        String dupCheckKey = MarketListingConsts.MARKET_LISTING + memberId + ":" + normalizedKeyword;
-        Boolean firstSearch = redisTemplate
-                .opsForValue()
-                .setIfAbsent(
-                        dupCheckKey,
-                        normalizedKeyword,
-                        Duration.ofMinutes(MarketListingConsts.SEARCH_DUPLICATE_PREVENT_MINUTES));
+        boolean isAlreadyCheck = isDupCheck(memberId, normalizedKeyword);
 
-        if (!firstSearch) {
+        if(isAlreadyCheck){
             return;
         }
 
@@ -86,6 +86,9 @@ public class MarketListingCacheService {
         }
     }
 
+    /**
+     * 검색 횟수가 가장 높은 인기 검색어 조회
+     */
     public List<SearchTrendingKeywordResponse> getTrendingKeywordList() {
         String key = getTrendingKey();
 
@@ -99,6 +102,10 @@ public class MarketListingCacheService {
                 .toList();
     }
 
+    /**
+     *
+     * prefixKeyword가 포함된 검색어 중 검색 횟수가 가장 높은 검색어 조회
+     */
     public List<SearchTrendingKeywordResponse> getTrendingKeywordListWithPrefix(String prefixKeyword) {
 
         if (prefixKeyword == null || prefixKeyword.isBlank()) {
@@ -127,6 +134,38 @@ public class MarketListingCacheService {
                         .reversed())
                 .limit(MarketListingConsts.TRENDING_SEARCH_LIMIT)
                 .toList();
+    }
+
+    /**
+     * 마켓리스팅 첫번째 페이지 캐시 데이터를 조회
+     */
+    public PageResponse<SearchAllMarketListingResponse> getMarketListingFirstPage(){
+        String key = getMarketListingFirstPageKey();
+
+        Object value = objRedisTemplate.opsForValue().get(key);
+        if(value == null) return null;
+
+        return objectMapper.convertValue(
+                value,
+                new TypeReference<PageResponse<SearchAllMarketListingResponse>>() {}
+        );
+    }
+
+    /**
+     * 마켓리스팅 단건 상품 캐시 데이터를 조회
+     */
+    public SearchMarketListingResponse getMarketListingItem(Long marketListingId) {
+        String key = getMarketListingItemKey(marketListingId);
+
+        Object value = objRedisTemplate.opsForValue().get(key);
+        if(value == null) return null;
+
+        return  objectMapper.convertValue(value, SearchMarketListingResponse.class);
+    }
+
+    public void setMarketListingItem(Long marketListingId, SearchMarketListingResponse result){
+        String key = getMarketListingItemKey(marketListingId);
+        objRedisTemplate.opsForValue().set(key, result, MarketListingConsts.LISTING_ITEM_TIME_LIMIT, TimeUnit.MINUTES);
     }
 
     private String getTrendingKey() {
@@ -163,16 +202,6 @@ public class MarketListingCacheService {
         );
     }
     /**
-     * 단건 조회 가져오기
-     * @param marketListingId
-     * @return
-     */
-    public SearchMarketListingResponse getMarketListingItem(Long marketListingId) {
-        Object value = objectRedisTemplate.opsForValue().get(getMarketListingItemKey(marketListingId));
-        if (value == null) return null;
-        return objectMapper.convertValue(value, SearchMarketListingResponse.class);
-    }
-    /**
      * 단건 조회 삭제
      * @param marketListingId
      */
@@ -192,18 +221,6 @@ public class MarketListingCacheService {
         );
     }
     /**
-     * 첫 페이지 가져오기
-     * @return
-     */
-    public PageResponse<SearchAllMarketListingResponse> getMarketListingFirstPage() {
-        Object value = objectRedisTemplate.opsForValue().get(MARKET_LISTING_FIRST_PAGE_KEY);
-        if (value == null) return null;
-        return objectMapper.convertValue(
-                value,
-                new TypeReference<PageResponse<SearchAllMarketListingResponse>>() {}
-        );
-    }
-    /**
      * 첫 페이지 삭제
      */
     public void deleteMarketListingFirstPage() {
@@ -218,5 +235,21 @@ public class MarketListingCacheService {
      */
     private String getMarketListingItemKey(Long marketListingId) {
         return MARKET_LISTING_ITEM_PREFIX + marketListingId;
+    }
+
+    private String getMarketListingFirstPageKey(){
+        return MarketListingConsts.MARKET_LISTING + MarketListingConsts.FIRST_PAGE;
+    }
+
+    private boolean isDupCheck(Long memberId, String normalizedKeyword){
+        String dupCheckKey = MarketListingConsts.MARKET_LISTING + memberId + ":" + normalizedKeyword;
+        Boolean firstSearch = redisTemplate
+                .opsForValue()
+                .setIfAbsent(
+                        dupCheckKey,
+                        normalizedKeyword,
+                        Duration.ofMinutes(MarketListingConsts.SEARCH_DUPLICATE_PREVENT_MINUTES));
+
+        return !Boolean.TRUE.equals(firstSearch);
     }
 }

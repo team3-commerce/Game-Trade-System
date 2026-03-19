@@ -45,6 +45,40 @@ public class BuilderUtil {
                 .awaitCompletion();
     }
 
+    private static final String dockerComposeFile = "./misc/docker-compose-build.yml";
+
+    public static void dockerComposeUp(
+            int dbPort,
+            int redisPort,
+            String volumeName
+    ) throws Exception {
+        ProcessBuilder builder =
+                new ProcessBuilder("docker", "compose", "-f", dockerComposeFile, "up", "-d").inheritIO();
+
+        builder.environment()
+            .put("GAME_TRADE_SYSTEM_DB_VOLUME_NAME", volumeName);
+        builder.environment()
+            .put("GAME_TRADE_SYSTEM_REDIS_PORT", String.valueOf(redisPort));
+        builder.environment()
+            .put("GAME_TRADE_SYSTEM_DB_PORT", String.valueOf(dbPort));
+
+        int exitCode = builder.start().waitFor();
+
+        if (exitCode != 0) {
+            throw new Exception("docker compose up exited with %s".formatted(exitCode));
+        }
+    }
+
+    public static void dockerComposeDown() throws Exception {
+        ProcessBuilder builder =
+                new ProcessBuilder("docker", "compose", "-f", dockerComposeFile, "down").inheritIO();
+        int exitCode = builder.start().waitFor();
+
+        if (exitCode != 0) {
+            throw new Exception("docker compose down exited with %s".formatted(exitCode));
+        }
+    }
+
     public static String getBeanClassName(BeanDefinition bean) {
         String fullName = bean.getBeanClassName();
         return fullName.substring(fullName.lastIndexOf('.') + 1);

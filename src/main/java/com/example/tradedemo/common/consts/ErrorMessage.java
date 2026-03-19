@@ -11,6 +11,12 @@ public final class ErrorMessage {
     public static final String MSG_AUTH_INVALID_PASSWORD = "올바르지 않은 비밀번호입니다";
     public static final String MSG_AUTH_WITHDRAWN_MEMBER = "탈퇴 처리 된 회원입니다";
     public static final String MSG_AUTH_SUSPENDED_MEMBER = "관리자에 의해 정지된 회원입니다 (사유: %s)";
+    public static final String MSG_AUTH_SOCIAL_ACCOUNT_ONLY = "소셜 로그인을 이용하거나 비밀번호를 설정해주세요";
+    public static final String MSG_AUTH_SOCIAL_UNLINK_FORBIDDEN = "최소 하나의 로그인 수단이 필요합니다";
+    public static final String MSG_AUTH_SOCIAL_NOT_FOUND = "연동된 소셜 계정을 찾을 수 없습니다";
+    public static final String MSG_AUTH_SOCIAL_UNSUPPORTED_PROVIDER = "지원하지 않는 소셜 로그인 제공자입니다";
+    public static final String MSG_AUTH_NOT_ACTIVE_STATUS = "활성화된 계정이 아닙니다";
+    public static final String MSG_AUTH_PASSWORD_ALREADY_EXISTS = "이미 비밀번호가 설정되어 있습니다";
 
     // Member
     public static final String MSG_MEMBER_NOT_FOUND = "찾는 유저 정보가 존재하지 않습니다";

@@ -66,6 +66,7 @@ public class MarketListingController {
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), res));
     }
+
     /**
      * 상품 등록 V4
      * @param details
@@ -241,6 +242,14 @@ public class MarketListingController {
     public ResponseEntity<ApiResponse<SearchMarketListingResponse>> cancelMarketListingV2(
             @AuthenticationPrincipal PrincipalDetails details, @PathVariable Long marketListingId) {
         SearchMarketListingResponse res = marketListingService.cancelMarketListingV2(details, marketListingId);
+
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK), res));
+    }
+
+    @PatchMapping("/api/v3/market-listings/{marketListingId}")
+    public ResponseEntity<ApiResponse<SearchMarketListingResponse>> cancelMarketListingV3(
+            @AuthenticationPrincipal PrincipalDetails details, @PathVariable Long marketListingId) {
+        SearchMarketListingResponse res = marketListingService.cancelMarketListingV3(details, marketListingId);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK), res));
     }
