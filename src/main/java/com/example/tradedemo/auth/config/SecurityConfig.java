@@ -46,7 +46,8 @@ public class SecurityConfig {
                                         "/api/v2/auth/**",
                                         "/api/v2/auth/oauth-success",
                                         "/login/oauth2/**",
-                                        "/oauth2/**"
+                                        "/oauth2/**",
+                                        "/ws/**"
                                 )
                                 .permitAll() // 화이트리스트
                                 .requestMatchers("/api/v1/admin/**")
