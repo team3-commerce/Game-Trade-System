@@ -1,6 +1,7 @@
 package com.example.tradedemo.domain.pending.service;
 
 import com.example.tradedemo.common.annotation.RedisLock;
+import com.example.tradedemo.common.annotation.RedissonLock;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.item.entity.Item;
@@ -241,13 +242,13 @@ public class PendingAssetService {
     }
 
     /**
-     * 캐시 이벤트 용 : deleteMemberItem 기능 사용중
-     * 레디슨락 적용 << 하기?
-     * 도전 : 레투스 말고 레디슨 적용시켜서 확인하기
-     * + 그러면 레투스도 확인해보자 :
+     * 수령하기
+     * Redis Redisson + @RedissonLock AOP
+     * Redis 캐시 삭제 : 인벤토리에서 조회한 캐시 삭제
      * @param memberId
      * @param pendingAssetId
      */
+    @RedissonLock(key = "'lock:pending-asset:' + #pendingAssetId")
     @Transactional
     public void claimPendingAssetV3(Long memberId, Long pendingAssetId) {
         PendingAsset asset = pendingAssetRepository
@@ -338,3 +339,4 @@ public class PendingAssetService {
         pendingAssetRepository.save(buyerPending);
     }
 }
+

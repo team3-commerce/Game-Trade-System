@@ -18,4 +18,5 @@ public final class MarketListingConsts {
     public static final Long TRENDING_KEYWORD_TIME_LIMIT = 2L;
     public static final int TRENDING_SEARCH_LIMIT = 5;
     public static final DateTimeFormatter TRENDING_SEARCH_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
+
 }

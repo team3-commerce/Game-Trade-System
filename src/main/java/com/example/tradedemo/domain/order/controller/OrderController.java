@@ -39,6 +39,14 @@ public class OrderController {
                 ApiResponse.success(String.valueOf(HttpStatus.OK), orderFacade.purchaseV2(memberId, marketListingId)));
     }
 
+    @PostMapping("/v3/market-listings/{marketListingId}")
+    public ResponseEntity<ApiResponse<CreateOrderResponse>> purchaseV3(
+            @PathVariable Long marketListingId, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        Long memberId = principalDetails.getMember().getId();
+        return ResponseEntity.ok(
+                ApiResponse.success(String.valueOf(HttpStatus.OK), orderFacade.purchaseV3(memberId, marketListingId)));
+    }
+
     /**
      * 내 구매 내역 조회
      */
