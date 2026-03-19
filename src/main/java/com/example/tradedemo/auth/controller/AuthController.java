@@ -8,6 +8,7 @@ import com.example.tradedemo.common.dto.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -44,7 +45,16 @@ public class AuthController {
     @PostMapping("/v2/auth/login")
     public ResponseEntity<ApiResponse<TokenAuthResponse>> loginV2(@Valid @RequestBody LoginAuthRequest request) {
         TokenAuthResponse tokenResponse = authService.loginV2(request);
-        return ResponseEntity.ok(ApiResponse.success("200", tokenResponse));
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK), tokenResponse));
+    }
+
+    /**
+     * 로그인 V3
+     */
+    @PostMapping("/v3/auth/login")
+    public ResponseEntity<ApiResponse<TokenAuthResponse>> loginV3(@Valid @RequestBody LoginAuthRequest request) {
+        TokenAuthResponse tokenResponse = authService.loginV3(request);
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK), tokenResponse));
     }
 
     /**
@@ -63,13 +73,37 @@ public class AuthController {
     }
 
     /**
+     * 로그아웃 V3
+     */
+    @PostMapping("/v3/auth/logout")
+    public ResponseEntity<ApiResponse<Void>> logoutV3(
+            @AuthenticationPrincipal PrincipalDetails principalDetails, HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        String accessToken = (authHeader != null && authHeader.startsWith(BEARER_PREFIX))
+                ? authHeader.substring(BEARER_PREFIX.length())
+                : null;
+
+        authService.logoutV3(principalDetails.getEmail(), accessToken);
+        return ResponseEntity.ok(ApiResponse.success("200", null));
+    }
+
+    /**
      * 토큰 재발급 V2
      */
     @PostMapping("/v2/auth/reissue")
-    public ResponseEntity<ApiResponse<TokenAuthResponse>> reissueV2(
-            @AuthenticationPrincipal PrincipalDetails principalDetails, @RequestBody TokenAuthResponse tokenAuthRequest) {
+    public ResponseEntity<ApiResponse<TokenAuthResponse>> reissueV2(@RequestBody TokenAuthResponse tokenAuthRequest) {
         TokenAuthResponse tokenResponse =
-                authService.reissueV2(principalDetails.getEmail(), tokenAuthRequest.refreshToken());
+                authService.reissueV2(tokenAuthRequest.refreshToken());
+        return ResponseEntity.ok(ApiResponse.success("200", tokenResponse));
+    }
+
+    /**
+     * 토큰 재발급 V3
+     */
+    @PostMapping("/v3/auth/reissue")
+    public ResponseEntity<ApiResponse<TokenAuthResponse>> reissueV3(@RequestBody TokenAuthResponse tokenAuthRequest) {
+        TokenAuthResponse tokenResponse =
+                authService.reissueV3(tokenAuthRequest.refreshToken());
         return ResponseEntity.ok(ApiResponse.success("200", tokenResponse));
     }
 
