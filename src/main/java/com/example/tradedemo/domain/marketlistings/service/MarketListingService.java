@@ -322,8 +322,6 @@ public class MarketListingService {
     public PageResponse<SearchAllMarketListingResponse> getAllMarketListing(
             Long memberId, String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
 
-        expireMarketListings(); // 만료 처리
-
         if (keyword != null && !keyword.isBlank()) {
             marketListingCacheService.cacheSearchKeyword(memberId, keyword);
         }
@@ -352,7 +350,6 @@ public class MarketListingService {
     )
     public PageResponse<SearchAllMarketListingResponse> getAllMarketListingV2(
             Long memberId, String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
-        expireMarketListings(); // 만료 처리
 
         if (keyword != null && !keyword.isBlank()) {
             marketListingCacheService.cacheSearchKeyword(memberId, keyword);
@@ -588,21 +585,5 @@ public class MarketListingService {
         return marketListingRepository.findById(marketListingId).orElseThrow(
                 () -> new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_FOUND)
         );
-    }
-
-    /**
-     * 공용 - 만료 시간
-     * 상품 등록 시 만료 시간 체크 : saleEndAt
-     * 만료 시간이 되면 SELLING(판매) → EXPIRED(만료)
-     */
-    @Transactional
-    public void expireMarketListings() {
-
-        List<MarketListing> expiredListings = marketListingRepository.findByStatusAndSaleEndAtBefore(
-                MarketListingStatus.SELLING, LocalDateTime.now());
-
-        for (MarketListing listing : expiredListings) {
-            listing.updateStatus(MarketListingStatus.EXPIRED);
-        }
     }
 }
