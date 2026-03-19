@@ -44,7 +44,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MarketListingService {
     private final MarketListingRepository marketListingRepository;
     private final MemberItemRepository memberItemRepository;
-    private final MemberRepository memberRepository;
+    private final MemberRepository memberRepository;it
     private final MarketListingCacheService marketListingCacheService;
     private final PendingAssetRepository pendingAssetRepository;
 
