@@ -3,6 +3,7 @@ package com.example.tradedemo.domain.coupon.repository;
 import static com.example.tradedemo.domain.coupon.entity.QCouponPolicy.couponPolicy;
 import static com.example.tradedemo.domain.coupon.entity.QMemberCoupon.memberCoupon;
 
+import com.example.tradedemo.common.dto.PageResponse;
 import com.example.tradedemo.domain.coupon.dto.SearchAllMemberCouponResponse;
 import com.example.tradedemo.domain.coupon.entity.MemberCoupon;
 import com.example.tradedemo.domain.coupon.enums.CouponStatus;
@@ -14,7 +15,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
@@ -24,7 +24,7 @@ public class MemberCouponCustomRepositoryImpl implements MemberCouponCustomRepos
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<SearchAllMemberCouponResponse> findAllMemberCouponByMemberId(
+    public PageResponse<SearchAllMemberCouponResponse> findAllMemberCouponByMemberId(
             Long memberId, String status, Pageable pageable) {
 
         BooleanBuilder builder = new BooleanBuilder();
@@ -64,8 +64,8 @@ public class MemberCouponCustomRepositoryImpl implements MemberCouponCustomRepos
                 .where(builder)
                 .fetchOne();
 
-        return new PageImpl<>(
-                content.stream().map(SearchAllMemberCouponResponse::of).toList(), pageable, total == null ? 0 : total);
+        return PageResponse.of(new PageImpl<>(
+                content.stream().map(SearchAllMemberCouponResponse::of).toList(), pageable, total == null ? 0 : total));
     }
 
     @Override

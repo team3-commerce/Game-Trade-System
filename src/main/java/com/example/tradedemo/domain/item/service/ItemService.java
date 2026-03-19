@@ -19,6 +19,7 @@ import com.example.tradedemo.common.exception.ErrorEnum;
 @RequiredArgsConstructor
 public class ItemService {
     private final ItemRepository itemRepository;
+    private final ItemCacheService itemCacheService;
 
     @Transactional(readOnly = true)
     public GetItemResponse getItem(Long itemId) {
@@ -35,7 +36,10 @@ public class ItemService {
         return PageResponse.of(items.map(GetItemResponse::of));
     }
 
-    @Cacheable(value =  "items", key = "#itemId")
+    @Cacheable(
+        value =  "items", 
+        key = "@itemCacheService.getItemIdCacheKey(#itemId)"
+    )
     @Transactional(readOnly = true)
     public GetItemResponse getItemV2(Long itemId) {
         Item item = itemRepository.findById(itemId).orElseThrow(
@@ -47,8 +51,8 @@ public class ItemService {
 
     @Cacheable(
         value =  "itemsSearches",
-        key = "@itemService.getSearchItemRequestCacheKey(#req)",
-        condition = "@itemService.shouldCacheSearchItemRequest(#req)"
+        key = "@itemCacheService.getSearchItemRequestCacheKey(#req)",
+        condition = "@itemCacheService.shouldCacheSearchItemRequest(#req)"
     )
     @Transactional(readOnly = true)
     public PageResponse<GetItemResponse> getManyItemsV2(SearchItemRequest req) {
@@ -56,28 +60,47 @@ public class ItemService {
         return PageResponse.of(items.map(GetItemResponse::of));
     }
 
-    public boolean shouldCacheSearchItemRequest(SearchItemRequest req) {
-        if (req.getNormalizedKeyword() == null && req.getPage() < 5) {
-            return true;
+    @Transactional(readOnly = true)
+    public GetItemResponse getItemV3(Long itemId) {
+        String cacheKey = itemCacheService.getItemIdCacheKey(itemId);
+
+        GetItemResponse cached = itemCacheService.getItem(cacheKey);
+        if (cached != null) {
+            return cached;
         }
-        return false;
+
+        Item item = itemRepository.findById(itemId).orElseThrow(
+                () -> new ServiceException(ErrorEnum.ERR_ITEM_NOT_FOUND)
+        );
+
+        GetItemResponse res = GetItemResponse.of(item);
+        itemCacheService.setItem(cacheKey, res);
+
+        return res;
     }
 
-    public String getSearchItemRequestCacheKey(SearchItemRequest req) {
-        String itemTypeKey;
-        if (req.getItemType() == null) {
-            itemTypeKey = "";
-        }else {
-            itemTypeKey = req.getItemType().toString();
+    @Transactional(readOnly = true)
+    public PageResponse<GetItemResponse> getManyItemsV3(SearchItemRequest req) {
+        boolean shouldCache = itemCacheService.shouldCacheSearchItemRequest(req);
+
+        // 만약 cache를 안하기로 한 요청이라면 redis를 부르지도 않았을 것이기 때문에 DB로 바로 조회
+        if (!shouldCache) {
+            Page<Item> items = itemRepository.searchItem(req);
+            return PageResponse.of(items.map(GetItemResponse::of));
         }
 
-        String createdAtSortKey;
-        if (req.shouldSortCreatedAtAsc()) {
-            createdAtSortKey = "sort-created-at-asc";
-        }else {
-            createdAtSortKey = "sort-created-at-dsc";
+        String cacheKey = itemCacheService.getSearchItemRequestCacheKey(req);
+
+        PageResponse<GetItemResponse> cached = itemCacheService.getItemList(cacheKey);
+        if (cached != null) {
+            return cached;
         }
 
-        return req.getPage().toString() + ":" + itemTypeKey + ":" + createdAtSortKey;
+        Page<Item> items = itemRepository.searchItem(req);
+        PageResponse<GetItemResponse> res = PageResponse.of(items.map(GetItemResponse::of));
+
+        itemCacheService.setItemList(cacheKey, res);
+
+        return res;
     }
 }

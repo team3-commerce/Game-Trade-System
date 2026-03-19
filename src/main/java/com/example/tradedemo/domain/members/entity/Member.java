@@ -1,6 +1,7 @@
 package com.example.tradedemo.domain.members.entity;
 
 import com.example.tradedemo.common.entity.Base;
+import com.example.tradedemo.domain.members.consts.MemberConst;
 import com.example.tradedemo.domain.members.enums.MemberRole;
 import com.example.tradedemo.domain.members.enums.MemberStatus;
 import jakarta.persistence.*;
@@ -25,7 +26,6 @@ public class Member extends Base {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(nullable = false)
     private String password;
 
     @Column(unique = true, nullable = false)
@@ -55,11 +55,22 @@ public class Member extends Base {
         this.role = role;
         this.status = MemberStatus.ACTIVE;
         this.statusChangedAt = LocalDateTime.now();
-        this.statusReason = "신규 회원 가입";
+        this.statusReason = MemberConst.REASON_SIGNUP;
     }
 
     public static Member create(String email, String password, String nickname, MemberRole role) {
         return new Member(email, password, nickname, role);
+    }
+
+    public static Member createSocial(String email, String nickname, MemberRole role) {
+        return new Member(email, null, nickname, role);
+    }
+    
+    public static Member createAuthMember(String email, MemberRole role) {
+        Member member = new Member();
+        member.email = email;
+        member.role = role;
+        return member;
     }
 
     // 로그인 시 시간 업데이트
@@ -71,14 +82,14 @@ public class Member extends Base {
     public void withdraw() {
         this.status = MemberStatus.WITHDRAWN;
         this.statusChangedAt = LocalDateTime.now();
-        this.statusReason = "사용자 요청에 의한 회원 탈퇴";
+        this.statusReason = MemberConst.REASON_WITHDRAWAL;
     }
 
     // 휴면 처리
     public void makeDormant() {
         this.status = MemberStatus.INACTIVE_DORMANT;
         this.statusChangedAt = LocalDateTime.now();
-        this.statusReason = "30일 이상 미접속으로 인한 휴면 전환";
+        this.statusReason = MemberConst.REASON_DORMANT;
     }
 
     // 관리자에 의한 계정 정지
@@ -92,7 +103,7 @@ public class Member extends Base {
     public void activate() {
         this.status = MemberStatus.ACTIVE;
         this.statusChangedAt = LocalDateTime.now();
-        this.statusReason = "계정 활동 재개";
+        this.statusReason = MemberConst.REASON_ACTIVATE;
     }
 
     // Refresh Token 업데이트

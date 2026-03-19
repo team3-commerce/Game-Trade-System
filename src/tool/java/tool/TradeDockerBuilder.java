@@ -22,7 +22,9 @@ public class TradeDockerBuilder {
     public static final String DB_IMAGE_NAME = "mysql:8.4";
     public static final String DB_PASSWORD = "1234";
     public static final String DB_NAME = "tradedb";
-    public static  final int DB_PORT = 42000;
+
+    public static  final int DB_PORT = 44000;
+    public static  final int REDIS_PORT = 45000;
 
     public static void main(String[] args) {
         if (args.length == 0) {

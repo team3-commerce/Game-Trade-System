@@ -34,6 +34,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -225,6 +226,35 @@ public class MarketListingService {
                 null, keyword, MarketListingStatus.SELLING, sortTotalPrice, sortSaleEndAt, pageable));
     }
 
+    @Transactional(readOnly = true)
+    public PageResponse<SearchAllMarketListingResponse> getAllMarketListingV3(Long memberId, String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
+
+        if (!isBlank(keyword)) {
+            marketListingCacheService.cacheSearchKeyword(memberId, keyword);
+        }
+
+        boolean isDefaultFirstPage = isDefaultFirstPage(keyword, sortTotalPrice, sortSaleEndAt, pageable);
+
+        // 캐시에 찾는 데이터가 있는지 먼저 확인
+        if(isDefaultFirstPage) {
+            PageResponse<SearchAllMarketListingResponse> cached = marketListingCacheService.getMarketListingFirstPage();
+
+            if(cached!=null){
+                return cached;
+            }
+        }
+
+        // 없을 경우 db 조회 후 캐시에 저장
+        PageResponse<SearchAllMarketListingResponse> result = PageResponse.of(marketListingRepository.getAllMarketListingWithKeyword(
+                null, keyword, MarketListingStatus.SELLING, sortTotalPrice, sortSaleEndAt, pageable));
+
+        if(isDefaultFirstPage) {
+            marketListingCacheService.setMarketListingFirstPage(result);
+        }
+
+        return result;
+    }
+
     /**
      * 본인 마켓 상품 전체 조회
      */
@@ -259,6 +289,26 @@ public class MarketListingService {
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_FOUND));
 
         return SearchMarketListingResponse.of(marketListing);
+    }
+
+    @Transactional(readOnly = true)
+    public SearchMarketListingResponse getMarketListingV3(Long marketListingId) {
+
+        // 캐시에 데이터가 있는지 먼저 확인
+        SearchMarketListingResponse cached = marketListingCacheService.getMarketListingItem(marketListingId);
+
+        if(cached!=null){
+            return cached;
+        }
+
+        // 없을 경우 DB 조회 후 캐시에 저장
+        SearchMarketListingResponse result = SearchMarketListingResponse.of(marketListingRepository
+                .findById(marketListingId)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_FOUND)));
+
+        marketListingCacheService.setMarketListingItem(marketListingId, result);
+
+        return result;
     }
 
     /**
@@ -356,6 +406,15 @@ public class MarketListingService {
     }
 
     @Transactional
+    public SearchMarketListingResponse cancelMarketListingV3(PrincipalDetails details, Long marketListingId) {
+
+        marketListingCacheService.deleteMarketListingFirstPage();
+        marketListingCacheService.deleteMarketListingItem(marketListingId);
+
+        return cancelMarketListingImpl(details, false, marketListingId);
+    }
+
+    @Transactional
     public SearchMarketListingResponse cancelMarketListingAdmin(PrincipalDetails details, Long marketListingId) {
         return cancelMarketListingImpl(details, true, marketListingId);
     }
@@ -366,4 +425,16 @@ public class MarketListingService {
                 () -> new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_FOUND)
         );
     }
+
+    private boolean isDefaultFirstPage(String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
+        return pageable.getPageNumber() == 0
+                && isBlank(keyword)
+                && isBlank(sortTotalPrice)
+                && isBlank(sortSaleEndAt);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
 }
