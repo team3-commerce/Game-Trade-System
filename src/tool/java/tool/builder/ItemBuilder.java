@@ -12,6 +12,7 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.tradedemo.domain.item.enums.ItemType;
 
 /**
  * 아이템을 추가하는 클래스 입니다. 저의 테스트 목적으로도 작성 되었지만 또 이 테스트 도구를 쓰는 사람의 참조 용으로도 작성 되었습니다.
@@ -44,10 +45,10 @@ public class ItemBuilder implements DataBuilder {
         jdbcTemplate.batchUpdate(SQL_STATEMENT, new BatchPreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {
-                long type = 0;
+                ItemType type = ItemType.EQUIPMENT;
 
                 if (random.nextInt(100) < 40) {
-                    type = 1;
+                    type = ItemType.CONSUMABLE;
                 }
 
                 final long twoYearsInSeconds = Duration.ofDays(365 * 2).toSeconds();
@@ -55,7 +56,7 @@ public class ItemBuilder implements DataBuilder {
                 LocalDateTime createdAt = STARTING_DATE.plusSeconds(random.nextLong(twoYearsInSeconds));
                 LocalDateTime modifiedAt =createdAt.plusSeconds(random.nextLong(twoYearsInSeconds));
 
-                ps.setLong(1, type);
+                ps.setString(1, type.toString());
                 ps.setString(2, getItemName());
                 ps.setObject(3, createdAt);
                 ps.setObject(4, modifiedAt);
