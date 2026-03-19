@@ -1,140 +1,184 @@
 package com.example.tradedemo.domain.marketlistings.service;
 
-import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.item.entity.Item;
 import com.example.tradedemo.domain.item.enums.ItemType;
 import com.example.tradedemo.domain.item.repository.ItemRepository;
 import com.example.tradedemo.domain.marketlistings.dto.CreateMarketListingRequest;
-import com.example.tradedemo.domain.marketlistings.enums.SalesDurations;
+import com.example.tradedemo.domain.marketlistings.enums.SalesDurations; // 프로젝트 enum에 맞게 수정
+import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepository;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.entity.MemberItem;
 import com.example.tradedemo.domain.members.enums.MemberRole;
 import com.example.tradedemo.domain.members.repository.MemberItemRepository;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import com.example.tradedemo.domain.pending.repository.PendingAssetRepository;
+import com.example.tradedemo.domain.wallet.repository.WalletHistoryRepository;
+import com.example.tradedemo.domain.wallet.repository.WalletRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * 상품 등록 동시성 테스트
+ * 대상:
+ *  - MarketListingService.createV4 (@RedisLock + Redis 캐시 삭제)
+ *  - MarketListingService.createV5 (@RedissonLock + Redis 캐시 삭제)
+ *
+ * 검증 포인트:
+ *  초기 재고 10개인 아이템을 수량 6으로 동시에 2번 등록 요청.
+ *  첫 번째 성공 후 재고는 4개 → 두 번째 요청은 4 < 6 이므로 실패해야 한다.
+ *  → 등록된 MarketListing 은 1건, 재고는 음수가 되어선 안 된다.
+ */
 @SpringBootTest
 class MarketListingServiceTest {
 
-    @Autowired
-    private MarketListingService marketListingService;
+    @Autowired private MarketListingService marketListingService;
 
-    @Autowired
-    private MemberRepository memberRepository;
+    @Autowired private MemberRepository memberRepository;
+    @Autowired private MemberItemRepository memberItemRepository;
+    @Autowired private ItemRepository itemRepository;
+    @Autowired private MarketListingRepository marketListingRepository;
+    @Autowired private PendingAssetRepository pendingAssetRepository;
+    @Autowired private WalletRepository walletRepository;
+    @Autowired private WalletHistoryRepository walletHistoryRepository;
 
-    @Autowired
-    private MemberItemRepository memberItemRepository;
+    private Member seller;
+    private Item item;
+    private MemberItem sellerItem;
 
-    @Autowired
-    private ItemRepository itemRepository;
-
-    private Long memberId;
-    private Long memberItemId;
-
-    // 기본 설정
     @BeforeEach
     void setUp() {
-        Member member = Member.create(
-                "seller@test.com",
-                "1234",
-                "seller",
-                MemberRole.USER
-        );
+        tearDown();
 
-        memberRepository.save(member);
-
-        Item item = Item.create(
-                "검",
-                ItemType.EQUIPMENT
-        );
-
+        item = Item.create("전설의 검", ItemType.EQUIPMENT);
         itemRepository.save(item);
 
-        // 인벤토리 : 수량 10개
-        MemberItem memberItem = MemberItem.create(
-                member,
-                item,
-                LocalDateTime.now(),
-                10L
-        );
+        seller = Member.create("seller@test.com", "pw", "seller", MemberRole.USER);
+        memberRepository.save(seller);
 
-        memberItemRepository.save(memberItem);
+        // 초기 재고 10
+        sellerItem = MemberItem.create(seller, item, LocalDateTime.now(), 10L);
+        memberItemRepository.save(sellerItem);
+    }
 
-        memberId = member.getId();
-        memberItemId = memberItem.getId();
+    @AfterEach
+    void tearDown() {
+        walletHistoryRepository.deleteAll();
+        pendingAssetRepository.deleteAll();
+        marketListingRepository.deleteAll();
+        memberItemRepository.deleteAll();
+        walletRepository.deleteAll();
+        memberRepository.deleteAll();
+        itemRepository.deleteAll();
     }
 
     @Test
-    @DisplayName("상품 등록 동시성 테스트 - 재고 10개를 두 번 등록")
-    void 상품_등록_테스트_2번_연속_클릭() throws InterruptedException {
+    @DisplayName("V4 RedisLock — 동시 2번 등록 시 재고 초과 차감 방지")
+    void 상품등록_RedisLock_V4_동시2회_재고초과방지() throws InterruptedException {
+        // given
+        // 수량 6으로 2번 요청 → 한 번만 성공해야 함 (10 - 6 = 4, 두 번째 4 < 6 실패)
+        CreateMarketListingRequest request = buildRequest(sellerItem.getId(), 6L, BigDecimal.valueOf(600));
 
-        int threadCount = 2; // 실행 횟수
-
-        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
-
-        CountDownLatch startLatch = new CountDownLatch(1);
-        CountDownLatch endLatch = new CountDownLatch(threadCount);
-
-        AtomicInteger successCount = new AtomicInteger();
-        AtomicInteger failCount = new AtomicInteger();
-
-        CreateMarketListingRequest request = new CreateMarketListingRequest(
-                memberItemId,
-                BigDecimal.valueOf(1000),
-                10L,
-                SalesDurations.HOURS_12
-        );
+        // when
+        int threadCount = 2;
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
 
         for (int i = 0; i < threadCount; i++) {
-
-            executorService.submit(() -> {
+            executor.submit(() -> {
                 try {
-                    startLatch.await(); // 동시에 시작
-                    marketListingService.create(memberId, request);
-                    successCount.incrementAndGet();
+                    marketListingService.createV4(seller.getId(), request);
                 } catch (Exception e) {
-
-                    failCount.incrementAndGet();
-                    System.out.println("에러 발생: " + e.getClass().getSimpleName() + " / " + e.getMessage());
-
+                    System.out.println("Exception caught: " + e.getMessage());
                 } finally {
-                    endLatch.countDown();
+                    latch.countDown();
                 }
-
             });
         }
+        latch.await();
+        executor.shutdown();
 
-        // 모든 스레드 동시에 시작
-        startLatch.countDown();
+        // then
+        MemberItem itemAfter = memberItemRepository.findById(sellerItem.getId()).orElseThrow();
+        assertTrue(itemAfter.getQuantity() >= 0, "재고는 음수가 되어선 안 된다");
 
-        // 모든 스레드 종료 대기
-        endLatch.await();
+        long listingCount = marketListingRepository.findAll().stream()
+                .filter(l -> l.getMember().getId().equals(seller.getId()))
+                .count();
+        assertEquals(1, listingCount, "성공한 상품 등록은 정확히 1건이어야 한다");
 
-        MemberItem memberItem = memberItemRepository.findById(memberItemId).orElseThrow();
-
-        System.out.println("===== 테스트 결과 =====");
-        System.out.println("요청 횟수: " + threadCount);
-        System.out.println("성공 횟수: " + successCount.get());
-        System.out.println("실패 횟수: " + failCount.get());
-        System.out.println("최종 재고: " + memberItem.getQuantity());
+        System.out.println("========================================");
+        System.out.println("상품 등록 V4 RedisLock");
+        System.out.println("동시 요청 수: 2 (수량 6 등록 2번 클릭)");
+        System.out.println("남은 재고:    " + itemAfter.getQuantity());
+        System.out.println("예상 재고:    4");
+        System.out.println("등록 성공 건: " + listingCount);
+        System.out.println("예상 성공 건: 1");
+        System.out.println("========================================");
     }
-    /*
 
-    ===== 비관적 락 수정 후 테스트 결과 =====
-    요청 횟수: 2
-    성공 횟수: 1
-    실패 횟수: 1
-    최종 재고: 0
+    @Test
+    @DisplayName("V5 RedissonLock — 동시 2번 등록 시 재고 초과 차감 방지")
+    void 상품등록_RedissonLock_V5_동시2회_재고초과방지() throws InterruptedException {
+        // given
+        CreateMarketListingRequest request = buildRequest(sellerItem.getId(), 6L, BigDecimal.valueOf(600));
+
+        // when
+        int threadCount = 2;
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            executor.submit(() -> {
+                try {
+                    marketListingService.createV5(seller.getId(), request);
+                } catch (Exception e) {
+                    System.out.println("Exception caught: " + e.getMessage());
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+        latch.await();
+        executor.shutdown();
+
+        // then
+        MemberItem itemAfter = memberItemRepository.findById(sellerItem.getId()).orElseThrow();
+        assertTrue(itemAfter.getQuantity() >= 0, "재고는 음수가 되어선 안 된다");
+
+        long listingCount = marketListingRepository.findAll().stream()
+                .filter(l -> l.getMember().getId().equals(seller.getId()))
+                .count();
+        assertEquals(1, listingCount, "성공한 상품 등록은 정확히 1건이어야 한다");
+
+        System.out.println("========================================");
+        System.out.println("상품 등록 V5 RedissonLock");
+        System.out.println("동시 요청 수: 2 (수량 6 등록 2번 클릭)");
+        System.out.println("남은 재고:    " + itemAfter.getQuantity());
+        System.out.println("예상 재고:    4");
+        System.out.println("등록 성공 건: " + listingCount);
+        System.out.println("예상 성공 건: 1");
+        System.out.println("========================================");
+    }
+
+    /**
+     * CreateMarketListingRequest 생성 헬퍼.
+     * DTO에 빌더가 없으므로 setter 방식 사용.
+     * DTO 필드명/setter가 다를 경우 실제 구조에 맞게 수정하세요.
      */
+    private CreateMarketListingRequest buildRequest(Long memberItemId, Long quantity, BigDecimal totalPrice) {
+        // 생성자 순서: memberItemId, totalPrice, quantity, salesDuration
+        return new CreateMarketListingRequest(memberItemId, totalPrice, quantity, SalesDurations.HOURS_24);
+    }
 }
