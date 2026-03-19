@@ -190,6 +190,19 @@ public class AuthService {
         member.updatePassword(passwordEncoder.encode(request.newPassword()));
     }
 
+    @Transactional
+    @CacheEvict(value = "refreshTokens", key = "#email")
+    public void setPasswordV2(String email, SetPasswordRequest request) {
+        setPassword(email, request);
+    }
+
+    @Transactional
+    public void setPasswordV3(String email, SetPasswordRequest request) {
+        setPassword(email, request);
+        // Redis 리프레시 토큰 무효화
+        redisTemplate.delete(V3_REFRESH_TOKEN_PREFIX + email);
+    }
+
     /**
      * 소셜 연동 해제
      */
@@ -212,6 +225,19 @@ public class AuthService {
         }
 
         socialAccountRepository.deleteByMemberAndProvider(member, request.provider());
+    }
+
+    @Transactional
+    @CacheEvict(value = "refreshTokens", key = "#email")
+    public void unlinkSocialV2(String email, UnlinkSocialRequest request) {
+        unlinkSocial(email, request);
+    }
+
+    @Transactional
+    public void unlinkSocialV3(String email, UnlinkSocialRequest request) {
+        unlinkSocial(email, request);
+        // Redis 리프레시 토큰 무효화
+        redisTemplate.delete(V3_REFRESH_TOKEN_PREFIX + email);
     }
     
     /**
@@ -236,6 +262,37 @@ public class AuthService {
         
         // 블랙리스트 등록
         redisTemplate.opsForValue().set(V3_BLACKLIST_TOKEN_PREFIX + accessToken, "logout", V3_BLACKLIST_TOKEN_TTL);
+    }
+
+    /**
+     * 토큰 재발급 V1
+     */
+    @Transactional
+    public TokenAuthResponse reissue(String refreshToken) {
+        // 토큰 유효성 검증
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new ServiceException(ErrorEnum.ERR_AUTH_EXPIRED_TOKEN);
+        }
+        String email = jwtTokenProvider.getUserEmail(refreshToken);
+
+        // 사용자 확인
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
+
+        // DB에 저장된 토큰과 비교
+        if (member.getRefreshToken() == null || !member.getRefreshToken().equals(refreshToken)) {
+            throw new ServiceException(ErrorEnum.ERR_AUTH_INVALID_TOKEN);
+        }
+
+        // 새 토큰 생성
+        String newAccessToken = jwtTokenProvider.createAccessToken(
+                member.getEmail(), member.getRole().name());
+        String newRefreshToken = jwtTokenProvider.createRefreshToken(member.getEmail());
+
+        // DB 업데이트
+        member.updateRefreshToken(newRefreshToken);
+
+        return new TokenAuthResponse(newAccessToken, newRefreshToken);
     }
 
     /**
