@@ -1,6 +1,7 @@
 package com.example.tradedemo.common.aspect;
 
 import com.example.tradedemo.common.annotation.RedisLock;
+import com.example.tradedemo.common.consts.AopConsts;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.coupon.repository.LockRedisRepository;
@@ -21,7 +22,7 @@ import java.util.UUID;
 
 @Aspect
 @Component
-@Order(1)
+@Order(AopConsts.LOCK_ASPECT_ORDER)
 @RequiredArgsConstructor
 @Slf4j
 public class RedisLockAspect {
