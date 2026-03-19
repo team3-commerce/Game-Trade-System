@@ -13,10 +13,6 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
 
-jwt:
-  secret: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-  tokenValidityInSeconds: 999999999
-
 app:
   add-test-items: true
   add-test-signup-coupon: true

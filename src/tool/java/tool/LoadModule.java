@@ -29,7 +29,7 @@ public class LoadModule {
     public void loadDbImage(String dataBuilderName) throws Exception {
         this.dockerVolume = "game-trade-system-volume-test";
 
-        dockerComposeDown();
+        BuilderUtil.dockerComposeDown();
 
         try {
             this.dockerClient.removeVolumeCmd(this.dockerVolume).exec();
@@ -38,7 +38,11 @@ public class LoadModule {
 
         loadVolume(dataBuilderName);
 
-        dockerComposeUp();
+        BuilderUtil.dockerComposeUp(
+                TradeDockerBuilder.DB_PORT,
+                TradeDockerBuilder.REDIS_PORT,
+                this.dockerVolume
+        );
 
         System.out.println("========================");
         System.out.println("DONE");
@@ -92,31 +96,9 @@ public class LoadModule {
         FileSystemUtils.deleteRecursively(Path.of(this.tempDirectoryPath));
     }
 
-    private void dockerComposeUp() throws Exception {
-        ProcessBuilder builder =
-                new ProcessBuilder("docker", "compose", "-f", "docker-compose-test.yml", "up", "-d").inheritIO();
-        builder.environment().put("GAME_TRADE_SYSTEM_DB_VOLUME_NAME", this.dockerVolume);
-        int exitCode = builder.start().waitFor();
-
-        if (exitCode != 0) {
-            throw new Exception("docker compose up exited with %s".formatted(exitCode));
-        }
-    }
-
-    private void dockerComposeDown() throws Exception {
-        ProcessBuilder builder =
-                new ProcessBuilder("docker", "compose", "-f", "docker-compose-test.yml", "down").inheritIO();
-        builder.environment().put("GAME_TRADE_SYSTEM_DB_VOLUME_NAME", this.dockerVolume);
-        int exitCode = builder.start().waitFor();
-
-        if (exitCode != 0) {
-            throw new Exception("docker compose down exited with %s".formatted(exitCode));
-        }
-    }
-
     public void cleanUpOnError() {
         try {
-            dockerComposeDown();
+            BuilderUtil.dockerComposeDown();
         } catch (Exception e) {
             System.out.println(e);
         }
