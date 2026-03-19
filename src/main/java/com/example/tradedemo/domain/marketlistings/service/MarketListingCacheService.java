@@ -52,20 +52,14 @@ public class MarketListingCacheService {
         String normalizedKeyword = keyword.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
 
         /**
-         * 동일 검색어 어뷰징 방지용
+         * 동일 유저가 동일 검색어 중복 검색하는 경우 제외
          */
-        String dupCheckKey = MarketListingConsts.MARKET_LISTING + memberId + ":" + normalizedKeyword;
-        Boolean firstSearch = redisTemplate
-                .opsForValue()
-                .setIfAbsent(
-                        dupCheckKey,
-                        normalizedKeyword,
-                        Duration.ofMinutes(MarketListingConsts.SEARCH_DUPLICATE_PREVENT_MINUTES));
+        boolean isAlreadyCheck = isDupCheck(memberId, normalizedKeyword);
 
-        if (!firstSearch) {
+        if(isAlreadyCheck){
             return;
         }
-
+        
         /**
          *  똑같은 keyword를 서로 다른 키에 저장
          *  하나는 인기 검색어 검색 횟수 카운트용, 하나는 prefix 검색어 조회용
@@ -202,4 +196,15 @@ public class MarketListingCacheService {
         return MarketListingConsts.MARKET_LISTING + marketListingId;
     }
 
+    private boolean isDupCheck(Long memberId, String normalizedKeyword){
+        String dupCheckKey = MarketListingConsts.MARKET_LISTING + memberId + ":" + normalizedKeyword;
+        Boolean firstSearch = redisTemplate
+                .opsForValue()
+                .setIfAbsent(
+                        dupCheckKey,
+                        normalizedKeyword,
+                        Duration.ofMinutes(MarketListingConsts.SEARCH_DUPLICATE_PREVENT_MINUTES));
+
+        return !Boolean.TRUE.equals(firstSearch);
+    }
 }
