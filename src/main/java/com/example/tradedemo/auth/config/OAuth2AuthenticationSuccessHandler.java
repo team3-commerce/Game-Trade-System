@@ -33,7 +33,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         Member member = principalDetails.getMember();
 
         String accessToken = jwtTokenProvider.createAccessToken(member.getEmail(), member.getRole().name());
-        String refreshToken = jwtTokenProvider.createRefreshToken();
+        String refreshToken = jwtTokenProvider.createRefreshToken(member.getEmail());
 
         // 캐시에 Refresh Token 저장
         Objects.requireNonNull(cacheManager.getCache("refreshTokens")).put(member.getEmail(), refreshToken);

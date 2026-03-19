@@ -38,6 +38,13 @@ public class MemberController {
         return ResponseEntity.ok(ApiResponse.success("200", response));
     }
 
+    @GetMapping("/v3/me")
+    public ResponseEntity<ApiResponse<GetMyInfoResponse>> getMyInfoV3(
+            @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        GetMyInfoResponse response = memberService.getMyInfoV3(principalDetails.getEmail());
+        return ResponseEntity.ok(ApiResponse.success("200", response));
+    }
+
     /**
      * 내 닉네임 수정
      */
@@ -56,6 +63,15 @@ public class MemberController {
             @RequestBody @Valid UpdateNicknameRequest request) {
 
         memberService.updateNicknameV2(principalDetails.getEmail(), request);
+        return ResponseEntity.ok(ApiResponse.success("200", null));
+    }
+
+    @PatchMapping("/v3/me/nickname")
+    public ResponseEntity<ApiResponse<Void>> updateNicknameV3(
+            @AuthenticationPrincipal PrincipalDetails principalDetails,
+            @RequestBody @Valid UpdateNicknameRequest request) {
+
+        memberService.updateNicknameV3(principalDetails.getEmail(), request);
         return ResponseEntity.ok(ApiResponse.success("200", null));
     }
 
@@ -80,6 +96,15 @@ public class MemberController {
         return ResponseEntity.ok(ApiResponse.success("200", null));
     }
 
+    @PatchMapping("/v3/me/password")
+    public ResponseEntity<ApiResponse<Void>> updatePasswordV3(
+            @AuthenticationPrincipal PrincipalDetails principalDetails,
+            @RequestBody @Valid UpdatePasswordRequest request) {
+
+        memberService.updatePasswordV3(principalDetails.getEmail(), request);
+        return ResponseEntity.ok(ApiResponse.success("200", null));
+    }
+
     /**
      * 회원 탈퇴
      */
@@ -93,6 +118,13 @@ public class MemberController {
     public ResponseEntity<ApiResponse<Void>> deleteMyinfoV2(
             @AuthenticationPrincipal PrincipalDetails principalDetails) {
         memberService.withdrawV2(principalDetails.getEmail());
+        return ResponseEntity.ok(ApiResponse.success("200", null));
+    }
+
+    @DeleteMapping("/v3/me")
+    public ResponseEntity<ApiResponse<Void>> deleteMyinfoV3(
+            @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        memberService.withdrawV3(principalDetails.getEmail());
         return ResponseEntity.ok(ApiResponse.success("200", null));
     }
 
@@ -112,6 +144,14 @@ public class MemberController {
             @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid SuspendMemberRequest request) {
 
         memberService.suspendMemberV2(request);
+        return ResponseEntity.ok(ApiResponse.success("200", null));
+    }
+
+    @PatchMapping("/v3/admin/suspend")
+    public ResponseEntity<ApiResponse<Void>> suspendV3(
+            @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid SuspendMemberRequest request) {
+
+        memberService.suspendMemberV3(request);
         return ResponseEntity.ok(ApiResponse.success("200", null));
     }
 }

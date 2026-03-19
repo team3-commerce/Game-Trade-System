@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,6 +29,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final CacheManager cacheManager;
+    private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
@@ -80,8 +82,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * 블랙리스트 여부 확인
      */
     private boolean isBlacklisted(String token) {
+        return isCaffeineBlacklisted(token) || isRedisBlacklisted(token);
+    }
+
+    private boolean isCaffeineBlacklisted(String token) {
         Cache blacklistCache = cacheManager.getCache(BLACKLIST_CACHE_NAME);
         return blacklistCache != null && blacklistCache.get(token) != null;
+    }
+
+    private boolean isRedisBlacklisted(String token) {
+        return redisTemplate.hasKey(V3_BLACKLIST_TOKEN_PREFIX + token);
     }
 
     /**

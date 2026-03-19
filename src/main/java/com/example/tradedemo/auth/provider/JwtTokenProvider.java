@@ -42,8 +42,8 @@ public class JwtTokenProvider {
     /**
      * Refresh Token 생성
      */
-    public String createRefreshToken() {
-        return createToken(null, null, REFRESH_TOKEN_VALIDITY);
+    public String createRefreshToken(String email) {
+        return createToken(email, "REFRESH", REFRESH_TOKEN_VALIDITY);
     }
 
     /**
