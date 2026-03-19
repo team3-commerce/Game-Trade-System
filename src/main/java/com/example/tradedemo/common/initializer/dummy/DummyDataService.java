@@ -142,7 +142,7 @@ public class DummyDataService {
 
             // 획득일은 현재 시간 기준 1일 전후로 랜덤값으로 설정
             LocalDateTime acquiredAt = baseTime.plusSeconds(random
-                    .nextLong(-86400, 86401));
+                    .nextLong(-86400, 0));
 
             Long memberId = memberIdList.get(random.nextInt(memberIdList.size()));
             Long itemId = itemIdList.get(random.nextInt(itemIdList.size()));
