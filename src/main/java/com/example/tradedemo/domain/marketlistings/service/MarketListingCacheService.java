@@ -27,12 +27,7 @@ public class MarketListingCacheService {
     private final RedisTemplate<String, String> redisTemplate;
     private final RedisTemplate<String, Object> objRedisTemplate;
 
-    private final RedisTemplate<String, Object> objectRedisTemplate;
     private final ObjectMapper objectMapper;
-    private static final String MARKET_LISTING_ITEM_PREFIX = "marketListing:item:";
-    private static final String MARKET_LISTING_FIRST_PAGE_KEY = "marketListing:firstPage";
-    private static final Long MARKET_LISTING_CACHE_FIRST_PAGE_TIME = 3L;
-    private static final Long MARKET_LISTING_CACHE_GET = 10L;
 
 
     /**
@@ -163,11 +158,6 @@ public class MarketListingCacheService {
         return  objectMapper.convertValue(value, SearchMarketListingResponse.class);
     }
 
-    public void setMarketListingItem(Long marketListingId, SearchMarketListingResponse result){
-        String key = getMarketListingItemKey(marketListingId);
-        objRedisTemplate.opsForValue().set(key, result, MarketListingConsts.LISTING_ITEM_TIME_LIMIT, TimeUnit.MINUTES);
-    }
-
     private String getTrendingKey() {
         return MarketListingConsts.MARKET_LISTING
                 + MarketListingConsts.TRENDING_SEARCH
@@ -195,10 +185,10 @@ public class MarketListingCacheService {
      * @param value
      */
     public void setMarketListingItem(Long marketListingId, Object value) {
-        objectRedisTemplate.opsForValue().set(
+        objRedisTemplate.opsForValue().set(
                 getMarketListingItemKey(marketListingId),
                 value,
-                Duration.ofMinutes(MARKET_LISTING_CACHE_GET)
+                Duration.ofMinutes(MarketListingConsts.LISTING_ITEM_TIME_LIMIT)
         );
     }
     /**
@@ -206,7 +196,7 @@ public class MarketListingCacheService {
      * @param marketListingId
      */
     public void deleteMarketListingItem(Long marketListingId) {
-        objectRedisTemplate.delete(getMarketListingItemKey(marketListingId));
+        objRedisTemplate.delete(getMarketListingItemKey(marketListingId));
         log.info("[MarketListingCacheService] 단건 캐시 삭제 - key: {}", getMarketListingItemKey(marketListingId));
     }
     /**
@@ -214,18 +204,18 @@ public class MarketListingCacheService {
      * @param value
      */
     public void setMarketListingFirstPage(Object value) {
-        objectRedisTemplate.opsForValue().set(
-                MARKET_LISTING_FIRST_PAGE_KEY,
+        objRedisTemplate.opsForValue().set(
+                getMarketListingFirstPageKey(),
                 value,
-                Duration.ofMinutes(MARKET_LISTING_CACHE_FIRST_PAGE_TIME)
+                Duration.ofMinutes(MarketListingConsts.FIRST_PAGE_TIME_LIMIT)
         );
     }
     /**
      * 첫 페이지 삭제
      */
     public void deleteMarketListingFirstPage() {
-        objectRedisTemplate.delete(MARKET_LISTING_FIRST_PAGE_KEY);
-        log.info("[MarketListingCacheService] 첫 페이지 캐시 삭제 - key: {}", MARKET_LISTING_FIRST_PAGE_KEY);
+        objRedisTemplate.delete(getMarketListingFirstPageKey());
+        log.info("[MarketListingCacheService] 첫 페이지 캐시 삭제 - key: {}", getMarketListingFirstPageKey());
     }
 
     /**
@@ -234,7 +224,7 @@ public class MarketListingCacheService {
      * @return
      */
     private String getMarketListingItemKey(Long marketListingId) {
-        return MARKET_LISTING_ITEM_PREFIX + marketListingId;
+        return MarketListingConsts.MARKET_LISTING_ITEM_PREFIX + marketListingId;
     }
 
     private String getMarketListingFirstPageKey(){
