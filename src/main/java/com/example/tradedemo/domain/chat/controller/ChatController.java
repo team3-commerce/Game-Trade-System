@@ -1,7 +1,9 @@
 package com.example.tradedemo.domain.chat.controller;
 
 import com.example.tradedemo.auth.dto.PrincipalDetails;
+import com.example.tradedemo.common.config.ChatRedisPublisher;
 import com.example.tradedemo.domain.chat.dto.ChatMessageRequest;
+import com.example.tradedemo.domain.chat.dto.RedisChatMessageRequest;
 import com.example.tradedemo.domain.chat.entity.ChatMessage;
 import com.example.tradedemo.domain.chat.entity.ChatRoom;
 import com.example.tradedemo.domain.chat.repository.ChatMessageRepository;
@@ -20,6 +22,7 @@ public class ChatController {
 
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomRepository chatRoomRepository;
+    private final ChatRedisPublisher chatRedisPublisher;
     private final SimpMessagingTemplate messagingTemplate;
 
     // WebSocket 연결을 통해 메세지 발송
@@ -33,9 +36,15 @@ public class ChatController {
                 .orElseThrow();
 
         ChatMessage message= new ChatMessage(sender, room, request.getContent());
-
         chatMessageRepository.save(message);
 
-        messagingTemplate.convertAndSend("/sub/chat/" + room.getId(), request);
+        RedisChatMessageRequest redisMessage = new RedisChatMessageRequest(
+                message.getChatRoom().getId(),
+                message.getSender().getId(),
+                message.getSender().getNickname(),
+                message.getContent()
+        );
+
+        chatRedisPublisher.publish(room.getId(), redisMessage);
     }
 }
