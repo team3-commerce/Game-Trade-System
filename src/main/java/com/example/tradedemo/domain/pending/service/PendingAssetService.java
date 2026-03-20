@@ -1,5 +1,7 @@
 package com.example.tradedemo.domain.pending.service;
 
+import com.example.tradedemo.common.annotation.RedisLock;
+import com.example.tradedemo.common.annotation.RedissonLock;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.item.entity.Item;
@@ -21,7 +23,11 @@ import com.example.tradedemo.domain.wallet.entity.WalletHistories;
 import com.example.tradedemo.domain.wallet.enums.WalletStatus;
 import com.example.tradedemo.domain.wallet.repository.WalletHistoryRepository;
 import com.example.tradedemo.domain.wallet.repository.WalletRepository;
+
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,9 +47,9 @@ public class PendingAssetService {
     private final ItemRepository itemRepository;
     private final WalletHistoryRepository walletHistoryRepository;
 
-    private final PendingAssetLockService pendingAssetLockService;
-    private final PendingAssetTransactionalService pendingAssetTransactionalService;
     private final MemberItemCacheService memberItemCacheService;
+    private final CacheManager cacheManager;
+
 
     /**
      * 수령 대기 테이블 조회
@@ -66,6 +72,7 @@ public class PendingAssetService {
     @Transactional
     public void claimPendingAsset(Long memberId, Long pendingAssetId) {
         /**
+         * 비관적 락
          * pendingAsset 조회
          * 동시에 본인의 자산인지 확인
          */
@@ -151,37 +158,97 @@ public class PendingAssetService {
     }
 
     /**
-     * Redis 락 안에 비관적 락 먹어야 한다.
-     * 경쟁조건 : 락 > 트랜젝션
-     * @param memberId
-     * @param pendingAssetId
+     * Redis 분산 락 적용 (V2)
+     * @RedisLock : RedisLockAspect가 자동으로 락 획득 → 트랜잭션 → 락 해제 순서 보장
+     * @Transactional : 락 안에서 트랜잭션 실행 (@Order(1)로 락이 먼저 실행됨)
      */
+    @RedisLock(key = "'pending-asset:' + #pendingAssetId")
+    @Transactional
+    @CacheEvict(cacheNames = "inventoryList", allEntries = true)
     public void claimPendingAssetV2(Long memberId, Long pendingAssetId) {
         /**
-         * Redis 락
-         * @param lockKey 락 키 (예: "pending-asset:1")
-         * @param action  락 안에서 실행할 비즈니스 로직 = 기존 비관적 락 V2
+         * 개별수령조회
          */
-        String lockKey = "pending-asset:" + pendingAssetId;
+        PendingAsset asset = pendingAssetRepository
+                .findByIdAndMemberId(pendingAssetId, memberId)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FORBIDDEN));
+        /**
+         * 수령 가능한지 조회 : 없으면 수령할 자산(돈/아이템)이 없습니다
+         */
+        if (asset.getIsClaimed()) {
+            throw new ServiceException(ErrorEnum.ERR_PENDING_ASSET_FOUND_EXCEPTION);
+        }
+        /**
+         * 수령 상품이 돈인지 아이템인지 확인 -> 돈
+         */
+        if (asset.getType() == Type.MONEY) {
+            Wallet wallet = walletRepository.findByMemberId(memberId)
+                    .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_WALLET_NOT_FOUND));
 
-        pendingAssetLockService.executeWithLock(lockKey, () ->
-                /**
-                 * 트랜젝션 -> 락 구조를 피하기 위해 PendingAssetLockService로 비즈니스로직을 옮겼다.
-                 * 다른 클래스에 있어야 락(executeWithLock) -> 트랜젝션
-                 */
-                pendingAssetTransactionalService.executeWithLockclaimPendingAssetV2Internal(memberId, pendingAssetId)
-        );
+            wallet.addBalance(asset.getMoneyAmount());
+
+            walletHistoryRepository.save(WalletHistories.create(
+                    asset.getMoneyAmount(),
+                    WalletStatus.PURCHASE,
+                    wallet.getBalance(),
+                    wallet,
+                    null,
+                    wallet.getMember(),
+                    asset.getOrder()
+            ));
+        }
+        /**
+         * 수령 상품이 돈인지 아이템인지 확인 -> 아이템
+         */
+        if (asset.getType() == Type.ITEM) {
+            Long itemId = asset.getMarketListing()
+                    .getMemberItem()
+                    .getItem()
+                    .getId();
+            /**
+             * 아이템이면 재고 확인
+             */
+            Long quantity = asset.getItemQuantity();
+            MemberItem memberItem = memberItemRepository
+                    .findByMemberIdAndItemId(memberId, itemId)
+                    .orElse(null);
+            /**
+             * 아이템 인벤토리에 추가
+             */
+            if (memberItem != null) {
+                memberItem.increase(quantity);
+            } else {
+                Member member = memberRepository.getReferenceById(memberId);
+                Item item = itemRepository.getReferenceById(itemId);
+
+                memberItem = MemberItem.create(member, item, LocalDateTime.now(), quantity);
+                memberItemRepository.save(memberItem);
+            }
+
+            Cache cache = cacheManager.getCache("인벤토리 아이템");
+            if (cache != null) {
+                String key = "사용자:" + memberId + ":인벤토리:" + memberItem.getId();
+                cache.evict(key);
+            }
+
+
+        }
+        /**
+         * 수령 상태 변경
+         * 수령 시간 체크
+         */
+        asset.setClaimed(true);
+        asset.setClaimedAt(LocalDateTime.now());
     }
-    /**
-     * executeWithLockclaimPendingAssetV2Internal 있던 자리
-     * 여기에 있던 거 그대로 복사해서 PendingAssetLockService에 옮김
-     */
 
     /**
-     * 상품 구매
+     * 수령하기
+     * Redis Redisson + @RedissonLock AOP
+     * Redis 캐시 삭제 : 인벤토리에서 조회한 캐시 삭제
      * @param memberId
      * @param pendingAssetId
      */
+    @RedissonLock(key = "'lock:pending-asset:' + #pendingAssetId")
     @Transactional
     public void claimPendingAssetV3(Long memberId, Long pendingAssetId) {
         PendingAsset asset = pendingAssetRepository
@@ -272,3 +339,4 @@ public class PendingAssetService {
         pendingAssetRepository.save(buyerPending);
     }
 }
+

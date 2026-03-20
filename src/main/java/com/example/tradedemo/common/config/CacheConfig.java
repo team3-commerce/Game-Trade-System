@@ -24,7 +24,7 @@ public class CacheConfig {
     public CacheManager cacheManager() {
         SimpleCacheManager cacheManager = new SimpleCacheManager();
 
-        // items 캐시
+        // items
         CaffeineCache itemCache = new CaffeineCache(
                 "items",
                 Caffeine.newBuilder()

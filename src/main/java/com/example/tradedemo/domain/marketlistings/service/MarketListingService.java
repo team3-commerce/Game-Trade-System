@@ -1,6 +1,8 @@
 package com.example.tradedemo.domain.marketlistings.service;
 
 import com.example.tradedemo.auth.dto.PrincipalDetails;
+import com.example.tradedemo.common.annotation.RedisLock;
+import com.example.tradedemo.common.annotation.RedissonLock;
 import com.example.tradedemo.common.dto.PageResponse;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
@@ -51,7 +53,10 @@ public class MarketListingService {
     private final MemberItemCacheService memberItemCacheService;
 
     /**
-     * 상품 등록
+     * 상품 등록 V1
+     * @param memberId
+     * @param request
+     * @return
      */
     @Transactional
     public GetMarketListingResponse create(Long memberId, CreateMarketListingRequest request) {
@@ -103,6 +108,12 @@ public class MarketListingService {
         return GetMarketListingResponse.create(marketListing, memberItem.getItem());
     }
 
+    /**
+     * 상품 등록 V2 : 로컬 인벤토리 조회 캐시
+     * @param memberId
+     * @param request
+     * @return
+     */
     @Transactional
     @Caching(
             evict = {
@@ -147,6 +158,12 @@ public class MarketListingService {
         return GetMarketListingResponse.create(marketListing, memberItem.getItem());
     }
 
+    /**
+     * 상품 등록 V3 : Redis 인벤토리 조회 삭제
+     * @param memberId
+     * @param request
+     * @return
+     */
     @Transactional
     public GetMarketListingResponse createV3(Long memberId, CreateMarketListingRequest request) {
         Member member = memberRepository
@@ -187,15 +204,124 @@ public class MarketListingService {
         return GetMarketListingResponse.create(marketListing, memberItem.getItem());
     }
 
+    /**
+     * 상품 등록 V4 - Redis RedisLock + @RedisLock AOP + Redis 캐시 삭제
+     * @RedisLock : 락 획득 → 트랜잭션 → 락 해제 순서 보장
+     * @Transactional : 락 안에서 트랜잭션 실행
+     * 사용자ID와 인벤토리 ID(인벤토리에저장된도감번호)
+     */
+    @RedisLock(key = "'market-listing:member:' + #memberId + ':item:' + #request.getMemberItemId()")
+    @Transactional
+    public GetMarketListingResponse createV4(Long memberId, CreateMarketListingRequest request) {
+        Member member = memberRepository
+                .findById(memberId)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
+        /**
+         * Redis 락이 동시성 보장 : findById 이거면 충분하다
+         */
+        MemberItem memberItem = memberItemRepository
+                .findById(request.getMemberItemId())
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_ITEM_NOT_FOUND));
+
+        if (!memberItem.getMember().getId().equals(member.getId())) {
+            throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_OWNER_MISMATCH);
+        }
+
+        if (memberItem.getQuantity() < request.getQuantity()) {
+            throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_OVER_SELLING);
+        }
+
+        /**
+         * 상품 등록 후 인벤토리 내 수량만큼 삭제(삭제 후에 등록)
+         */
+        memberItem.decrease(request.getQuantity());
+
+        BigDecimal unitPrice = request.getTotalPrice()
+                .divide(BigDecimal.valueOf(request.getQuantity()), 0, RoundingMode.DOWN);
+        /**
+         * 거래소(MarketListing)에 상품 등록
+         */
+        MarketListing marketListing = MarketListing.create(
+                memberItem.getItem().getName(),
+                request.getTotalPrice(),
+                unitPrice,
+                request.getQuantity(),
+                request.getSalesDuration().getDuration(),
+                memberItem,
+                member
+        );
+
+        marketListingRepository.saveAndFlush(marketListing);
+
+        // Redis 캐시 삭제
+        memberItemCacheService.deleteMemberItemList(memberId);
+        memberItemCacheService.deleteMemberItem(memberId, memberItem.getId());
+
+        return GetMarketListingResponse.create(marketListing, memberItem.getItem());
+    }
 
     /**
-     * 마켓 상품 전체 조회
+     * 상품 등록 V5 - Redis Redisson + @RedissonLock AOP + Redis 캐시 삭제
+     * 인벤토리 조회 캐시 삭제
+     * @param memberId
+     * @param request
+     * @return
+     */
+    @RedissonLock(key = "'lock:market-listing:member:' + #memberId + ':item:' + #request.getMemberItemId()")
+    @Transactional
+    public GetMarketListingResponse createV5(Long memberId, CreateMarketListingRequest request) {
+        Member member = memberRepository
+                .findById(memberId)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
+
+        MemberItem memberItem = memberItemRepository
+                .findById(request.getMemberItemId())
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_ITEM_NOT_FOUND));
+
+        if (!memberItem.getMember().getId().equals(member.getId())) {
+            throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_OWNER_MISMATCH);
+        }
+
+        if (memberItem.getQuantity() < request.getQuantity()) {
+            throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_OVER_SELLING);
+        }
+
+        memberItem.decrease(request.getQuantity());
+
+        BigDecimal unitPrice = request.getTotalPrice()
+                .divide(BigDecimal.valueOf(request.getQuantity()), 0, RoundingMode.DOWN);
+
+        MarketListing marketListing = MarketListing.create(
+                memberItem.getItem().getName(),
+                request.getTotalPrice(),
+                unitPrice,
+                request.getQuantity(),
+                request.getSalesDuration().getDuration(),
+                memberItem,
+                member
+        );
+
+        marketListingRepository.saveAndFlush(marketListing);
+
+        // Redis 캐시 삭제
+        memberItemCacheService.deleteMemberItemList(memberId);
+        memberItemCacheService.deleteMemberItem(memberId, memberItem.getId());
+
+        return GetMarketListingResponse.create(marketListing, memberItem.getItem());
+    }
+
+    /**
+     * 마켓 상품 전체 조회 V1
+     * @param memberId
+     * @param keyword
+     * @param sortTotalPrice
+     * @param sortSaleEndAt
+     * @param pageable
+     * @return
      */
     @Transactional(readOnly = true)
     public PageResponse<SearchAllMarketListingResponse> getAllMarketListing(
             Long memberId, String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
-
-        expireMarketListings(); // 만료 처리
 
         if (keyword != null && !keyword.isBlank()) {
             marketListingCacheService.cacheSearchKeyword(memberId, keyword);
@@ -205,6 +331,15 @@ public class MarketListingService {
                 null, keyword, MarketListingStatus.SELLING, sortTotalPrice, sortSaleEndAt, pageable));
     }
 
+    /**
+     * 마켓 상품 전체 조회 V2 - 로컬 캐시
+     * @param memberId
+     * @param keyword
+     * @param sortTotalPrice
+     * @param sortSaleEndAt
+     * @param pageable
+     * @return
+     */
     @Transactional(readOnly = true)
     @Cacheable(
             cacheNames = "marketListingsFirstPage",
@@ -216,7 +351,6 @@ public class MarketListingService {
     )
     public PageResponse<SearchAllMarketListingResponse> getAllMarketListingV2(
             Long memberId, String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
-        expireMarketListings(); // 만료 처리
 
         if (keyword != null && !keyword.isBlank()) {
             marketListingCacheService.cacheSearchKeyword(memberId, keyword);
@@ -226,37 +360,48 @@ public class MarketListingService {
                 null, keyword, MarketListingStatus.SELLING, sortTotalPrice, sortSaleEndAt, pageable));
     }
 
+    /**
+     * 마켓 상품 전체 조회 V3 — Redis 캐시
+     * @param memberId
+     * @param keyword
+     * @param sortTotalPrice
+     * @param sortSaleEndAt
+     * @param pageable
+     * @return
+     */
     @Transactional(readOnly = true)
-    public PageResponse<SearchAllMarketListingResponse> getAllMarketListingV3(Long memberId, String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
+    public PageResponse<SearchAllMarketListingResponse> getAllMarketListingV3(
+            Long memberId, String keyword, String sortTotalPrice, String sortSaleEndAt, Pageable pageable) {
 
-        if (!isBlank(keyword)) {
+        boolean isCacheable = pageable.getPageNumber() == 0
+                && (keyword == null || keyword.isBlank())
+                && (sortTotalPrice == null || sortTotalPrice.isBlank())
+                && (sortSaleEndAt == null || sortSaleEndAt.isBlank());
+
+        if (isCacheable) {
+            PageResponse<SearchAllMarketListingResponse> cached =
+                    marketListingCacheService.getMarketListingFirstPage();
+            if (cached != null) return cached;
+        }
+
+        if (keyword != null && !keyword.isBlank()) {
             marketListingCacheService.cacheSearchKeyword(memberId, keyword);
         }
 
-        boolean isDefaultFirstPage = isDefaultFirstPage(keyword, sortTotalPrice, sortSaleEndAt, pageable);
+        PageResponse<SearchAllMarketListingResponse> response = PageResponse.of(
+                marketListingRepository.getAllMarketListingWithKeyword(
+                        null, keyword, MarketListingStatus.SELLING,
+                        sortTotalPrice, sortSaleEndAt, pageable));
 
-        // 캐시에 찾는 데이터가 있는지 먼저 확인
-        if(isDefaultFirstPage) {
-            PageResponse<SearchAllMarketListingResponse> cached = marketListingCacheService.getMarketListingFirstPage();
-
-            if(cached!=null){
-                return cached;
-            }
+        if (isCacheable) {
+            marketListingCacheService.setMarketListingFirstPage(response);
         }
 
-        // 없을 경우 db 조회 후 캐시에 저장
-        PageResponse<SearchAllMarketListingResponse> result = PageResponse.of(marketListingRepository.getAllMarketListingWithKeyword(
-                null, keyword, MarketListingStatus.SELLING, sortTotalPrice, sortSaleEndAt, pageable));
-
-        if(isDefaultFirstPage) {
-            marketListingCacheService.setMarketListingFirstPage(result);
-        }
-
-        return result;
+        return response;
     }
 
     /**
-     * 본인 마켓 상품 전체 조회
+     * 본인 마켓 상품 전체 조회 V1
      */
     @Transactional(readOnly = true)
     public PageResponse<SearchAllMarketListingResponse> getAllMeMarketListing(
@@ -267,7 +412,9 @@ public class MarketListingService {
     }
 
     /**
-     * 마켓 상품 단건 조회
+     * 마켓 상품 단건 조회V1
+     * @param marketListingId
+     * @return
      */
     @Transactional(readOnly = true)
     public SearchMarketListingResponse getMarketListing(Long marketListingId) {
@@ -277,56 +424,58 @@ public class MarketListingService {
 
         return SearchMarketListingResponse.of(marketListing);
     }
-
+    /**
+     * 마켓 상품 단건 조회 V2 - 로컬 캐시
+     * @param marketListingId
+     * @return
+     */
     @Transactional(readOnly = true)
-    @Cacheable(
-            cacheNames = "marketListingItem",
-            key = "'listing:' + #marketListingId"
-    )
+    @Cacheable(cacheNames = "marketListingItem", key = "'listing:' + #marketListingId")
     public SearchMarketListingResponse getMarketListingV2(Long marketListingId) {
-        MarketListing marketListing = marketListingRepository
-                .findById(marketListingId)
+
+        MarketListing marketListing = marketListingRepository.findById(marketListingId)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_FOUND));
 
         return SearchMarketListingResponse.of(marketListing);
     }
-
+    /**
+     * 마켓 상품 단건 조회 V3 - Redis 캐시
+     * @param marketListingId
+     * @return
+     */
     @Transactional(readOnly = true)
     public SearchMarketListingResponse getMarketListingV3(Long marketListingId) {
 
-        // 캐시에 데이터가 있는지 먼저 확인
-        SearchMarketListingResponse cached = marketListingCacheService.getMarketListingItem(marketListingId);
-
-        if(cached!=null){
-            return cached;
-        }
-
-        // 없을 경우 DB 조회 후 캐시에 저장
-        SearchMarketListingResponse result = SearchMarketListingResponse.of(marketListingRepository
+        /**
+         * Redis 캐시 조회
+         */
+        SearchMarketListingResponse cached =
+                marketListingCacheService.getMarketListingItem(marketListingId);
+        if (cached != null) return cached;
+        /**
+         * DB 조회
+         */
+        MarketListing marketListing = marketListingRepository
                 .findById(marketListingId)
-                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_FOUND)));
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_FOUND));
 
-        marketListingCacheService.setMarketListingItem(marketListingId, result);
+        /**
+         * 조회 기록 응답 : 단건 조회 가져오기
+         */
+        SearchMarketListingResponse response = SearchMarketListingResponse.of(marketListing);
+        /**
+         * Redis 저장
+         */
+        marketListingCacheService.setMarketListingItem(marketListingId, response);
 
-        return result;
+        return SearchMarketListingResponse.of(marketListing);
     }
 
     /**
-     * 만료 시간
-     * 상품 등록 시 만료 시간 체크 : saleEndAt
-     * 만료 시간이 되면 SELLING(판매) → EXPIRED(만료)
+     * 인기 검색어 조회 V1
+     * @param prefixKeyword
+     * @return
      */
-    @Transactional
-    public void expireMarketListings() {
-
-        List<MarketListing> expiredListings = marketListingRepository.findByStatusAndSaleEndAtBefore(
-                MarketListingStatus.SELLING, LocalDateTime.now());
-
-        for (MarketListing listing : expiredListings) {
-            listing.updateStatus(MarketListingStatus.EXPIRED);
-        }
-    }
-
     @Transactional(readOnly = true)
     public List<SearchTrendingKeywordResponse> getTrendingKeywords(String prefixKeyword) {
         if (prefixKeyword == null || prefixKeyword.isBlank()) {
@@ -336,6 +485,14 @@ public class MarketListingService {
         }
     }
 
+
+    /**
+     * 상품 등록 취소 V1 - QueryDSL
+     * @param details
+     * @param calledByAdminApi
+     * @param marketListingId
+     * @return
+     */
     private SearchMarketListingResponse cancelMarketListingImpl(
             PrincipalDetails details, boolean calledByAdminApi, Long marketListingId) {
         MarketListing marketListing = marketListingRepository
@@ -390,12 +547,16 @@ public class MarketListingService {
 
         return SearchMarketListingResponse.of(marketListing);
     }
-
     @Transactional
     public SearchMarketListingResponse cancelMarketListing(PrincipalDetails details, Long marketListingId) {
         return cancelMarketListingImpl(details, false, marketListingId);
     }
-
+    /**
+     * 상품 등록 취소 V2 - 로컬 캐시
+     * @param details
+     * @param marketListingId
+     * @return
+     */
     @Transactional
     @Caching(evict = {
             @CacheEvict(cacheNames = "marketListingsFirstPage", allEntries = true),
@@ -404,7 +565,12 @@ public class MarketListingService {
     public SearchMarketListingResponse cancelMarketListingV2(PrincipalDetails details, Long marketListingId) {
         return cancelMarketListingImpl(details, false, marketListingId);
     }
-
+    /**
+     * 상품 등록 취소 V1 - 관리자
+     * @param details
+     * @param marketListingId
+     * @return
+     */
     @Transactional
     public SearchMarketListingResponse cancelMarketListingV3(PrincipalDetails details, Long marketListingId) {
 
@@ -419,6 +585,11 @@ public class MarketListingService {
         return cancelMarketListingImpl(details, true, marketListingId);
     }
 
+    /**
+     * 공용 - 마켓(거래소) id 찾기
+     * @param marketListingId
+     * @return
+     */
     @Transactional(readOnly = true)
     public MarketListing findMarketListing(Long marketListingId) {
         return marketListingRepository.findById(marketListingId).orElseThrow(

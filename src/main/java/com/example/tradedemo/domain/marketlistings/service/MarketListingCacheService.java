@@ -8,11 +8,11 @@ import com.example.tradedemo.domain.marketlistings.dto.SearchTrendingKeywordResp
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
-import com.example.tradedemo.domain.members.dto.GetAllMemberItemResponse;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.concurrent.TimeUnit;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Range;
@@ -26,7 +26,9 @@ import org.springframework.stereotype.Service;
 public class MarketListingCacheService {
     private final RedisTemplate<String, String> redisTemplate;
     private final RedisTemplate<String, Object> objRedisTemplate;
+
     private final ObjectMapper objectMapper;
+
 
     /**
      * 검색한 키워드를 카운트해서 캐시에 저장하는 메서드
@@ -59,7 +61,7 @@ public class MarketListingCacheService {
         if(isAlreadyCheck){
             return;
         }
-        
+
         /**
          *  똑같은 keyword를 서로 다른 키에 저장
          *  하나는 인기 검색어 검색 횟수 카운트용, 하나는 prefix 검색어 조회용
@@ -156,26 +158,6 @@ public class MarketListingCacheService {
         return  objectMapper.convertValue(value, SearchMarketListingResponse.class);
     }
 
-    public void setMarketListingFirstPage(PageResponse<SearchAllMarketListingResponse> result){
-        String key = getMarketListingFirstPageKey();
-        objRedisTemplate.opsForValue().set(key, result, MarketListingConsts.FIRST_PAGE_TIME_LIMIT, TimeUnit.MINUTES);
-    }
-
-    public void setMarketListingItem(Long marketListingId, SearchMarketListingResponse result){
-        String key = getMarketListingItemKey(marketListingId);
-        objRedisTemplate.opsForValue().set(key, result, MarketListingConsts.LISTING_ITEM_TIME_LIMIT, TimeUnit.MINUTES);
-    }
-
-    public void deleteMarketListingFirstPage(){
-        String key = getMarketListingFirstPageKey();
-        objRedisTemplate.delete(key);
-    }
-
-    public void deleteMarketListingItem(Long marketListingId){
-        String key = getMarketListingItemKey(marketListingId);
-        objRedisTemplate.delete(key);
-    }
-
     private String getTrendingKey() {
         return MarketListingConsts.MARKET_LISTING
                 + MarketListingConsts.TRENDING_SEARCH
@@ -188,12 +170,65 @@ public class MarketListingCacheService {
                 + LocalDate.now().format(MarketListingConsts.TRENDING_SEARCH_FORMATTER);
     }
 
-    private String getMarketListingFirstPageKey(){
-        return MarketListingConsts.MARKET_LISTING + MarketListingConsts.FIRST_PAGE;
+    /**
+     *
+     * 상품 구매 : 캐시 생성
+     * 마켓(거래소)에서 조회한 캐시 데이터를 저장
+     * 상품 구매 시 조회한 캐시 데이터 삭제
+     *
+     */
+
+
+    /**
+     * 단건 조회 저장
+     * @param marketListingId
+     * @param value
+     */
+    public void setMarketListingItem(Long marketListingId, Object value) {
+        objRedisTemplate.opsForValue().set(
+                getMarketListingItemKey(marketListingId),
+                value,
+                Duration.ofMinutes(MarketListingConsts.LISTING_ITEM_TIME_LIMIT)
+        );
+    }
+    /**
+     * 단건 조회 삭제
+     * @param marketListingId
+     */
+    public void deleteMarketListingItem(Long marketListingId) {
+        objRedisTemplate.delete(getMarketListingItemKey(marketListingId));
+        log.info("[MarketListingCacheService] 단건 캐시 삭제 - key: {}", getMarketListingItemKey(marketListingId));
+    }
+    /**
+     * 첫 페이지 저장
+     * @param value
+     */
+    public void setMarketListingFirstPage(Object value) {
+        objRedisTemplate.opsForValue().set(
+                getMarketListingFirstPageKey(),
+                value,
+                Duration.ofMinutes(MarketListingConsts.FIRST_PAGE_TIME_LIMIT)
+        );
+    }
+    /**
+     * 첫 페이지 삭제
+     */
+    public void deleteMarketListingFirstPage() {
+        objRedisTemplate.delete(getMarketListingFirstPageKey());
+        log.info("[MarketListingCacheService] 첫 페이지 캐시 삭제 - key: {}", getMarketListingFirstPageKey());
     }
 
+    /**
+     * 마켓(거래소)의 키, id
+     * @param marketListingId
+     * @return
+     */
     private String getMarketListingItemKey(Long marketListingId) {
-        return MarketListingConsts.MARKET_LISTING + marketListingId;
+        return MarketListingConsts.MARKET_LISTING_ITEM_PREFIX + marketListingId;
+    }
+
+    private String getMarketListingFirstPageKey(){
+        return MarketListingConsts.MARKET_LISTING + MarketListingConsts.FIRST_PAGE;
     }
 
     private boolean isDupCheck(Long memberId, String normalizedKeyword){
