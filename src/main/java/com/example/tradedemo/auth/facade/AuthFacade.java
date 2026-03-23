@@ -4,15 +4,10 @@ import com.example.tradedemo.auth.dto.*;
 import com.example.tradedemo.auth.service.AuthService;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
-import com.example.tradedemo.domain.coupon.service.CouponService;
 import com.example.tradedemo.domain.members.entity.Member;
-import com.example.tradedemo.domain.members.entity.SocialAccount;
-import com.example.tradedemo.domain.members.enums.SocialProvider;
 import com.example.tradedemo.domain.members.service.MemberService;
-import com.example.tradedemo.domain.members.service.SocialAccountService;
-import com.example.tradedemo.domain.wallet.service.WalletService;
+import com.example.tradedemo.domain.wallet.facade.WalletFacade;
 import java.math.BigDecimal;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,30 +18,27 @@ public class AuthFacade {
 
     private final AuthService authService;
     private final MemberService memberService;
-    private final WalletService walletService;
-    private final CouponService couponService;
-    private final SocialAccountService socialAccountService;
+    private final WalletFacade walletFacade;
 
     /**
-     * 회원가입
+     * 회원 가입 및 지갑 생성 (V1)
      */
     @Transactional
     public void signup(SignupAuthRequest request) {
-        // 비밀번호 암호화
         String encodedPassword = authService.encodePassword(request.password());
+        Member member = memberService.createMember(
+                request.email(),
+                encodedPassword,
+                request.nickname(),
+                request.role()
+        );
 
-        // 멤버 생성
-        Member member = memberService.createMember(request.email(), encodedPassword, request.nickname(), request.role());
-
-        // 지갑 생성
-        walletService.createWallet(member, BigDecimal.ZERO);
-
-        // 쿠폰 발급
-        couponService.autoSignupCoupon(member);
+        // 초기 잔액 0원인 지갑 생성
+        walletFacade.createWallet(member, BigDecimal.ZERO);
     }
 
     /**
-     * 로그인 V1
+     * 로그인 V1 (DB 기반)
      */
     @Transactional
     public TokenAuthResponse login(LoginAuthRequest request) {
@@ -54,61 +46,53 @@ public class AuthFacade {
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
 
         authService.validatePassword(request.password(), member.getPassword());
-        
-        memberService.handleMemberStatus(member); // 계정 상태 확인
+        memberService.handleMemberStatus(member);
 
         TokenAuthResponse response = authService.createTokens(member.getEmail(), member.getRole().name());
-
         member.updateRefreshToken(response.refreshToken());
-        member.updateLastLoginAt();
 
         return response;
     }
 
     /**
-     * 로그인 V2 (Caffeine Cache)
+     * 로그인 V2 (캐시 기반)
      */
     @Transactional
     public TokenAuthResponse loginV2(LoginAuthRequest request) {
         Member member = memberService.findByEmail(request.email())
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
 
-        if (member.getPassword() == null) {
+        // 일반 로그인 시 소셜 계정 체크
+        if (member.isSocialOnly()) {
             throw new ServiceException(ErrorEnum.ERR_AUTH_SOCIAL_ACCOUNT_ONLY);
         }
 
         authService.validatePassword(request.password(), member.getPassword());
-        
         memberService.handleMemberStatus(member);
 
         TokenAuthResponse response = authService.createTokens(member.getEmail(), member.getRole().name());
-
         authService.saveRefreshTokenToCache(member.getEmail(), response.refreshToken());
-        member.updateLastLoginAt();
 
         return response;
     }
 
     /**
-     * 로그인 V3 (Redis)
+     * 로그인 V3 (Redis 기반)
      */
     @Transactional
     public TokenAuthResponse loginV3(LoginAuthRequest request) {
         Member member = memberService.findByEmail(request.email())
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
 
-        if (member.getPassword() == null) {
+        if (member.isSocialOnly()) {
             throw new ServiceException(ErrorEnum.ERR_AUTH_SOCIAL_ACCOUNT_ONLY);
         }
 
         authService.validatePassword(request.password(), member.getPassword());
-        
         memberService.handleMemberStatus(member);
 
         TokenAuthResponse response = authService.createTokens(member.getEmail(), member.getRole().name());
-
         authService.saveRefreshTokenToRedis(member.getEmail(), response.refreshToken());
-        member.updateLastLoginAt();
 
         return response;
     }
@@ -124,16 +108,18 @@ public class AuthFacade {
     }
 
     /**
-     * 로그아웃 V2
+     * 로그아웃 V2 (캐시 블랙리스트)
      */
+    @Transactional
     public void logoutV2(String email, String accessToken) {
+        // 캐시 기반 로그아웃 (생략 가능하나 구조상 유지)
         authService.addToBlacklistCache(accessToken);
-        // 리프레시 토큰 캐시는 @CacheEvict로 Controller 수준에서 처리하거나 여기서 명시적으로 삭제
     }
 
     /**
-     * 로그아웃 V3
+     * 로그아웃 V3 (Redis 블랙리스트)
      */
+    @Transactional
     public void logoutV3(String email, String accessToken) {
         authService.deleteRefreshTokenFromRedis(email);
         authService.addToBlacklistRedis(accessToken);
@@ -148,7 +134,7 @@ public class AuthFacade {
         Member member = memberService.findByEmail(email)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
 
-        if (member.getRefreshToken() == null || !member.getRefreshToken().equals(refreshToken)) {
+        if (!refreshToken.equals(member.getRefreshToken())) {
             throw new ServiceException(ErrorEnum.ERR_AUTH_INVALID_TOKEN);
         }
 
@@ -164,9 +150,9 @@ public class AuthFacade {
     @Transactional
     public TokenAuthResponse reissueV2(String refreshToken) {
         String email = authService.validateAndGetEmail(refreshToken);
-        String cachedToken = authService.getRefreshTokenFromCache(email);
+        String savedToken = authService.getRefreshTokenFromCache(email);
 
-        if (cachedToken == null || !cachedToken.equals(refreshToken)) {
+        if (!refreshToken.equals(savedToken)) {
             throw new ServiceException(ErrorEnum.ERR_AUTH_INVALID_TOKEN);
         }
 
@@ -185,9 +171,9 @@ public class AuthFacade {
     @Transactional
     public TokenAuthResponse reissueV3(String refreshToken) {
         String email = authService.validateAndGetEmail(refreshToken);
-        String cachedToken = authService.getRefreshTokenFromRedis(email);
+        String savedToken = authService.getRefreshTokenFromRedis(email);
 
-        if (cachedToken == null || !cachedToken.equals(refreshToken)) {
+        if (!refreshToken.equals(savedToken)) {
             throw new ServiceException(ErrorEnum.ERR_AUTH_INVALID_TOKEN);
         }
 
@@ -201,18 +187,15 @@ public class AuthFacade {
     }
 
     /**
-     * 비밀번호 설정
+     * 소셜 가입자 비밀번호 설정
      */
     @Transactional
     public void setPassword(String email, SetPasswordRequest request) {
         Member member = memberService.findByEmail(email)
-                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
 
-        if (member.getPassword() != null) {
-            throw new ServiceException(ErrorEnum.ERR_AUTH_PASSWORD_ALREADY_EXISTS);
-        }
-
-        member.updatePassword(authService.encodePassword(request.newPassword()));
+        String encodedPassword = authService.encodePassword(request.newPassword());
+        member.updatePassword(encodedPassword);
     }
 
     /**
@@ -221,19 +204,26 @@ public class AuthFacade {
     @Transactional
     public void unlinkSocial(String email, UnlinkSocialRequest request) {
         Member member = memberService.findByEmail(email)
-                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
 
-        if (!socialAccountService.existsByMemberAndProvider(member, request.provider())) {
-            throw new ServiceException(ErrorEnum.ERR_AUTH_SOCIAL_NOT_FOUND);
-        }
+        member.unlinkSocial(request.provider());
+    }
 
-        List<SocialAccount> socialAccounts = socialAccountService.findAllByMember(member);
-        boolean hasPassword = member.getPassword() != null;
+    /**
+     * 소셜 연동 해제 V2 (캐시 기반)
+     */
+    @Transactional
+    public void unlinkSocialV2(String email, UnlinkSocialRequest request) {
+        unlinkSocial(email, request);
+        authService.deleteRefreshTokenFromCache(email);
+    }
 
-        if (!hasPassword && socialAccounts.size() <= 1) {
-            throw new ServiceException(ErrorEnum.ERR_AUTH_SOCIAL_UNLINK_FORBIDDEN);
-        }
-
-        socialAccountService.deleteByMemberAndProvider(member, request.provider());
+    /**
+     * 소셜 연동 해제 V3 (Redis 기반)
+     */
+    @Transactional
+    public void unlinkSocialV3(String email, UnlinkSocialRequest request) {
+        unlinkSocial(email, request);
+        authService.deleteRefreshTokenFromRedis(email);
     }
 }

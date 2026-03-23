@@ -15,6 +15,7 @@ import com.example.tradedemo.domain.pending.enums.PendingType;
 import com.example.tradedemo.domain.pending.enums.Type;
 import com.example.tradedemo.domain.pending.service.PendingAssetService;
 import com.example.tradedemo.domain.wallet.entity.Wallet;
+import com.example.tradedemo.domain.wallet.facade.WalletFacade;
 import com.example.tradedemo.domain.wallet.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
@@ -29,6 +30,7 @@ public class PendingAssetFacade {
 
     private final PendingAssetService pendingAssetService;
     private final WalletService walletService;
+    private final WalletFacade walletFacade;
     private final MemberItemService memberItemService;
     private final MemberItemCacheService memberItemCacheService;
     private final CacheManager cacheManager;
@@ -99,7 +101,7 @@ public class PendingAssetFacade {
     private void processClaim(Long memberId, PendingAsset asset) {
         if (asset.getType() == Type.MONEY) {
             Wallet wallet = walletService.findWallet(memberId);
-            walletService.addBalanceWithHistory(wallet, asset.getMoneyAmount(), asset.getOrder());
+            walletFacade.addBalanceWithHistory(wallet, asset.getMoneyAmount(), asset.getOrder());
         }
 
         if (asset.getType() == Type.ITEM) {

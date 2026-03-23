@@ -83,6 +83,13 @@ public class AuthService {
     }
 
     /**
+     * 캐시 내 리프레시 토큰 삭제 (V2)
+     */
+    public void deleteRefreshTokenFromCache(String email) {
+        getRefreshCache().evict(email);
+    }
+
+    /**
      * Redis 내 리프레시 토큰 조회 (V3)
      */
     public String getRefreshTokenFromRedis(String email) {

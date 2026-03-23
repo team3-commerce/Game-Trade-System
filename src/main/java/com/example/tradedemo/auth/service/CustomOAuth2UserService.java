@@ -67,7 +67,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     }
 
     private Member processOAuth2User(SocialProvider provider, OAuth2UserInfo userInfo, String email) {
-        // 소셜 계정 연동 여부 확인
+        // 소셜 계정 연동 여부 확인 (기존 연동 기록이 있는 경우)
         Member member = socialAccountRepository.findByProviderAndProviderId(provider, userInfo.getId())
                 .map(SocialAccount::getMember)
                 .orElseGet(() -> {
@@ -75,18 +75,18 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     Member existingMember = memberRepository.findByEmail(email)
                             .orElseGet(() -> registerNewMember(userInfo, email));
                     
-                    // 소셜 계정 연결
-                    socialAccountRepository.save(SocialAccount.create(existingMember, provider, userInfo.getId()));
+                    // 신규 소셜 연동 정보를 Member 엔티티에 추가
+                    existingMember.linkSocial(provider, userInfo.getId());
                     return existingMember;
                 });
 
-        // 계정 상태 체크 (활동 중이 아닌 경우 로그인을 차단)
+        // 계정 상태 체크
         if (member.getStatus() != MemberStatus.ACTIVE) {
             log.warn("Blocked login attempt for {} member: {}", member.getStatus(), email);
             throw new OAuth2AuthenticationException(ErrorEnum.ERR_AUTH_NOT_ACTIVE_STATUS.getErrorMessage());
         }
 
-        return member;
+        return memberRepository.save(member);
     }
 
     private Member registerNewMember(OAuth2UserInfo userInfo, String email) {
@@ -99,7 +99,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             nickname = nickname + "_" + userInfo.getId().substring(0, Math.min(4, userInfo.getId().length()));
         }
 
-        Member member = Member.createSocial(email, nickname, MemberRole.USER);
-        return memberRepository.save(member);
+        // 비밀번호 없이 소셜 전용 계정으로 생성
+        return Member.createSocial(email, nickname, MemberRole.USER);
     }
 }

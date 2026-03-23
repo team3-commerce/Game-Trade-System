@@ -122,14 +122,14 @@ public class AuthController {
     @PostMapping("/v2/auth/unlink-social")
     public ResponseEntity<ApiResponse<Void>> unlinkSocialV2(
             @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid UnlinkSocialRequest request) {
-        authFacade.unlinkSocial(userDetails.getUsername(), request);
+        authFacade.unlinkSocialV2(userDetails.getUsername(), request);
         return ResponseEntity.ok(ApiResponse.success(SUCCESS_CODE, null));
     }
 
     @PostMapping("/v3/auth/unlink-social")
     public ResponseEntity<ApiResponse<Void>> unlinkSocialV3(
             @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid UnlinkSocialRequest request) {
-        authFacade.unlinkSocial(userDetails.getUsername(), request);
+        authFacade.unlinkSocialV3(userDetails.getUsername(), request);
         return ResponseEntity.ok(ApiResponse.success(SUCCESS_CODE, null));
     }
 
