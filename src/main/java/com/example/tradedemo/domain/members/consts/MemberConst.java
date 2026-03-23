@@ -6,6 +6,10 @@ public final class MemberConst {
 
     private MemberConst() {}
 
+    // 캐시 이름
+    public static final String MEMBERS_CACHE_NAME = "members";
+    public static final String MEMBER_AUTHS_CACHE_NAME = "memberAuths";
+
     // 상태 변경 사유
     public static final String REASON_SIGNUP = "신규 회원 가입";
     public static final String REASON_WITHDRAWAL = "사용자 요청에 의한 회원 탈퇴";

@@ -9,4 +9,8 @@ public final class ItemConst {
 
     public static final Duration ITEM_CACHE_TTL = Duration.ofMinutes(60);
     public static final Duration ITEM_CACHE_LIST_TTL = Duration.ofMinutes(60);
+
+    // 캐시 이름
+    public static final String ITEM_CACHE_NAME = "items";
+    public static final String ITEM_SEARCH_CACHE_NAME = "itemsSearches";
 }

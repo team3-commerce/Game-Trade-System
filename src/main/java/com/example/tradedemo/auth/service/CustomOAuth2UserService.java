@@ -2,6 +2,7 @@ package com.example.tradedemo.auth.service;
 
 import com.example.tradedemo.auth.dto.*;
 import com.example.tradedemo.common.exception.ErrorEnum;
+import com.example.tradedemo.domain.coupon.service.CouponService;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.entity.SocialAccount;
 import com.example.tradedemo.domain.members.enums.MemberRole;
@@ -9,6 +10,8 @@ import com.example.tradedemo.domain.members.enums.MemberStatus;
 import com.example.tradedemo.domain.members.enums.SocialProvider;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
 import com.example.tradedemo.domain.members.repository.SocialAccountRepository;
+import com.example.tradedemo.domain.wallet.facade.WalletFacade;
+import java.math.BigDecimal;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +29,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final MemberRepository memberRepository;
     private final SocialAccountRepository socialAccountRepository;
+    private final WalletFacade walletFacade;
+    private final CouponService couponService;
 
     @Override
     @Transactional
@@ -67,7 +72,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     }
 
     private Member processOAuth2User(SocialProvider provider, OAuth2UserInfo userInfo, String email) {
-        // 소셜 계정 연동 여부 확인
+        // 소셜 계정 연동 여부 확인 (기존 연동 기록이 있는 경우)
         Member member = socialAccountRepository.findByProviderAndProviderId(provider, userInfo.getId())
                 .map(SocialAccount::getMember)
                 .orElseGet(() -> {
@@ -75,18 +80,18 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     Member existingMember = memberRepository.findByEmail(email)
                             .orElseGet(() -> registerNewMember(userInfo, email));
                     
-                    // 소셜 계정 연결
-                    socialAccountRepository.save(SocialAccount.create(existingMember, provider, userInfo.getId()));
+                    // 신규 소셜 연동 정보를 Member 엔티티에 추가
+                    existingMember.linkSocial(provider, userInfo.getId());
                     return existingMember;
                 });
 
-        // 계정 상태 체크 (활동 중이 아닌 경우 로그인을 차단)
+        // 계정 상태 체크
         if (member.getStatus() != MemberStatus.ACTIVE) {
             log.warn("Blocked login attempt for {} member: {}", member.getStatus(), email);
             throw new OAuth2AuthenticationException(ErrorEnum.ERR_AUTH_NOT_ACTIVE_STATUS.getErrorMessage());
         }
 
-        return member;
+        return memberRepository.save(member);
     }
 
     private Member registerNewMember(OAuth2UserInfo userInfo, String email) {
@@ -99,7 +104,16 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             nickname = nickname + "_" + userInfo.getId().substring(0, Math.min(4, userInfo.getId().length()));
         }
 
+        // 비밀번호 없이 소셜 전용 계정으로 생성
         Member member = Member.createSocial(email, nickname, MemberRole.USER);
-        return memberRepository.save(member);
+        memberRepository.save(member);
+        
+        // 지갑 생성 (소셜 신규 가입자용)
+        walletFacade.createWallet(member, BigDecimal.ZERO);
+
+        // 회원가입 쿠폰 자동 발급 (소셜 신규 가입자용)
+        couponService.autoSignupCoupon(member);
+        
+        return member;
     }
 }

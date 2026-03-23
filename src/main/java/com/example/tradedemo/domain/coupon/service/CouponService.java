@@ -1,5 +1,7 @@
 package com.example.tradedemo.domain.coupon.service;
 
+import static com.example.tradedemo.domain.coupon.constants.CouponCacheConst.*;
+
 import com.example.tradedemo.common.annotation.RedisLock;
 import com.example.tradedemo.common.annotation.RedissonLock;
 import com.example.tradedemo.common.dto.PageResponse;
@@ -85,7 +87,7 @@ public class CouponService {
     }
 
     @Transactional
-    @CacheEvict(value = "couponPolicies", allEntries = true)
+    @CacheEvict(value = COUPON_POLICIES_CACHE_NAME, allEntries = true)
     public CreateCouponPolicyResponse createCouponPolicyV2(@Valid CreateCouponPolicyRequest request) {
         // 정책 이름 중복 검사
         if (couponPolicyRepository.existsByName(request.getName())) {
@@ -207,7 +209,7 @@ public class CouponService {
 
     @Transactional(readOnly = true)
     @Cacheable(
-            value = "couponPolicies",
+            value = COUPON_POLICIES_CACHE_NAME,
             key = "'page:' + #pageable.pageNumber + ':sort:' + #sortCreatedAt + ':type:' + #issueType",
             unless = "#result.content.isEmpty()")
     public PageResponse<SearchAllCouponPolicyResponse> searchAllCouponPoliciesV2(
@@ -243,7 +245,7 @@ public class CouponService {
 
     @Transactional(readOnly = true)
     @Cacheable(
-            value = "memberCoupons",
+            value = MEMBER_COUPONS_CACHE_NAME,
             key = "'member:' + #memberId + ':page:' + #pageable.pageNumber + ':status:' + #status",
             unless = "#result.content.isEmpty()")
     public PageResponse<SearchAllMemberCouponResponse> getAllMemberCouponV2(Long memberId, String status, Pageable pageable) {
@@ -280,7 +282,7 @@ public class CouponService {
 
     @Transactional(readOnly = true)
     @Cacheable(
-            value = "memberCoupons",
+            value = MEMBER_COUPONS_CACHE_NAME,
             key = "'member:' + #memberId + ':coupon:' + #couponId")
     public SearchAllMemberCouponResponse getMemberCouponV2(Long memberId, Long couponId) {
         return memberCouponRepository
@@ -336,8 +338,8 @@ public class CouponService {
 
 
     @Caching(evict = {
-            @CacheEvict(value = "memberCoupons", allEntries = true),
-            @CacheEvict(value = "couponPolicies", allEntries = true)
+            @CacheEvict(value = MEMBER_COUPONS_CACHE_NAME, allEntries = true),
+            @CacheEvict(value = COUPON_POLICIES_CACHE_NAME, allEntries = true)
     })
     public void issueFirstComeCouponV2(Long couponPolicyId, Member member) {
         String lockKey = lockService.buildLockKey(couponPolicyId);
@@ -355,7 +357,7 @@ public class CouponService {
     /**
      * Redis Lettuce + @RedisLock AOP 적용
      */
-    @RedisLock(key = "'lock:coupon:' + #couponPolicyId")
+    @RedisLock(key = "'" + COUPON_LOCK_PREFIX + "' + #couponPolicyId")
     @Transactional
     public void issueFirstComeCouponV3_1(Long couponPolicyId, Member member) {
 
@@ -388,7 +390,7 @@ public class CouponService {
     /**
      * Redis Redisson + @RedissonLock AOP 적용 + Redis Cache
      */
-    @RedissonLock(key = "'lock:coupon:' + #couponPolicyId")
+    @RedissonLock(key = "'" + COUPON_LOCK_PREFIX + "' + #couponPolicyId")
     @Transactional
     public void issueFirstComeCouponV3_2(Long couponPolicyId, Member member) {
 
@@ -454,7 +456,7 @@ public class CouponService {
 
     @Transactional(readOnly = true)
     @Cacheable(
-            value = "couponHistories",
+            value = COUPON_HISTORIES_CACHE_NAME,
             key = "'member:' + #memberId + ':page:' + #pageable.pageNumber + ':status:' + #status + ':sort:' + #sortCreatedAt",
             unless = "#result.content.isEmpty()")
     public PageResponse<SearchAllCouponHistoryResponse> getAllCouponHistoryV2(

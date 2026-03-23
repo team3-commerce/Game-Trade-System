@@ -1,11 +1,14 @@
 package com.example.tradedemo.domain.members.controller;
 
+import static com.example.tradedemo.auth.consts.AuthConst.SUCCESS_CODE;
+
 import com.example.tradedemo.auth.dto.PrincipalDetails;
 import com.example.tradedemo.common.dto.ApiResponse;
 import com.example.tradedemo.domain.members.dto.GetMyInfoResponse;
 import com.example.tradedemo.domain.members.dto.SuspendMemberRequest;
 import com.example.tradedemo.domain.members.dto.UpdateNicknameRequest;
 import com.example.tradedemo.domain.members.dto.UpdatePasswordRequest;
+import com.example.tradedemo.domain.members.facade.MemberFacade;
 import com.example.tradedemo.domain.members.service.MemberService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 public class MemberController {
 
     private final MemberService memberService;
+    private final MemberFacade memberFacade;
 
     /**
      * 내 정보 조회
@@ -28,21 +32,21 @@ public class MemberController {
     public ResponseEntity<ApiResponse<GetMyInfoResponse>> getMyInfo(
             @AuthenticationPrincipal PrincipalDetails principalDetails) {
         GetMyInfoResponse response = memberService.getMyInfo(principalDetails.getEmail());
-        return ResponseEntity.ok(ApiResponse.success("200", response));
+        return ResponseEntity.ok(ApiResponse.success(SUCCESS_CODE, response));
     }
 
     @GetMapping("/v2/me")
     public ResponseEntity<ApiResponse<GetMyInfoResponse>> getMyInfoV2(
             @AuthenticationPrincipal PrincipalDetails principalDetails) {
         GetMyInfoResponse response = memberService.getMyInfoV2(principalDetails.getEmail());
-        return ResponseEntity.ok(ApiResponse.success("200", response));
+        return ResponseEntity.ok(ApiResponse.success(SUCCESS_CODE, response));
     }
 
     @GetMapping("/v3/me")
     public ResponseEntity<ApiResponse<GetMyInfoResponse>> getMyInfoV3(
             @AuthenticationPrincipal PrincipalDetails principalDetails) {
         GetMyInfoResponse response = memberService.getMyInfoV3(principalDetails.getEmail());
-        return ResponseEntity.ok(ApiResponse.success("200", response));
+        return ResponseEntity.ok(ApiResponse.success(SUCCESS_CODE, response));
     }
 
     /**
@@ -54,7 +58,7 @@ public class MemberController {
             @RequestBody @Valid UpdateNicknameRequest request) {
 
         memberService.updateNickname(principalDetails.getEmail(), request);
-        return ResponseEntity.ok(ApiResponse.success("200", null));
+        return ResponseEntity.ok(ApiResponse.success(SUCCESS_CODE, null));
     }
 
     @PatchMapping("/v2/me/nickname")
@@ -63,7 +67,7 @@ public class MemberController {
             @RequestBody @Valid UpdateNicknameRequest request) {
 
         memberService.updateNicknameV2(principalDetails.getEmail(), request);
-        return ResponseEntity.ok(ApiResponse.success("200", null));
+        return ResponseEntity.ok(ApiResponse.success(SUCCESS_CODE, null));
     }
 
     @PatchMapping("/v3/me/nickname")
@@ -72,7 +76,7 @@ public class MemberController {
             @RequestBody @Valid UpdateNicknameRequest request) {
 
         memberService.updateNicknameV3(principalDetails.getEmail(), request);
-        return ResponseEntity.ok(ApiResponse.success("200", null));
+        return ResponseEntity.ok(ApiResponse.success(SUCCESS_CODE, null));
     }
 
     /**
@@ -84,7 +88,7 @@ public class MemberController {
             @RequestBody @Valid UpdatePasswordRequest request) {
 
         memberService.updatePassword(principalDetails.getEmail(), request);
-        return ResponseEntity.ok(ApiResponse.success("200", null));
+        return ResponseEntity.ok(ApiResponse.success(SUCCESS_CODE, null));
     }
 
     @PatchMapping("/v2/me/password")
@@ -93,7 +97,7 @@ public class MemberController {
             @RequestBody @Valid UpdatePasswordRequest request) {
 
         memberService.updatePasswordV2(principalDetails.getEmail(), request);
-        return ResponseEntity.ok(ApiResponse.success("200", null));
+        return ResponseEntity.ok(ApiResponse.success(SUCCESS_CODE, null));
     }
 
     @PatchMapping("/v3/me/password")
@@ -102,7 +106,7 @@ public class MemberController {
             @RequestBody @Valid UpdatePasswordRequest request) {
 
         memberService.updatePasswordV3(principalDetails.getEmail(), request);
-        return ResponseEntity.ok(ApiResponse.success("200", null));
+        return ResponseEntity.ok(ApiResponse.success(SUCCESS_CODE, null));
     }
 
     /**
@@ -110,22 +114,22 @@ public class MemberController {
      */
     @DeleteMapping("/v1/me")
     public ResponseEntity<ApiResponse<Void>> deleteMyinfo(@AuthenticationPrincipal PrincipalDetails principalDetails) {
-        memberService.withdraw(principalDetails.getEmail());
-        return ResponseEntity.ok(ApiResponse.success("200", null));
+        memberFacade.withdraw(principalDetails.getEmail());
+        return ResponseEntity.ok(ApiResponse.success(SUCCESS_CODE, null));
     }
 
     @DeleteMapping("/v2/me")
     public ResponseEntity<ApiResponse<Void>> deleteMyinfoV2(
             @AuthenticationPrincipal PrincipalDetails principalDetails) {
-        memberService.withdrawV2(principalDetails.getEmail());
-        return ResponseEntity.ok(ApiResponse.success("200", null));
+        memberFacade.withdrawV2(principalDetails.getEmail()); 
+        return ResponseEntity.ok(ApiResponse.success(SUCCESS_CODE, null));
     }
 
     @DeleteMapping("/v3/me")
     public ResponseEntity<ApiResponse<Void>> deleteMyinfoV3(
             @AuthenticationPrincipal PrincipalDetails principalDetails) {
-        memberService.withdrawV3(principalDetails.getEmail());
-        return ResponseEntity.ok(ApiResponse.success("200", null));
+        memberFacade.withdrawV3(principalDetails.getEmail());
+        return ResponseEntity.ok(ApiResponse.success(SUCCESS_CODE, null));
     }
 
     /**
@@ -136,7 +140,7 @@ public class MemberController {
             @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid SuspendMemberRequest request) {
 
         memberService.suspendMember(request);
-        return ResponseEntity.ok(ApiResponse.success("200", null));
+        return ResponseEntity.ok(ApiResponse.success(SUCCESS_CODE, null));
     }
 
     @PatchMapping("/v2/admin/suspend")
@@ -144,7 +148,7 @@ public class MemberController {
             @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid SuspendMemberRequest request) {
 
         memberService.suspendMemberV2(request);
-        return ResponseEntity.ok(ApiResponse.success("200", null));
+        return ResponseEntity.ok(ApiResponse.success(SUCCESS_CODE, null));
     }
 
     @PatchMapping("/v3/admin/suspend")
@@ -152,6 +156,6 @@ public class MemberController {
             @AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid SuspendMemberRequest request) {
 
         memberService.suspendMemberV3(request);
-        return ResponseEntity.ok(ApiResponse.success("200", null));
+        return ResponseEntity.ok(ApiResponse.success(SUCCESS_CODE, null));
     }
 }

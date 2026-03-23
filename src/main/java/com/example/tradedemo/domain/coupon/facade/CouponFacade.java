@@ -6,6 +6,7 @@ import com.example.tradedemo.domain.coupon.service.CouponCacheService;
 import com.example.tradedemo.domain.coupon.service.CouponService;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.wallet.entity.Wallet;
+import com.example.tradedemo.domain.wallet.facade.WalletFacade;
 import com.example.tradedemo.domain.wallet.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -19,6 +20,7 @@ public class CouponFacade {
 
     private final CouponService couponService;
     private final WalletService walletService;
+    private final WalletFacade walletFacade;
     private final CouponCacheService couponCacheService;
 
     @Transactional(noRollbackFor = CouponExpiredException.class)
@@ -30,7 +32,7 @@ public class CouponFacade {
         Wallet wallet = walletService.findWallet(memberId);
 
         // 지갑 잔액 추가 + 지갑 히스토리 저장
-        walletService.addCouponBalance(wallet, couponHistory, member);
+        walletFacade.addCouponBalance(wallet, couponHistory, member);
     }
 
     @Transactional(noRollbackFor = CouponExpiredException.class)
@@ -49,7 +51,7 @@ public class CouponFacade {
         Wallet wallet = walletService.findWallet(memberId);
 
         // 지갑 잔액 추가 + 지갑 히스토리 저장
-        walletService.addCouponBalance(wallet, couponHistory, member);
+        walletFacade.addCouponBalance(wallet, couponHistory, member);
     }
 
     @Transactional(noRollbackFor = CouponExpiredException.class)
@@ -57,7 +59,7 @@ public class CouponFacade {
         CouponHistory couponHistory = couponService.useCoupon(memberId, memberCouponId, member);
 
         Wallet wallet = walletService.findWallet(memberId);
-        walletService.addCouponBalance(wallet, couponHistory, member);
+        walletFacade.addCouponBalance(wallet, couponHistory, member);
 
         // Redis 캐시 무효화
         couponCacheService.evictAllMemberCoupons(memberId);
