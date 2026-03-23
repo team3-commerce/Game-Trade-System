@@ -1,7 +1,9 @@
 package com.example.tradedemo.domain.chat.entity;
 
+import com.example.tradedemo.domain.chat.enums.ChatRoomMemberRole;
 import com.example.tradedemo.domain.members.entity.Member;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -9,7 +11,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(
         name = "chat_room_members",
         uniqueConstraints = {
@@ -20,8 +22,7 @@ import java.time.LocalDateTime;
         }
 )
 public class ChatRoomMember {
-    // ChatRoom은 참여자 필드가 없기 때문에 ChatRoom과 Member 연결하는 테이블
-    // 참여자 테이블 -> 내 채팅방 목록 조회
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -34,11 +35,18 @@ public class ChatRoomMember {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    private LocalDateTime joinedAt = LocalDateTime.now();
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ChatRoomMemberRole role;
 
-    public ChatRoomMember(ChatRoom chatRoom, Member member) {
-        this.chatRoom = chatRoom;
-        this.member = member;
-        this.joinedAt = LocalDateTime.now();
+    private LocalDateTime joinedAt;
+
+    public static ChatRoomMember create(ChatRoom chatRoom, Member member, ChatRoomMemberRole role) {
+        ChatRoomMember chatRoomMember = new ChatRoomMember();
+        chatRoomMember.chatRoom = chatRoom;
+        chatRoomMember.member = member;
+        chatRoomMember.role = role;
+        chatRoomMember.joinedAt = LocalDateTime.now();
+        return chatRoomMember;
     }
 }

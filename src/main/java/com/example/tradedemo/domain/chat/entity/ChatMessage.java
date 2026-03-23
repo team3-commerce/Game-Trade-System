@@ -2,6 +2,7 @@ package com.example.tradedemo.domain.chat.entity;
 
 import com.example.tradedemo.domain.members.entity.Member;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -9,7 +10,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "chat_messages")
 public class ChatMessage {
 
@@ -25,12 +26,14 @@ public class ChatMessage {
 
     private String content;
 
-    private LocalDateTime createdAt= LocalDateTime.now();
+    private LocalDateTime createdAt;
 
-    public ChatMessage(Member sender, ChatRoom chatRoom, String content) {
-        this.sender = sender;
-        this.chatRoom = chatRoom;
-        this.content = content;
-        this.createdAt = LocalDateTime.now();
+    public static ChatMessage create(Member sender, ChatRoom chatRoom, String content) {
+        ChatMessage message = new ChatMessage();
+        message.sender = sender;
+        message.chatRoom = chatRoom;
+        message.content = content;
+        message.createdAt = LocalDateTime.now();
+        return message;
     }
 }

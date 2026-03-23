@@ -35,7 +35,7 @@ public class ChatMessageController {
                 .findById(request.getRoomId())
                 .orElseThrow();
 
-        ChatMessage message= new ChatMessage(sender, room, request.getContent());
+        ChatMessage message = ChatMessage.create(sender, room, request.getContent());
         chatMessageRepository.save(message);
 
         RedisChatMessageRequest redisMessage = new RedisChatMessageRequest(
@@ -49,14 +49,14 @@ public class ChatMessageController {
     }
 
     // 채팅방 입장 시스템 메시지
-    // 목록에서 채팅방 선택(구독)할 때 호출, 입장 메시지는 DB 저장 X
+    // 목록에서 채팅방 선택(구독)할 때 호출
     @MessageMapping("/chat.enter")
     public void enter(ChatMessageRequest request, Principal principal) {
         Member member = ((PrincipalDetails) principal).getMember();
 
         RedisChatMessageRequest systemMessage = new RedisChatMessageRequest(
                 request.getRoomId(),
-                null,                    // senderId null → 시스템 메시지 구분자
+                null,
                 "SYSTEM",
                 member.getNickname() + "님이 입장했습니다."
         );

@@ -3,897 +3,579 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>채팅 테스트</title>
+    <title>Trade Demo</title>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+        :root{--bg:#0d1117;--surface:#161b22;--surface2:#21262d;--border:#30363d;--text:#e6edf3;--muted:#7d8590;--blue:#388bfd;--blue-dim:#1f4068;--green:#3fb950;--red:#f85149;--orange:#db6d28;}
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;}
 
-        :root {
-            --bg: #0a0e27;
-            --surface: #151a33;
-            --surface2: #1e2542;
-            --border: #2a3150;
-            --text: #e8eaed;
-            --text-muted: #8b92b0;
-            --blue: #4c9aff;
-            --green: #36b37e;
-            --red: #ff5630;
-            --yellow: #ffab00;
-            --purple: #6554c0;
-        }
+        /* LOGIN */
+        .login-overlay{position:fixed;inset:0;background:rgba(13,17,23,.96);display:flex;align-items:center;justify-content:center;z-index:999;}
+        .login-overlay.hidden{display:none;}
+        .login-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:36px;width:340px;}
+        .login-card h2{font-size:20px;font-weight:700;margin-bottom:6px;}
+        .login-card p{font-size:13px;color:var(--muted);margin-bottom:24px;}
+        .field{margin-bottom:14px;}
+        .field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:600;margin-bottom:5px;}
+        .field input{width:100%;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:14px;font-family:inherit;}
+        .field input:focus{outline:none;border-color:var(--blue);}
+        .btn-p{width:100%;padding:12px;background:var(--blue);border:none;border-radius:7px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;}
+        .btn-p:hover{background:#1f6feb;}
+        .err{color:var(--red);font-size:13px;margin-top:10px;text-align:center;min-height:18px;}
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        /* APP */
+        .app{display:grid;grid-template-columns:60px 1fr;height:100vh;}
+        .nav{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:4px;}
+        .nav-btn{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:10px;cursor:pointer;border:none;background:none;color:var(--muted);font-size:20px;}
+        .nav-btn:hover{background:var(--surface2);color:var(--text);}
+        .nav-btn.on{background:var(--blue-dim);color:var(--blue);}
+        .nav .sp{flex:1;}
+        .nav-u{width:32px;height:32px;background:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;cursor:pointer;border:none;margin:6px 0;}
 
-        body {
-            font-family: 'IBM Plex Sans KR', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+        .main{display:grid;grid-template-columns:280px 1fr;height:100vh;}
+        .sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+        .sb-head{padding:16px;border-bottom:1px solid var(--border);}
+        .sb-head h2{font-size:16px;font-weight:700;}
+        .sb-sub{font-size:12px;color:var(--muted);margin-top:2px;}
 
-        /* ─── LOGIN OVERLAY ─── */
-        .login-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(10, 14, 39, 0.95);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-        }
-        .login-overlay.hidden { display: none; }
+        /* TABS */
+        .tab-bar{display:flex;border-bottom:1px solid var(--border);}
+        .tab{flex:1;padding:10px 6px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;}
+        .tab.on{color:var(--blue);border-bottom-color:var(--blue);}
 
-        .login-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 40px;
-            width: 360px;
-        }
-        .login-card h2 {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        .login-card p {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 28px;
-        }
-        .login-field {
-            margin-bottom: 16px;
-        }
-        .login-field label {
-            display: block;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-            font-weight: 600;
-        }
-        .login-field input {
-            width: 100%;
-            padding: 12px 14px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 14px;
-            font-family: 'IBM Plex Sans KR', sans-serif;
-        }
-        .login-field input:focus {
-            outline: none;
-            border-color: var(--blue);
-        }
-        .login-btn {
-            width: 100%;
-            padding: 13px;
-            background: var(--blue);
-            border: none;
-            border-radius: 8px;
-            color: #fff;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 8px;
-            transition: background 0.2s;
-        }
-        .login-btn:hover { background: #3d8ee6; }
-        .login-error {
-            color: var(--red);
-            font-size: 13px;
-            margin-top: 12px;
-            text-align: center;
-            min-height: 20px;
-        }
+        /* LIST */
+        .list{flex:1;overflow-y:auto;padding:8px;}
+        .mkt-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px;cursor:pointer;}
+        .mkt-item:hover{border-color:var(--blue);}
+        .mkt-name{font-size:14px;font-weight:600;margin-bottom:4px;}
+        .mkt-meta{display:flex;gap:10px;font-size:12px;color:var(--muted);}
+        .price{color:var(--green);font-weight:600;}
+        .badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;}
+        .b-sell{background:rgba(63,185,80,.15);color:var(--green);}
+        .b-no{background:rgba(248,81,73,.15);color:var(--red);}
 
-        /* ─── LAYOUT ─── */
-        .container {
-            display: grid;
-            grid-template-columns: 320px 1fr;
-            height: 100vh;
-        }
-
-        /* ─── SIDEBAR ─── */
-        .sidebar {
-            background: var(--surface);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        .sidebar-header {
-            padding: 24px;
-            border-bottom: 1px solid var(--border);
-        }
-        .sidebar-header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 8px; }
-
-        .current-user {
-            padding: 14px 24px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .current-user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .user-avatar {
-            width: 34px;
-            height: 34px;
-            background: var(--blue);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            font-weight: 700;
-        }
-        .user-name { font-size: 14px; font-weight: 600; }
-        .user-id { font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
-        .logout-btn {
-            padding: 6px 12px;
-            background: transparent;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text-muted);
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .logout-btn:hover { border-color: var(--red); color: var(--red); }
-
-        .status-indicator {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            color: var(--text-muted);
-            padding: 10px 24px;
-            border-bottom: 1px solid var(--border);
-        }
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--red);
-            animation: pulse 2s infinite;
-        }
-        .status-dot.connected { background: var(--green); }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-        .room-list { flex: 1; overflow-y: auto; padding: 12px; }
-        .room-list h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); padding: 12px; font-weight: 600; }
-        .room-item {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 14px 16px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .room-item:hover { border-color: var(--blue); background: rgba(76, 154, 255, 0.05); }
-        .room-item.active { border-color: var(--blue); background: rgba(76, 154, 255, 0.1); }
-        .room-item h4 { font-size: 15px; font-weight: 600; }
-        .room-item .room-id { font-size: 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
-
-        .create-room { padding: 16px 24px; border-top: 1px solid var(--border); }
-        .create-room input {
-            width: 100%;
-            padding: 10px 14px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 14px;
-            margin-bottom: 8px;
-            font-family: 'IBM Plex Sans KR', sans-serif;
-        }
-        .create-room input:focus { outline: none; border-color: var(--blue); }
-        .create-room button {
-            width: 100%;
-            padding: 10px;
-            background: var(--blue);
-            border: none;
-            border-radius: 8px;
-            color: #fff;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .create-room button:hover { background: #3d8ee6; }
-
-        /* ─── 초대 모달 ─── */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(10, 14, 39, 0.85);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 200;
-        }
-        .modal-overlay.hidden { display: none; }
-        .modal-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 32px;
-            width: 400px;
-            max-height: 80vh;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-        .modal-card h3 { font-size: 18px; font-weight: 700; }
-        .modal-card input {
-            width: 100%;
-            padding: 10px 14px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 14px;
-            font-family: 'IBM Plex Sans KR', sans-serif;
-        }
-        .modal-card input:focus { outline: none; border-color: var(--blue); }
-        .member-list {
-            overflow-y: auto;
-            max-height: 250px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .member-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 14px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: border-color 0.2s;
-        }
-        .member-item:hover { border-color: var(--blue); }
-        .member-item.selected { border-color: var(--blue); background: rgba(76,154,255,0.1); }
-        .member-item input[type="checkbox"] { accent-color: var(--blue); width: 16px; height: 16px; }
-        .member-item-info { display: flex; flex-direction: column; }
-        .member-item-nickname { font-size: 14px; font-weight: 600; }
-        .member-item-email { font-size: 12px; color: var(--text-muted); }
-        .modal-actions { display: flex; gap: 8px; }
-        .modal-actions button {
-            flex: 1;
-            padding: 11px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .btn-cancel { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border) !important; }
-        .btn-cancel:hover { border-color: var(--text-muted) !important; }
-        .btn-confirm { background: var(--blue); color: #fff; }
-        .btn-confirm:hover { background: #3d8ee6; }
-
-        /* ─── CHAT MESSAGES ─── */
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 24px 28px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        /* 상대방: 왼쪽 */
-        .message { display: flex; flex-direction: column; gap: 4px; max-width: 65%; align-self: flex-start; align-items: flex-start; }
-        /* 나: 오른쪽 */
-        .message.me { align-self: flex-end; align-items: flex-end; }
-
-        .message-sender { font-size: 12px; font-weight: 600; color: var(--text-muted); padding-left: 4px; }
-
-        /* 상대방 말풍선 */
-        .message-bubble {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 18px 18px 18px 4px;
-            padding: 12px 16px;
-            font-size: 14px;
-            line-height: 1.5;
-            color: var(--text);
-        }
-        /* 내 말풍선 */
-        .message.me .message-bubble {
-            background: var(--blue);
-            border-color: var(--blue);
-            border-radius: 18px 18px 4px 18px;
-            color: #fff;
-        }
-        .message-time { font-size: 11px; color: var(--text-muted); padding: 0 4px; }
-        .chat-area { display: flex; flex-direction: column; background: var(--bg); }
-        .chat-header { padding: 20px 28px; border-bottom: 1px solid var(--border); background: var(--surface); }
-        .chat-header h2 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
-        .chat-header p { font-size: 13px; color: var(--text-muted); }
+        .room-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
+        .room-item:hover{border-color:var(--blue);}
+        .room-item.on{border-color:var(--blue);background:rgba(56,139,253,.1);}
+        .room-item h4{font-size:14px;font-weight:600;margin-bottom:2px;}
+        .room-id{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
 
 
+        /* VIEW */
+        .view{display:flex;flex-direction:column;background:var(--bg);height:100vh;}
+        .v-head{padding:18px 24px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;justify-content:space-between;align-items:center;}
+        .v-head h2{font-size:17px;font-weight:700;}
+        .v-head p{font-size:12px;color:var(--muted);}
+        .v-body{flex:1;overflow-y:auto;padding:24px;}
 
-        .chat-input-wrapper { padding: 20px 28px; border-top: 1px solid var(--border); background: var(--surface); }
-        .typing-indicator { font-size: 13px; color: var(--green); padding: 0 0 8px 4px; min-height: 24px; font-style: italic; }
-        .typing-indicator .dots::after { content: '...'; animation: dots 1.4s steps(4, end) infinite; }
-        @keyframes dots { 0%, 20% { content: '.'; } 40% { content: '..'; } 60%, 100% { content: '...'; } }
-        .chat-input-form { display: flex; gap: 12px; }
-        .chat-input-form input {
-            flex: 1;
-            padding: 14px 18px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            color: var(--text);
-            font-size: 14px;
-            font-family: 'IBM Plex Sans KR', sans-serif;
-        }
-        .chat-input-form input:focus { outline: none; border-color: var(--blue); }
-        .chat-input-form button {
-            padding: 14px 24px;
-            background: var(--blue);
-            border: none;
-            border-radius: 12px;
-            color: #fff;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .chat-input-form button:hover { background: #3d8ee6; }
+        /* PRODUCT */
+        .pd-name{font-size:22px;font-weight:700;margin-bottom:14px;}
+        .pd-info{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:16px;}
+        .info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;}
+        .info-row:last-child{border-bottom:none;}
+        .info-row .lbl{color:var(--muted);}
+        .info-row .val{font-weight:600;}
+        .btn-chat{padding:12px 28px;background:var(--green);border:none;border-radius:8px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;}
+        .btn-chat:hover{background:#2ea043;}
+        .btn-back{padding:7px 14px;background:transparent;border:1px solid var(--border);border-radius:7px;color:var(--muted);font-size:13px;cursor:pointer;}
+        .btn-back:hover{border-color:var(--text);color:var(--text);}
 
-        .empty-state {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-muted);
-            gap: 12px;
-        }
-        .empty-state h3 { font-size: 18px; font-weight: 600; color: var(--text); }
+        /* CHAT */
+        .c-msgs{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:14px;}
+        .load-more{padding:7px 18px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-size:12px;cursor:pointer;align-self:center;margin-bottom:4px;}
+        .load-more:hover{border-color:var(--blue);color:var(--text);}
+        .msg{display:flex;flex-direction:column;gap:4px;max-width:62%;align-self:flex-start;align-items:flex-start;}
+        .msg.me{align-self:flex-end;align-items:flex-end;}
+        .msg-sender{font-size:11px;font-weight:600;color:var(--muted);padding-left:4px;}
+        .msg-bubble{background:var(--surface2);border:1px solid var(--border);border-radius:16px 16px 16px 4px;padding:10px 14px;font-size:14px;line-height:1.5;}
+        .msg.me .msg-bubble{background:var(--blue);border-color:var(--blue);color:#fff;border-radius:16px 16px 4px 16px;}
+        .msg-time{font-size:10px;color:var(--muted);padding:0 4px;}
+        .sys{text-align:center;font-size:12px;color:var(--muted);font-style:italic;padding:4px 0;}
+        .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--muted);}
+        .empty .ico{font-size:40px;}
+        .empty h3{font-size:16px;color:var(--text);}
+        .c-input{padding:16px 24px;border-top:1px solid var(--border);background:var(--surface);}
+        .ws-st{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-bottom:8px;}
+        .ws-dot{width:7px;height:7px;border-radius:50%;background:var(--red);}
+        .ws-dot.on{background:var(--green);}
+        .c-form{display:flex;gap:10px;}
+        .c-form input{flex:1;padding:12px 16px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:inherit;}
+        .c-form input:focus{outline:none;border-color:var(--blue);}
+        .c-form button{padding:12px 20px;background:var(--blue);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;}
 
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--bg); }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+        /* MODAL */
+        .m-list{overflow-y:auto;max-height:240px;display:flex;flex-direction:column;gap:6px;}
+        .m-nick{font-size:14px;font-weight:600;}
+        .m-email{font-size:11px;color:var(--muted);}
+        .m-actions{display:flex;gap:8px;}
+        .btn-cancel{flex:1;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;}
+        .btn-ok{flex:1;padding:10px;background:var(--blue);border:none;border-radius:7px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;}
+
+        ::-webkit-scrollbar{width:5px;}
+        ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
     </style>
 </head>
 <body>
 
-<!-- ════════ 로그인 오버레이 ════════ -->
+<!-- LOGIN -->
 <div class="login-overlay" id="loginOverlay">
     <div class="login-card">
-        <h2>🔐 로그인</h2>
-        <p>채팅을 시작하려면 로그인하세요</p>
-        <div class="login-field">
-            <label>이메일</label>
-            <input type="email" id="loginEmail" placeholder="user@example.com" />
-        </div>
-        <div class="login-field">
-            <label>비밀번호</label>
-            <input type="password" id="loginPassword" placeholder="비밀번호 입력" />
-        </div>
-        <button class="login-btn" onclick="login()">로그인</button>
-        <div class="login-error" id="loginError"></div>
+        <h2>🛒 Trade Demo</h2>
+        <p>로그인하여 시작하세요</p>
+        <div class="field"><label>이메일</label><input type="email" id="loginEmail" placeholder="user@example.com"/></div>
+        <div class="field"><label>비밀번호</label><input type="password" id="loginPassword" placeholder="비밀번호"/></div>
+        <button class="btn-p" onclick="login()">로그인</button>
+        <div class="err" id="loginErr"></div>
     </div>
 </div>
 
-<!-- ════════ 채팅방 생성 모달 ════════ -->
-<div class="modal-overlay hidden" id="createRoomModal">
-    <div class="modal-card">
-        <h3>새 채팅방 만들기</h3>
-        <!-- 채팅방 이름은 서버에서 자동 생성: "{상대방 닉네임}과의 채팅" -->
-        <div style="font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); font-weight:600;">
-            초대할 사람 선택
-        </div>
-        <div class="member-list" id="inviteMemberList">
-            <div style="color:var(--text-muted); font-size:13px;">불러오는 중...</div>
-        </div>
-        <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeCreateModal()">취소</button>
-            <button class="btn-confirm" onclick="createRoom()">채팅방 생성</button>
-        </div>
+<!-- APP -->
+<div class="app">
+    <!-- NAV -->
+    <div class="nav">
+        <button class="nav-btn on" id="nMkt" onclick="switchNav('market')" title="상품">🛍️</button>
+        <button class="nav-btn"    id="nChat" onclick="switchNav('chat')"  title="채팅">💬</button>
+        <div class="sp"></div>
+        <button class="nav-u" id="navUser" onclick="logout()" title="로그아웃">?</button>
     </div>
-</div>
 
-<!-- ════════ 메인 ════════ -->
-<div class="container">
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h1>채팅 테스트</h1>
-        </div>
+    <div class="main">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="sb-head">
+                <h2 id="sbTitle">상품</h2>
+                <div class="sb-sub" id="sbSub">마켓 전체 상품</div>
+            </div>
 
-        <!-- 현재 로그인 사용자 표시 -->
-        <div class="current-user">
-            <div class="current-user-info">
-                <div class="user-avatar" id="userAvatar">?</div>
-                <div>
-                    <div class="user-name" id="currentNickname">-</div>
-                    <div class="user-id" id="currentMemberId">-</div>
+            <!-- 상품 사이드바 -->
+            <div id="mktSB" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+                <div class="list" id="mktList"></div>
+            </div>
+
+            <!-- 채팅 사이드바 -->
+            <div id="chatSB" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+                <div class="tab-bar">
+                    <div class="tab on" id="tAll"    onclick="switchChatTab('all')">전체</div>
+                    <div class="tab"    id="tBuyer"  onclick="switchChatTab('buyer')">구매</div>
+                    <div class="tab"    id="tSeller" onclick="switchChatTab('seller')">판매</div>
                 </div>
-            </div>
-            <button class="logout-btn" onclick="logout()">로그아웃</button>
-        </div>
-
-        <div class="status-indicator">
-            <div class="status-dot" id="statusDot"></div>
-            <span id="statusText">연결 대기중...</span>
-        </div>
-
-        <div class="room-list">
-            <h3>채팅방</h3>
-            <div id="roomList"></div>
-        </div>
-
-        <div class="create-room">
-            <button onclick="openCreateModal()" style="margin-top:0;">+ 새 채팅방 만들기</button>
-        </div>
-    </div>
-
-    <!-- CHAT AREA -->
-    <div class="chat-area">
-        <div class="chat-header">
-            <h2 id="chatTitle">채팅방을 선택해주세요</h2>
-            <p id="chatSubtitle">왼쪽에서 채팅방을 선택하거나 새로 만들어보세요</p>
-        </div>
-
-        <div class="chat-messages" id="chatMessages">
-            <div class="empty-state">
-                <h3>📭 메시지가 없습니다</h3>
-                <p>채팅방을 선택하고 메시지를 보내보세요!</p>
+                <div class="list" id="roomList"></div>
             </div>
         </div>
 
-        <div class="chat-input-wrapper">
-            <div class="typing-indicator" id="typingIndicator"></div>
-            <form class="chat-input-form" id="chatForm" onsubmit="sendMessage(event)">
-                <input type="text" id="messageInput" placeholder="메시지를 입력하세요..." disabled oninput="handleTyping()" />
-                <button type="submit" disabled>전송</button>
-            </form>
+        <!-- 상품 뷰 -->
+        <div class="view" id="mktView">
+            <div class="v-head">
+                <div><h2 id="mktVTitle">상품을 선택해주세요</h2><p id="mktVSub">왼쪽 목록에서 상품을 클릭하세요</p></div>
+                <div id="mktVActions"></div>
+            </div>
+            <div class="v-body" id="mktVBody">
+                <div class="empty"><div class="ico">🛍️</div><h3>상품을 선택해주세요</h3><p>상품을 클릭하면 상세정보가 표시됩니다</p></div>
+            </div>
+        </div>
+
+        <!-- 채팅 뷰 -->
+        <div class="view" id="chatView" style="display:none;">
+            <div class="v-head">
+                <div><h2 id="cTitle">채팅방을 선택해주세요</h2><p id="cSub">왼쪽에서 채팅방을 선택하세요</p></div>
+                <div class="ws-st"><div class="ws-dot" id="wsDot"></div><span id="wsText">연결 대기중</span></div>
+            </div>
+            <div class="c-msgs" id="cMsgs">
+                <div class="empty"><div class="ico">💬</div><h3>채팅방을 선택해주세요</h3></div>
+            </div>
+            <div class="c-input">
+                <form class="c-form" onsubmit="sendMsg(event)">
+                    <input type="text" id="msgInput" placeholder="메시지를 입력하세요..." disabled/>
+                    <button type="submit" id="sendBtn" disabled>전송</button>
+                </form>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    const API_BASE = 'http://localhost:8080';
-    const WS_URL  = 'http://localhost:8080/ws';
+    const API='http://localhost:8080', WS_URL='http://localhost:8080/ws';
+    let jwt=null, myEmail=null, myNickname=null;
+    let stomp=null, curSub=null, curRoom=null;
+    let curNav='market', curChatTab='all', curListingId=null, curSellerEmail=null;
+    let curNextCursor=null; // 커서: 더 불러오기 시 사용할 lastMessageId
+    let lastReceivedId=null; // 재연결 복구용 마지막 수신 메시지 ID
+    let rooms=[], mktItems=[];
 
-    let stompClient = null;
-    let currentUserId   = null;   // Long (숫자)
-    let currentNickname = null;   // String
-    let currentRoomId   = null;
-    let jwtToken        = null;
-    let rooms           = [];
-    let currentSubscription = null;
-    let typingTimeout   = null;
-    let typingUsers     = new Set();
-
-    // ─────────────────────────────────────────────────────────
-    // 로그인
-    // ─────────────────────────────────────────────────────────
+    // ── LOGIN ────────────────────────────────────
     async function login() {
-        const email    = document.getElementById('loginEmail').value.trim();
-        const password = document.getElementById('loginPassword').value;
-        const errorEl  = document.getElementById('loginError');
-        errorEl.textContent = '';
-
-        if (!email || !password) {
-            errorEl.textContent = '이메일과 비밀번호를 입력해주세요.';
-            return;
-        }
-
-        try {
-            // 1단계: 로그인 → accessToken 획득
-            const loginResponse = await fetch(`${API_BASE}/api/v1/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-
-            if (!loginResponse.ok) {
-                errorEl.textContent = '이메일 또는 비밀번호가 올바르지 않습니다.';
-                return;
-            }
-
-            const loginData = await loginResponse.json();
-            // TokenAuthResponse: { accessToken, refreshToken, grantType }
-            // ApiResponse 래핑 시: { data: { accessToken, ... } }
-            const tokenPayload = loginData.data ?? loginData;
-            jwtToken = tokenPayload.accessToken ?? tokenPayload.token;
-
-            if (!jwtToken) {
-                errorEl.textContent = '토큰을 받지 못했습니다.';
-                return;
-            }
-
-            // 2단계: GET /api/v1/me → nickname, email 조회
-            // GetMyInfoResponse: { email, nickname, role }
-            const meResponse = await fetch(`${API_BASE}/api/v1/me`, {
-                headers: { 'Authorization': `Bearer ${jwtToken}` }
-            });
-
-            if (!meResponse.ok) {
-                errorEl.textContent = '사용자 정보를 가져오지 못했습니다.';
-                return;
-            }
-
-            const meData = await meResponse.json();
-            const me = meData.data ?? meData; // ApiResponse 래핑 여부 대응
-
-            currentNickname = me.nickname;
-            currentUserId   = me.email; // memberId가 응답에 없으므로 email로 대체
-
-            console.log('✅ 로그인 성공 - nickname:', currentNickname, 'email:', currentUserId);
-
-            // 로그인 오버레이 숨기기
+        const email=document.getElementById('loginEmail').value.trim();
+        const pw=document.getElementById('loginPassword').value;
+        const err=document.getElementById('loginErr');
+        err.textContent='';
+        if(!email||!pw){err.textContent='이메일과 비밀번호를 입력해주세요.';return;}
+        try{
+            const r=await fetch(`${API}/api/v1/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pw})});
+            if(!r.ok){err.textContent='이메일 또는 비밀번호가 올바르지 않습니다.';return;}
+            const d=await r.json(), p=d.data??d;
+            jwt=p.accessToken??p.token;
+            if(!jwt){err.textContent='토큰을 받지 못했습니다.';return;}
+            const mr=await fetch(`${API}/api/v1/me`,{headers:{Authorization:`Bearer ${jwt}`}});
+            const md=await mr.json(), mp=md.data??md;
+            myEmail=mp.email??email; myNickname=mp.nickname;
             document.getElementById('loginOverlay').classList.add('hidden');
+            document.getElementById('navUser').textContent=(myNickname||'?')[0].toUpperCase();
+            connectWS(); loadMkt();
+        }catch(e){err.textContent='로그인 중 오류가 발생했습니다.';}
+    }
+    document.getElementById('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+    function logout(){
+        if(stomp)stomp.disconnect();
+        jwt=myEmail=myNickname=null;
+        document.getElementById('loginOverlay').classList.remove('hidden');
+    }
 
-            // 사용자 정보 표시
-            document.getElementById('userAvatar').textContent =
-                currentNickname ? currentNickname.charAt(0).toUpperCase() : '?';
-            document.getElementById('currentNickname').textContent = currentNickname ?? '-';
-            document.getElementById('currentMemberId').textContent = currentUserId ?? '-';
-
-            // WebSocket 연결 + 채팅방 목록 로드
-            connectWebSocket();
-            await loadRooms();
-
-        } catch (error) {
-            console.error('❌ 로그인 실패:', error);
-            errorEl.textContent = '로그인 중 오류가 발생했습니다.';
+    // ── NAV ──────────────────────────────────────
+    function switchNav(nav){
+        curNav=nav;
+        document.getElementById('nMkt').classList.toggle('on',nav==='market');
+        document.getElementById('nChat').classList.toggle('on',nav==='chat');
+        document.getElementById('mktSB').style.display  =nav==='market'?'flex':'none';
+        document.getElementById('chatSB').style.display =nav==='chat'  ?'flex':'none';
+        document.getElementById('mktView').style.display =nav==='market'?'flex':'none';
+        document.getElementById('chatView').style.display=nav==='chat'  ?'flex':'none';
+        if(nav==='market'){
+            document.getElementById('sbTitle').textContent='상품';
+            document.getElementById('sbSub').textContent='마켓 전체 상품';
+            if(!mktItems.length)loadMkt();
+        }else{
+            document.getElementById('sbTitle').textContent='채팅';
+            document.getElementById('sbSub').textContent='내 채팅방 목록';
+            loadRooms(curChatTab);
         }
     }
 
-    // Enter 키로 로그인
-    document.getElementById('loginPassword').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') login();
-    });
-
-    function logout() {
-        if (stompClient) stompClient.disconnect();
-        jwtToken = currentUserId = currentNickname = null;
-        currentRoomId = null;
-        document.getElementById('loginOverlay').classList.remove('hidden');
-        document.getElementById('loginEmail').value = '';
-        document.getElementById('loginPassword').value = '';
-        document.getElementById('loginError').textContent = '';
-        updateStatus(false);
-        clearMessages();
+    // ── MARKET ───────────────────────────────────
+    async function loadMkt(){
+        try{
+            const r=await fetch(`${API}/api/v1/market-listings`,{headers:{Authorization:`Bearer ${jwt}`}});
+            console.log('📦 상품 API 응답 상태:', r.status);
+            if(!r.ok){
+                const errTxt=await r.text();
+                console.error('❌ 상품 목록 API 실패:', r.status, errTxt);
+                document.getElementById('mktList').innerHTML=`<div style="padding:20px;text-align:center;color:var(--red);font-size:13px;">상품 로드 실패 (${r.status})</div>`;
+                return;
+            }
+            const d=await r.json();
+            console.log('📦 상품 API 응답 전체:', JSON.stringify(d).substring(0,300));
+            // ApiResponse<PageResponse<...>> 구조: { status, data: { content: [...], totalPages, ... } }
+            const pageData = d.data ?? d;
+            console.log('📦 pageData keys:', Object.keys(pageData));
+            mktItems = Array.isArray(pageData) ? pageData : (pageData.content ?? []);
+            console.log('📦 mktItems 개수:', mktItems.length);
+            renderMkt();
+        }catch(e){console.error('상품 목록 실패:',e);}
+    }
+    function renderMkt(){
+        const el=document.getElementById('mktList');
+        if(!mktItems.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">등록된 상품이 없습니다</div>';return;}
+        el.innerHTML=mktItems.map(item=>{
+            const bc=item.status==='SELLING'?'b-sell':'b-no';
+            const bt=item.status==='SELLING'?'판매중':item.status;
+            return `<div class="mkt-item" onclick="showDetail(${item.marketListingId})">
+      <div class="mkt-name">${esc(item.itemName)}</div>
+      <div class="mkt-meta"><span class="price">₩${Number(item.totalPrice).toLocaleString()}</span><span>수량 ${item.quantity}</span><span class="badge ${bc}">${bt}</span></div>
+    </div>`;
+        }).join('');
     }
 
-    // ─────────────────────────────────────────────────────────
-    // WebSocket 연결
-    // ─────────────────────────────────────────────────────────
-    function connectWebSocket() {
-        console.log('🔌 WebSocket 연결 시도...');
+    async function showDetail(id){
+        curListingId=id;
+        try{
+            const r=await fetch(`${API}/api/v1/market-listings/${id}`,{headers:{Authorization:`Bearer ${jwt}`}});
+            if(!r.ok)return;
+            const d=await r.json(), item=d.data??d;
+            document.getElementById('mktVTitle').textContent=item.itemName??item.item?.name??'상품 상세';
+            document.getElementById('mktVSub').textContent=`상품 ID: ${id}`;
+            document.getElementById('mktVActions').innerHTML=`<button class="btn-back" onclick="clearDetail()">← 목록</button>`;
+            const endAt=item.saleEndAt?new Date(item.saleEndAt).toLocaleDateString('ko-KR'):'-';
+            // sellerEmail을 전역 상태로 저정 → 버튼 onclick에 이메일 직접 삽입 불필요
+            curSellerEmail=item.sellerEmail??item.member?.email??null;
+            const sellerNickname=item.sellerNickname??'판매자';
+            const isMine=curSellerEmail&&curSellerEmail===myEmail;
+            document.getElementById('mktVBody').innerHTML=`
+      <div style="max-width:540px;">
+        <div class="pd-name">${esc(item.itemName??item.item?.name??'')}</div>
+        <div class="pd-info">
+          <div class="info-row"><span class="lbl">총 가격</span><span class="val" style="color:var(--green)">₩${Number(item.totalPrice).toLocaleString()}</span></div>
+          <div class="info-row"><span class="lbl">개당 가격</span><span class="val">₩${Number(item.unitPrice??0).toLocaleString()}</span></div>
+          <div class="info-row"><span class="lbl">수량</span><span class="val">${item.quantity}</span></div>
+          <div class="info-row"><span class="lbl">상태</span><span class="val">${item.marketListingStatus??item.status??'-'}</span></div>
+          <div class="info-row"><span class="lbl">만료일</span><span class="val">${endAt}</span></div>
+          ${curSellerEmail?`<div class="info-row"><span class="lbl">판매자</span><span class="val">${esc(sellerNickname)}</span></div>`:''}
+        </div>
+        ${!isMine
+                ?`<button class="btn-chat" onclick="chatWithSeller()">💬 판매자와 채팅하기</button>`
+                :`<div style="font-size:13px;color:var(--muted);">내가 등록한 상품입니다</div>`}
+      </div>`;
+        }catch(e){console.error('상품 상세 실패:',e);}
+    }
 
-        const socket = new SockJS(WS_URL);
-        stompClient = Stomp.over(socket);
-        stompClient.debug = (str) => console.log('🔍 STOMP:', str);
+    function clearDetail(){
+        curListingId=null; curSellerEmail=null; // 상태 초기화
+        document.getElementById('mktVTitle').textContent='상품을 선택해주세요';
+        document.getElementById('mktVSub').textContent='왼쪽 목록에서 상품을 클릭하세요';
+        document.getElementById('mktVActions').innerHTML='';
+        document.getElementById('mktVBody').innerHTML='<div class="empty"><div class="ico">🛍️</div><h3>상품을 선택해주세요</h3><p>상품을 클릭하면 상세정보가 표시됩니다</p></div>';
+    }
 
-        // [수정] Authorization 헤더에 "Bearer " 접두사 포함하여 전송
-        // StompAuthInterceptor에서 startsWith("Bearer ") 검사를 하므로 반드시 포함해야 함
-        stompClient.connect(
-            { Authorization: `Bearer ${jwtToken}` },
-            function(frame) {
-                console.log('✅ WebSocket 연결 완료:', frame);
-                updateStatus(true);
-            },
-            function(error) {
-                console.error('❌ WebSocket 연결 실패:', error);
-                updateStatus(false);
-                setTimeout(connectWebSocket, 5000);
+    async function chatWithSeller(){
+        if(!curSellerEmail||!curListingId){alert('상품 정보를 불러올 수 없습니다.');return;}
+        try{
+            const r=await fetch(`${API}/api/chat/rooms`,{
+                method:'POST',
+                headers:{Authorization:`Bearer ${jwt}`,'Content-Type':'application/json'},
+                body:JSON.stringify({sellerEmail:curSellerEmail,listingId:curListingId})
+            });
+            if(!r.ok){
+                let msg='채팅방 생성에 실패했습니다.';
+                try{
+                    const ej=JSON.parse(await r.text());
+                    msg=ej.customMessage??ej.message??ej.error??msg;
+                }catch(_){}
+                alert(msg);
+                // 이미 방이 있으면 채팅 탭 구매 탭으로 이동해서 기존 방 확인 유도
+                switchNav('chat');
+                switchChatTab('buyer');
+                return;
             }
+            const rd=await r.json(), room=rd.data; // ApiResponse<ChatRoomResponse> → .data
+            // 구매자로 채팅 시작 → 구매 탭으로 이동
+            switchNav('chat');
+            switchChatTab('buyer');
+            await loadRooms('buyer');
+            selectRoom(room.id, room.displayName??room.name);
+        }catch(e){alert('네트워크 오류가 발생했습니다.');}
+    }
+
+    // ── CHAT TABS ─────────────────────────────────
+    function switchChatTab(tab){
+        curChatTab=tab;
+        ['all','buyer','seller'].forEach(t=>{
+            const id='t'+t.charAt(0).toUpperCase()+t.slice(1);
+            document.getElementById(id).classList.toggle('on',t===tab);
+        });
+        loadRooms(tab);
+    }
+
+    async function loadRooms(tab='all'){
+        const url=tab==='buyer'?`${API}/api/chat/rooms/buyer`:tab==='seller'?`${API}/api/chat/rooms/seller`:`${API}/api/chat/rooms`;
+        try{
+            const r=await fetch(url,{headers:{Authorization:`Bearer ${jwt}`}});
+            if(!r.ok)return;
+            const res=await r.json();
+            rooms=res.data??res; // ApiResponse<List> → .data 꺼내기
+            renderRooms();
+        }catch(e){console.error('채팅방 목록 실패:',e);}
+    }
+
+    function renderRooms(){
+        const el=document.getElementById('roomList');
+        if(!rooms.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">채팅방이 없습니다</div>';return;}
+        el.innerHTML=rooms.map(room=>`
+    <div class="room-item ${curRoom===room.id?'on':''}" onclick="selectRoom(${room.id},'${esc(room.displayName??room.name)}')">
+      <div><h4>${esc(room.displayName??room.name)}</h4>${room.listingName?`<div style="font-size:11px;color:var(--blue);margin-top:2px;">📦 ${esc(room.listingName)}</div>`:''}<div class="room-id">${room.myRole==='BUYER'?'구매':room.myRole==='SELLER'?'판매':''}</div></div>
+    </div>`).join('');
+    }
+
+    async function selectRoom(roomId, roomName){
+        if(curSub){curSub.unsubscribe();curSub=null;}
+        curRoom=roomId;
+        curNextCursor=null; lastReceivedId=null; // 커서 초기화
+        document.getElementById('cTitle').textContent=roomName;
+        document.getElementById('cSub').textContent=`채팅방 #${roomId}`;
+        document.getElementById('msgInput').disabled=false;
+        document.getElementById('sendBtn').disabled=false;
+        renderRooms(); clearMsgs();
+        await loadHistory(roomId, null); // 최초 로드: lastMessageId=null
+        if(stomp&&stomp.connected){
+            curSub=stomp.subscribe(`/sub/chat/${roomId}`,msg=>{
+                const data=JSON.parse(msg.body);
+                // 수신한 메시지 ID 추적 (재연결 복구에 활용)
+                if(data.messageId) lastReceivedId=Math.max(lastReceivedId||0, data.messageId)||null;
+                showMsg(data);
+            });
+            stomp.send('/pub/chat.enter',{},JSON.stringify({roomId,content:''}));
+        }
+    }
+
+    // ── WEBSOCKET ─────────────────────────────────
+    function connectWS(){
+        const sock=new SockJS(WS_URL);
+        stomp=Stomp.over(sock);
+        stomp.debug=()=>{};
+        stomp.connect({Authorization:`Bearer ${jwt}`},
+            async ()=>{
+                setWS(true);
+                // 재연결 시 현재 채팅방이 있으면 누락 메시지 복구
+                // lastReceivedId=null → 최신 메시지를 새로 로드해 누락 보완
+                if(curRoom){
+                    await recoverMissedMessages(curRoom);
+                    // 구독 재등록
+                    if(curSub){try{curSub.unsubscribe();}catch(e){}}
+                    curSub=stomp.subscribe(`/sub/chat/${curRoom}`,msg=>{
+                        const data=JSON.parse(msg.body);
+                        if(data.senderId) lastReceivedId=Math.max(lastReceivedId||0, data.messageId||0)||null;
+                        showMsg(data);
+                    });
+                }
+            },
+            ()=>{setWS(false);setTimeout(connectWS,5000);}
         );
     }
 
-    function updateStatus(connected) {
-        const dot  = document.getElementById('statusDot');
-        const text = document.getElementById('statusText');
-        if (connected) {
-            dot.classList.add('connected');
-            // [수정] Alice/Bob 대신 실제 nickname 표시
-            text.textContent = `${currentNickname} 연결됨`;
-        } else {
-            dot.classList.remove('connected');
-            text.textContent = '연결 끊김';
-        }
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // 채팅방
-    // ─────────────────────────────────────────────────────────
-    async function loadRooms() {
-        try {
-            const response = await fetch(`${API_BASE}/api/chat/rooms`, {
-                headers: { Authorization: `Bearer ${jwtToken}` }
+    /**
+     * 재연결 복구: 끊긴 동안 놓친 메시지를 lastReceivedId 이후부터 다시 로드
+     * lastReceivedId가 없으면 최신 페이지를 새로 로드
+     */
+    async function recoverMissedMessages(roomId){
+        try{
+            // 최신 메시지를 다시 로드해서 화면에 추가 (중복 방지: messageId 체크)
+            const r=await fetch(`${API}/api/chat/rooms/${roomId}/messages?size=30`,{
+                headers:{Authorization:`Bearer ${jwt}`}
             });
-            if (!response.ok) return;
-            rooms = await response.json();
-            renderRooms();
-        } catch (e) { console.error('채팅방 목록 실패:', e); }
-    }
-
-    // ─── 채팅방 생성 모달 ───────────────────────────────────
-
-    function openCreateModal() {
-        document.getElementById('createRoomModal').classList.remove('hidden');
-        loadInvitableMembers();
-    }
-
-    function closeCreateModal() {
-        document.getElementById('createRoomModal').classList.add('hidden');
-    }
-
-    async function loadInvitableMembers() {
-        const list = document.getElementById('inviteMemberList');
-        list.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">불러오는 중...</div>';
-        try {
-            const res = await fetch(`${API_BASE}/api/chat/rooms/invitable-members`, {
-                headers: { Authorization: `Bearer ${jwtToken}` }
-            });
-            if (!res.ok) { list.innerHTML = '<div style="color:var(--red);font-size:13px;">불러오기 실패</div>'; return; }
-            const members = await res.json();
-            if (members.length === 0) {
-                list.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">초대 가능한 회원이 없습니다</div>';
-                return;
+            if(!r.ok)return;
+            const result=await r.json();
+            // ChatController가 ApiResponse<List<ChatMessageResponse>> 반환
+            const msgs=result.data??[];
+            const existingIds=new Set([...document.querySelectorAll('[data-msg-id]')].map(el=>Number(el.dataset.msgId)));
+            const newMsgs=msgs.filter(m=>!existingIds.has(m.messageId));
+            if(newMsgs.length>0){
+                newMsgs.forEach(showPast);
+                const c=document.getElementById('cMsgs'); c.scrollTop=c.scrollHeight;
+                showSystemNotice(`🔄 ${newMsgs.length}개의 누락 메시지를 복구했습니다.`);
             }
-            list.innerHTML = members.map(m => `
-                <div class="member-item" onclick="toggleMember(this)" data-email="${escapeHtml(m.email)}">
-                    <input type="checkbox" onclick="event.stopPropagation()" />
-                    <div class="member-item-info">
-                        <div class="member-item-nickname">${escapeHtml(m.nickname)}</div>
-                        <div class="member-item-email">${escapeHtml(m.email)}</div>
-                    </div>
-                </div>
-            `).join('');
-        } catch (e) { list.innerHTML = '<div style="color:var(--red);font-size:13px;">오류 발생</div>'; }
+        }catch(e){console.warn('재연결 복구 실패:',e);}
+    }
+    function setWS(on){
+        document.getElementById('wsDot').className='ws-dot'+(on?' on':'');
+        document.getElementById('wsText').textContent=on?`${myNickname} 연결됨`:'연결 끊김';
     }
 
-    // 라디오 스타일 — 클릭하면 기존 선택 해제 후 해당 항목만 선택 (1명만 가능)
-    function toggleMember(el) {
-        const wasSelected = el.classList.contains('selected');
-        // 모든 선택 먼저 해제
-        document.querySelectorAll('.member-item.selected').forEach(item => {
-            item.classList.remove('selected');
-            item.querySelector('input[type="checkbox"]').checked = false;
-        });
-        // 이미 선택된 항목을 다시 클릭하면 해제 상태로 유지, 아니면 선택
-        if (!wasSelected) {
-            el.classList.add('selected');
-            el.querySelector('input[type="checkbox"]').checked = true;
-        }
-    }
-
-    async function createRoom() {
-        const inviteeEmails = [...document.querySelectorAll('.member-item.selected')]
-            .map(el => el.dataset.email);
-
-        if (inviteeEmails.length !== 1) {
-            alert('대화 상대를 1명 선택해주세요.');
-            return;
-        }
-
-        try {
-            // name 필드 제거 — 서버에서 "{상대방 닉네임}과의 채팅"으로 자동 생성
-            const response = await fetch(`${API_BASE}/api/chat/rooms`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${jwtToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ inviteeEmails })
+    // ── MESSAGES ──────────────────────────────────
+    /**
+     * 커서 기반 메시지 로드
+     * @param roomId - 채팅방 ID
+     * @param lastMessageId - null: 최신부터, 값 있음: 해당 ID 이전 메시지 (더 불러오기)
+     * @param prepend - true: 화면 위쪽에 추가 (더 불러오기), false: 아래에 추가 (최초)
+     */
+    async function loadHistory(roomId, lastMessageId, prepend=false){
+        try{
+            const PAGE_SIZE=30;
+            const params=new URLSearchParams({size:PAGE_SIZE});
+            if(lastMessageId) params.append('lastMessageId', lastMessageId);
+            const r=await fetch(`${API}/api/chat/rooms/${roomId}/messages?${params}`,{
+                headers:{Authorization:`Bearer ${jwt}`}
             });
+            if(!r.ok)return;
+            // ChatController가 ApiResponse<List<ChatMessageResponse>> 반환
+            const msgs=(await r.json()).data??[];
 
-            if (!response.ok) {
-                const errBody = await response.text();
-                try {
-                    const errJson = JSON.parse(errBody);
-                    alert(errJson.message ?? errJson.error ?? '채팅방 생성 실패');
-                } catch {
-                    alert(errBody || '채팅방 생성 실패');
-                }
-                return;
+            // 커서 갱신
+            // msgs는 오름차순(ASC) 정렬 — 첫 번째 요소가 가장 오래된 메시지
+            // 더 불러오기 시 첫 번째 messageId를 nextCursor로 사용
+            if(msgs.length>0){
+                curNextCursor=msgs[0].messageId; // 가장 오래된 ID → 다음 더 보기 기준
             }
-            closeCreateModal();
-            await loadRooms();
-        } catch (e) { console.error('채팅방 생성 실패:', e); }
+            // 반환된 메시지 수가 PAGE_SIZE이면 더 이전 메시지가 있을 수 있음
+            const mayHaveMore=(msgs.length===PAGE_SIZE);
+
+            const c=document.getElementById('cMsgs');
+            const prevScrollH=c.scrollHeight;
+
+            if(prepend){
+                // 더 불러오기: 위쪽에 삽입
+                c.querySelector('.load-more')?.remove();
+                const frag=document.createDocumentFragment();
+                msgs.forEach(m=>{ const el=makeMsgEl(m,true); frag.appendChild(el); });
+                c.insertBefore(frag, c.firstChild);
+                // 스크롤 위치 유지 (새로 추가된 높이만큼 보정)
+                c.scrollTop=c.scrollHeight-prevScrollH;
+            } else {
+                // 최초 로드: 아래에 추가
+                c.querySelector('.empty')?.remove();
+                msgs.forEach(m=>showPast(m));
+                c.scrollTop=c.scrollHeight;
+            }
+
+            // 더 이전 메시지가 있을 수 있으면 "더 불러오기" 버튼 표시
+            renderLoadMoreBtn(roomId, mayHaveMore);
+        }catch(e){console.error('메시지 로드 실패:',e);}
     }
 
-    function renderRooms() {
-        const container = document.getElementById('roomList');
-        container.innerHTML = rooms.map(room => `
-            <div class="room-item ${currentRoomId === room.id ? 'active' : ''}"
-                 onclick="selectRoom(${room.id}, '${escapeHtml(room.displayName ?? room.name)}')">
-                <div>
-                    <h4>${escapeHtml(room.displayName ?? room.name)}</h4>
-                    <div class="room-id">ID: ${room.id}</div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    async function selectRoom(roomId, roomName) {
-        if (currentSubscription) { currentSubscription.unsubscribe(); currentSubscription = null; }
-
-        currentRoomId = roomId;
-        typingUsers.clear();
-        updateTypingIndicator();
-
-        document.getElementById('chatTitle').textContent = roomName;
-        document.getElementById('chatSubtitle').textContent = `Room ID: ${roomId}`;
-        document.getElementById('messageInput').disabled = false;
-        document.querySelector('.chat-input-form button').disabled = false;
-
-        renderRooms();
-        clearMessages();
-        await loadPastMessages(roomId);
-
-        if (stompClient && stompClient.connected) {
-            currentSubscription = stompClient.subscribe(`/sub/chat/${roomId}`, function(message) {
-                const data = JSON.parse(message.body);
-                displayMessage(data);
-            });
-            console.log('채팅방', roomId, '구독 시작');
-
-            // 구독 직후 입장 시스템 메시지 전송
-            // → 서버가 Redis pub/sub으로 구독자 전체에게 브로드캐스트
-            stompClient.send('/pub/chat.enter', {}, JSON.stringify({ roomId: roomId, content: '' }));
+    function renderLoadMoreBtn(roomId, show){
+        const c=document.getElementById('cMsgs');
+        c.querySelector('.load-more')?.remove();
+        if(show && curNextCursor){
+            const btn=document.createElement('button');
+            btn.className='load-more';
+            btn.textContent='이전 메시지 불러오기';
+            btn.onclick=()=>loadHistory(roomId, curNextCursor, true);
+            c.insertBefore(btn, c.firstChild);
         }
     }
 
-    // ─────────────────────────────────────────────────────────
-    // 메시지
-    // ─────────────────────────────────────────────────────────
-    async function loadPastMessages(roomId) {
-        try {
-            const response = await fetch(
-                `${API_BASE}/api/chat/rooms/${roomId}/messages?size=50`,
-                { headers: { Authorization: `Bearer ${jwtToken}` } }
-            );
-            if (!response.ok) return;
-
-            const messages = await response.json();
-            messages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-            messages.forEach(msg => displayPastMessage(msg));
-
-            const container = document.getElementById('chatMessages');
-            container.scrollTop = container.scrollHeight;
-        } catch (e) { console.error('과거 메시지 로드 실패:', e); }
+    function sendMsg(e){
+        e.preventDefault();
+        const inp=document.getElementById('msgInput'), txt=inp.value.trim();
+        if(!txt||!curRoom)return;
+        stomp.send('/pub/chat.send',{},JSON.stringify({roomId:curRoom,content:txt}));
+        inp.value='';
     }
 
-    function sendMessage(event) {
-        event.preventDefault();
-        const input   = document.getElementById('messageInput');
-        const content = input.value.trim();
-        if (!content || !currentRoomId) return;
-
-        stompClient.send('/pub/chat.send', {}, JSON.stringify({
-            roomId: currentRoomId,
-            content: content
-        }));
-        input.value = '';
-        if (typingTimeout) { clearTimeout(typingTimeout); typingTimeout = null; }
-    }
-
-    function displayMessage(data) {
-        const container = document.getElementById('chatMessages');
-        const emptyState = container.querySelector('.empty-state');
-        if (emptyState) emptyState.remove();
-
-        // 시스템 메시지 (입장 알림 등) — senderNickname === 'SYSTEM'
-        if (data.senderNickname === 'SYSTEM') {
-            const div = document.createElement('div');
-            div.style.cssText = 'text-align:center; font-size:12px; color:var(--text-muted); padding:6px 0; font-style:italic;';
-            div.textContent = data.content;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
-            return;
+    function showMsg(data){
+        const c=document.getElementById('cMsgs');
+        c.querySelector('.empty')?.remove();
+        if(data.senderNickname==='SYSTEM'){
+            const d=document.createElement('div'); d.className='sys'; d.textContent=data.content;
+            c.appendChild(d); c.scrollTop=c.scrollHeight; return;
         }
-
-        // senderNickname과 currentNickname으로 내 메시지 여부 판단
-        const isMe = data.senderNickname === currentNickname;
-        const time = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-
-        const div = document.createElement('div');
-        div.className = `message ${isMe ? 'me' : ''}`;
-        div.innerHTML =
-            (!isMe ? `<div class="message-sender">${escapeHtml(data.senderNickname ?? '')}</div>` : '') +
-            `<div class="message-bubble">${escapeHtml(data.content)}</div>` +
-            `<div class="message-time">${time}</div>`;
-        container.appendChild(div);
-        container.scrollTop = container.scrollHeight;
+        c.appendChild(makeMsgEl(data,false));
+        c.scrollTop=c.scrollHeight;
     }
 
-    function displayPastMessage(data) {
-        const container = document.getElementById('chatMessages');
-        const emptyState = container.querySelector('.empty-state');
-        if (emptyState) emptyState.remove();
-
-        const isMe = data.senderNickname === currentNickname;
-        const time = data.createdAt
-            ? new Date(data.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
-            : '';
-
-        const div = document.createElement('div');
-        div.className = `message ${isMe ? 'me' : ''}`;
-        div.innerHTML =
-            (!isMe ? `<div class="message-sender">${escapeHtml(data.senderNickname ?? '')}</div>` : '') +
-            `<div class="message-bubble">${escapeHtml(data.content)}</div>` +
-            `<div class="message-time">${time}</div>`;
-        container.appendChild(div);
+    // makeMsgEl: DOM 요소 생성 헬퍼 (showPast, 더 불러오기 공용)
+    function makeMsgEl(data, isPast=true){
+        const el=document.createElement('div');
+        if(data.messageId) el.dataset.msgId=data.messageId;
+        const isMe=data.senderNickname===myNickname;
+        const t=isPast&&data.createdAt
+            ?new Date(data.createdAt).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})
+            :new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+        el.className=`msg ${isMe?'me':''}`;
+        el.innerHTML=(!isMe?`<div class="msg-sender">${esc(data.senderNickname??'')}</div>`:'')
+            +`<div class="msg-bubble">${esc(data.content)}</div>`
+            +`<div class="msg-time">${t}</div>`;
+        return el;
     }
 
-    function clearMessages() {
-        document.getElementById('chatMessages').innerHTML = `
-            <div class="empty-state">
-                <h3>📭 메시지가 없습니다</h3>
-                <p>채팅방을 선택하고 메시지를 보내보세요!</p>
-            </div>
-        `;
+    function showPast(data){
+        const c=document.getElementById('cMsgs');
+        c.querySelector('.empty')?.remove();
+        c.appendChild(makeMsgEl(data,true));
     }
 
-    // ─────────────────────────────────────────────────────────
-    // 타이핑 인디케이터
-    // ─────────────────────────────────────────────────────────
-    function handleTyping() {
-        if (typingTimeout) clearTimeout(typingTimeout);
-        typingTimeout = setTimeout(() => {}, 2000);
+    function showSystemNotice(text){
+        const c=document.getElementById('cMsgs');
+        const d=document.createElement('div');
+        d.style.cssText='text-align:center;font-size:11px;color:var(--muted);padding:4px 0;font-style:italic;';
+        d.textContent=text;
+        c.appendChild(d); c.scrollTop=c.scrollHeight;
     }
 
-    function updateTypingIndicator() {
-        const indicator = document.getElementById('typingIndicator');
-        if (typingUsers.size === 0) {
-            indicator.innerHTML = '';
-        } else {
-            const names = Array.from(typingUsers).join(', ');
-            indicator.innerHTML = `${names}이 입력 중<span class="dots"></span>`;
-        }
+    function clearMsgs(){
+        document.getElementById('cMsgs').innerHTML='<div class="empty"><div class="ico">💬</div><h3>메시지가 없습니다</h3><p>첫 메시지를 보내보세요!</p></div>';
     }
 
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text ?? '';
-        return div.innerHTML;
-    }
+    function esc(t){const d=document.createElement('div');d.textContent=t??'';return d.innerHTML;}
 </script>
 </body>
 </html>

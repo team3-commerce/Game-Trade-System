@@ -1,12 +1,14 @@
 package com.example.tradedemo.domain.chat.controller;
 
 import com.example.tradedemo.auth.dto.PrincipalDetails;
+import com.example.tradedemo.common.dto.ApiResponse;
 import com.example.tradedemo.domain.chat.dto.ChatMessageResponse;
 import com.example.tradedemo.domain.chat.dto.ChatRoomResponse;
 import com.example.tradedemo.domain.chat.dto.CreateRoomRequest;
-import com.example.tradedemo.domain.chat.dto.MemberInfo;
 import com.example.tradedemo.domain.chat.service.ChatRoomService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,51 +21,54 @@ public class ChatController {
 
     private final ChatRoomService chatRoomService;
 
-    /** 내가 참여한 채팅방 목록 조회 */
+    /** 전체 채팅방 목록 */
     @GetMapping("/rooms")
-    public List<ChatRoomResponse> getMyRooms(
+    public ResponseEntity<ApiResponse<List<ChatRoomResponse>>> getMyRooms(
             @AuthenticationPrincipal PrincipalDetails principalDetails) {
-        return chatRoomService.getMyRooms(principalDetails.getEmail());
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()),
+                chatRoomService.getMyRooms(principalDetails.getEmail())));
     }
 
-    /** 채팅방 생성 + 초대한 사람들 자동 참여 */
+    /** 내가 BUYER인 채팅방 조회 */
+    @GetMapping("/rooms/buyer")
+    public ResponseEntity<ApiResponse<List<ChatRoomResponse>>> getMyBuyerRooms(
+            @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()),
+                chatRoomService.getMyBuyerRooms(principalDetails.getEmail())));
+    }
+
+    /** 내가 SELLER인 채팅방 조회 */
+    @GetMapping("/rooms/seller")
+    public ResponseEntity<ApiResponse<List<ChatRoomResponse>>> getMySellerRooms(
+            @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()),
+                chatRoomService.getMySellerRooms(principalDetails.getEmail())));
+    }
+
+    /** 채팅방 생성 */
     @PostMapping("/rooms")
-    public ChatRoomResponse createRoom(
+    public ResponseEntity<ApiResponse<ChatRoomResponse>> createRoom(
             @RequestBody CreateRoomRequest request,
             @AuthenticationPrincipal PrincipalDetails principalDetails) {
-        return chatRoomService.createRoom(request, principalDetails.getEmail());
-    }
-
-    /** 초대 가능한 회원 목록 조회 (나 자신 제외) */
-    @GetMapping("/rooms/invitable-members")
-    public List<MemberInfo> getInvitableMembers(
-            @AuthenticationPrincipal PrincipalDetails principalDetails) {
-        return chatRoomService.getInvitableMembers(principalDetails.getEmail());
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
+                String.valueOf(HttpStatus.CREATED.value()),
+                chatRoomService.createRoom(request, principalDetails.getEmail())));
     }
 
     // 메시지 조회
 
-    /** 전체 최근 메시지 조회 */
-    @GetMapping("/messages")
-    public List<ChatMessageResponse> getMessages(
-            @RequestParam(defaultValue = "50") int size) {
-        return chatRoomService.getRecentMessages(size);
-    }
-
-    /** 커서 기반 메시지 조회 (마지막으로 읽은 messageId 이전) */
-    @GetMapping("/messages/before/{id}")
-    public List<ChatMessageResponse> getMessagesBefore(
-            @PathVariable Long id,
-            @RequestParam(defaultValue = "50") int size) {
-        return chatRoomService.getMessagesBefore(id, size);
-    }
-
-    /** 채팅방별 최근 메시지 조회 */
+    /**
+     * 채팅방별 커서 기반 메시지 조회
+     * lastMessageId 없음 → 최신 50개 (최초 입장 / 재연결 복구)
+     * lastMessageId 있음 → 해당 ID 이전 n개 (이전 메시지 더 보기)
+     */
     @GetMapping("/rooms/{roomId}/messages")
-    public List<ChatMessageResponse> getRoomMessages(
+    public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getRoomMessages(
             @PathVariable Long roomId,
+            @RequestParam(required = false) Long lastMessageId,
             @RequestParam(defaultValue = "50") int size) {
-        return chatRoomService.getMessagesByRoom(roomId, size);
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()),
+                chatRoomService.getMessagesByRoom(roomId, lastMessageId, size)));
     }
 
 }
