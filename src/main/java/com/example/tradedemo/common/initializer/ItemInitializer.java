@@ -34,6 +34,9 @@ public class ItemInitializer implements ApplicationRunner {
 
     @Transactional
     public void run(ApplicationArguments args) throws Exception {
+        // 이미 있으면 스킵
+        if (itemRepository.count() > 0) return;
+
         itemRepository.save(Item.create("검", ItemType.EQUIPMENT));
         itemRepository.save(Item.create("갑옷", ItemType.EQUIPMENT));
 
