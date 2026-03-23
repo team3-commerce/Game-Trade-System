@@ -63,6 +63,7 @@ public final class ErrorMessage {
     public static final String MSG_LOCK_ACQUIRE_FAILED = "Redis 락 획득에 실패하였습니다.";
 
     // Chat
-    public static final String MSG_CHAT_ROOM_LISTING_ALREADY_EXISTS = "이 상품에 대한 채팅방이 이미 존재합니다.";
+    public static final String MSG_CHAT_ROOM_LISTING_ALREADY_EXISTS = "이 상품에 대한 채팅방이 이미 존재합니다";
+    public static final String MSG_CHAT_ROOM_NOT_FOUND = "채팅방이 존재하지 않습니다";
 
 }

@@ -6,6 +6,7 @@ import com.example.tradedemo.domain.chat.dto.ChatMessageResponse;
 import com.example.tradedemo.domain.chat.dto.ChatRoomResponse;
 import com.example.tradedemo.domain.chat.dto.CreateRoomRequest;
 import com.example.tradedemo.domain.chat.service.ChatRoomService;
+import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -55,8 +56,6 @@ public class ChatController {
                 chatRoomService.createRoom(request, principalDetails.getEmail())));
     }
 
-    // 메시지 조회
-
     /**
      * 채팅방별 커서 기반 메시지 조회
      * lastMessageId 없음 → 최신 50개 (최초 입장 / 재연결 복구)
@@ -70,5 +69,17 @@ public class ChatController {
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()),
                 chatRoomService.getMessagesByRoom(roomId, lastMessageId, size)));
     }
+
+    /**
+     * 채팅방의 상품 판매 상태 조회
+     * 반환값으로 입력창 활성/비활성 결정
+     */
+    @GetMapping("/rooms/{roomId}/listing-status")
+    public ResponseEntity<ApiResponse<MarketListingStatus>> getListingStatus(
+            @PathVariable Long roomId) {
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()),
+                chatRoomService.getListingStatus(roomId)));
+    }
+
 
 }
