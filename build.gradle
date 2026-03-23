@@ -96,6 +96,9 @@ dependencies {
     // H2
     testImplementation 'com.h2database:h2'
 
+    // WebSocket
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
 }
 
 tasks.named('test') {

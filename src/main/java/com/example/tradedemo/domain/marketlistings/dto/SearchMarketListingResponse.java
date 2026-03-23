@@ -23,8 +23,16 @@ public class SearchMarketListingResponse {
     private LocalDateTime saleEndAt;
     private LocalDateTime createdAt;
     private LocalDateTime modifiedAt;
+    private String sellerEmail;
+    private String sellerNickname;
 
     public static SearchMarketListingResponse of(MarketListing marketListing) {
+        String sellerEmail = null;
+        String sellerNickname = null;
+        if (marketListing.getMember() != null) {
+            sellerEmail = marketListing.getMember().getEmail();
+            sellerNickname = marketListing.getMember().getNickname();
+        }
         return new SearchMarketListingResponse(
                 marketListing.getId(),
                 marketListing.getItemName(),
@@ -33,6 +41,9 @@ public class SearchMarketListingResponse {
                 marketListing.getStatus(),
                 marketListing.getSaleEndAt(),
                 marketListing.getCreatedAt(),
-                marketListing.getModifiedAt());
+                marketListing.getModifiedAt(),
+                sellerEmail,
+                sellerNickname
+        );
     }
 }
