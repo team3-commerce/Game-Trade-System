@@ -35,6 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -308,6 +309,24 @@ public class PendingAssetService {
 
         asset.setClaimed(true);
         asset.setClaimedAt(LocalDateTime.now());
+    }
+
+    @Transactional
+    public void createCancelPendingAsset(MarketListing marketListing, Member owner, Duration duration) {
+        PendingAsset pendingAsset = PendingAsset.create(
+                PendingType.CANCELLED,
+                Type.ITEM,
+                BigDecimal.ZERO,
+                marketListing.getQuantity(),
+                false,
+                null,
+                LocalDateTime.now().plus(duration),
+                marketListing,
+                null,
+                owner
+        );
+
+        pendingAssetRepository.save(pendingAsset);
     }
 
     @Transactional
