@@ -76,4 +76,19 @@ public class WalletService {
                 member,
                 null));
     }
+
+    @Transactional
+    public void addBalanceWithHistory(Wallet wallet, BigDecimal amount, Order order) {
+        wallet.addBalance(amount);
+
+        walletHistoryRepository.save(WalletHistories.create(
+                amount,
+                WalletStatus.PURCHASE,
+                wallet.getBalance(),
+                wallet,
+                null,
+                wallet.getMember(),
+                order
+        ));
+    }
 }

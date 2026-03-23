@@ -24,6 +24,13 @@ public class ItemService {
     private final ItemCacheService itemCacheService;
 
     @Transactional(readOnly = true)
+    public Item findItem(Long itemId) {
+        return itemRepository.findById(itemId).orElseThrow(
+                () -> new ServiceException(ErrorEnum.ERR_ITEM_NOT_FOUND)
+        );
+    }
+
+    @Transactional(readOnly = true)
     public GetItemResponse getItem(Long itemId) {
         Item item = itemRepository.findById(itemId).orElseThrow(
                 () -> new ServiceException(ErrorEnum.ERR_ITEM_NOT_FOUND)

@@ -6,11 +6,15 @@ import static com.example.tradedemo.domain.members.consts.MemberItemConst.INVENT
 import com.example.tradedemo.common.dto.PageResponse;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
+import com.example.tradedemo.domain.item.entity.Item;
+import com.example.tradedemo.domain.item.service.ItemService;
 import com.example.tradedemo.domain.members.dto.GetAllMemberItemResponse;
 import com.example.tradedemo.domain.members.dto.GetMemberItemResponse;
+import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.entity.MemberItem;
 import com.example.tradedemo.domain.members.exception.MemberItemNotFoundException;
 import com.example.tradedemo.domain.members.repository.MemberItemRepository;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberItemService {
 
     private final MemberItemRepository memberItemRepository;
+    private final MemberService memberService;
+    private final ItemService itemService;
     private final MemberItemCacheService memberItemCacheService;
 
     @Transactional(readOnly = true)
@@ -30,7 +36,7 @@ public class MemberItemService {
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_ITEM_NOT_FOUND));
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public MemberItem findByIdForUpdate(Long memberItemId) {
         return memberItemRepository.findByIdForUpdate(memberItemId)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_ITEM_NOT_FOUND));
@@ -50,6 +56,26 @@ public class MemberItemService {
         }
 
         memberItem.decrease(quantity);
+    }
+
+    /**
+     * 인벤토리 추가 또는 업데이트
+     */
+    @Transactional
+    public MemberItem addOrUpdateInventory(Long memberId, Long itemId, Long quantity) {
+        MemberItem memberItem = memberItemRepository
+                .findByMemberIdAndItemId(memberId, itemId)
+                .orElse(null);
+
+        if (memberItem != null) {
+            memberItem.increase(quantity);
+        } else {
+            Member member = memberService.findMember(memberId);
+            Item item = itemService.findItem(itemId);
+            memberItem = MemberItem.create(member, item, LocalDateTime.now(), quantity);
+            memberItemRepository.save(memberItem);
+        }
+        return memberItem;
     }
 
     @Transactional(readOnly = true)
