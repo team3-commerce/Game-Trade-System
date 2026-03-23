@@ -348,4 +348,10 @@ public class MemberService {
                 .findById(memberId)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
     }
+
+    @Transactional(readOnly = true)
+    public Member findMemberByEmail(String email) {
+        return memberRepository.findByEmail(email)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
+    }
 }

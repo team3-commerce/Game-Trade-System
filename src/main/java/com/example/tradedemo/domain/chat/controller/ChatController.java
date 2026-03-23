@@ -5,6 +5,7 @@ import com.example.tradedemo.common.dto.ApiResponse;
 import com.example.tradedemo.domain.chat.dto.ChatMessageResponse;
 import com.example.tradedemo.domain.chat.dto.ChatRoomResponse;
 import com.example.tradedemo.domain.chat.dto.CreateRoomRequest;
+import com.example.tradedemo.domain.chat.facade.ChatFacade;
 import com.example.tradedemo.domain.chat.service.ChatService;
 import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import java.util.List;
 public class ChatController {
 
     private final ChatService chatService;
+    private final ChatFacade chatFacade;
 
     /** 전체 채팅방 목록 */
     @GetMapping("/rooms")
@@ -53,7 +55,7 @@ public class ChatController {
             @AuthenticationPrincipal PrincipalDetails principalDetails) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
                 String.valueOf(HttpStatus.CREATED.value()),
-                chatService.createRoom(request, principalDetails.getEmail())));
+                chatFacade.createRoom(request, principalDetails.getEmail())));
     }
 
     /**

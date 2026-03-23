@@ -30,9 +30,7 @@ public class ChatService {
 
     private final ChatRoomRepository chatRoomRepository;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
-    private final MemberRepository memberRepository;
     private final ChatMessageRepository chatMessageRepository;
-    private final MarketListingRepository marketListingRepository;
 
     /** 내가 참여한 전체 채팅방 조회 */
     @Transactional(readOnly = true)
@@ -54,47 +52,31 @@ public class ChatService {
 
     /**
      * 채팅방 생성 (상품 탭 "판매자와 채팅하기")
-     * 1. 상품 조회 + SELLING 상태 검증
-     * 2. 같은 구매자 + 같은 상품 중복 채팅방 있으면 예외
-     * 3. 판매자 조회
-     * 4. 채팅방 생성 ("[상품명] 판매자닉네임")
-     * 5. 구매자 = BUYER, 판매자 = SELLER 참여 등록
+     * 1. 같은 구매자 + 같은 상품 중복 채팅방 있으면 예외
+     * 2. 채팅방 생성 ("[상품명] 판매자닉네임")
+     * 3. 구매자 = BUYER, 판매자 = SELLER 참여 등록
      */
-    public ChatRoomResponse createRoom(CreateRoomRequest request, String buyerEmail) {
+    public ChatRoomResponse createRoom(MarketListing marketListing, Member buyer, Member seller) {
 
-        // 1. 상품 조회
-        MarketListing marketListing = marketListingRepository.findById(request.listingId())
-                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_FOUND));
-        // SELLING 상태가 아니면 예외
-        marketListing.validateSelling();
-
-        // 2. 중복 채팅방 존재하는지 확인
+        // 1. 중복 채팅방 존재하는지 확인
         boolean alreadyExists = chatRoomMemberRepository
-                .findRoomByBuyerAndListing(buyerEmail, request.listingId())
+                .findRoomByBuyerAndListing(buyer.getEmail(), marketListing.getId())
                 .isPresent();
 
         if (alreadyExists) {
             throw new ServiceException(ErrorEnum.ERR_CHAT_ROOM_LISTING_ALREADY_EXISTS);
         }
 
-        // 3. 판매자 회원 정보 조회
-        Member seller = memberRepository.findByEmail(request.sellerEmail())
-                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND));
-
-        // 4. 채팅방 생성
+        // 2. 채팅방 생성
         String roomName = "[" + marketListing.getItemName() + "] " + seller.getNickname();
         ChatRoom room = saveRoom(roomName, marketListing);
 
-        // 5. 구매자, 판매자를 채팅방 참여자로 등록
-        Member buyer = memberRepository.findByEmail(buyerEmail).orElseThrow(
-                () -> new ServiceException(ErrorEnum.ERR_MEMBER_NOT_FOUND)
-        );
-
+        // 3. 구매자, 판매자를 채팅방 참여자로 등록
         chatRoomMemberRepository.save(ChatRoomMember.create(room, buyer, ChatRoomMemberRole.BUYER));
         chatRoomMemberRepository.save(ChatRoomMember.create(room, seller, ChatRoomMemberRole.SELLER));
 
         log.info("[ChatRoom] 채팅방 생성 완료 - roomId: {}, buyer: {}, seller: {}",
-                room.getId(), buyerEmail, request.sellerEmail());
+                room.getId(), buyer.getEmail(), seller.getEmail());
 
         return ChatRoomResponse.of(room, seller.getNickname(), ChatRoomMemberRole.BUYER.name(), marketListing.getItemName());
     }
