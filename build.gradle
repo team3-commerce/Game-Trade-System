@@ -92,6 +92,10 @@ dependencies {
 
     // datafaker
     implementation 'net.datafaker:datafaker:2.0.2'
+
+    // H2
+    testImplementation 'com.h2database:h2'
+
 }
 
 tasks.named('test') {
