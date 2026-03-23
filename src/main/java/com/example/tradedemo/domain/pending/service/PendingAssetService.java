@@ -27,13 +27,20 @@ public class PendingAssetService {
 
     /**
      * 수령 대기 테이블 조회
-     * memberId 기준으로 아직 수령하지 않은 것(돈/아이템)을 조회한다.
      */
     @Transactional(readOnly = true)
     public List<PendingAssetResponse> getPendingAssets(Long memberId) {
         return pendingAssetRepository.findByMemberIdAndIsClaimedFalse(memberId).stream()
                 .map(PendingAssetResponse::from)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 수령 대기 중인 자산 존재 여부 확인
+     */
+    @Transactional(readOnly = true)
+    public boolean hasUnclaimedAssets(Long memberId) {
+        return pendingAssetRepository.existsByMemberIdAndIsClaimedFalse(memberId);
     }
 
     @Transactional(readOnly = true)
@@ -104,4 +111,3 @@ public class PendingAssetService {
         pendingAssetRepository.save(buyerPending);
     }
 }
-

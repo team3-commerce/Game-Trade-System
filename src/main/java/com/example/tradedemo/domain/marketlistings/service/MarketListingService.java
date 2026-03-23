@@ -54,6 +54,14 @@ public class MarketListingService {
     }
 
     /**
+     * 특정 회원의 판매 중인 매물 존재 여부 확인
+     */
+    @Transactional(readOnly = true)
+    public boolean hasActiveListings(Long memberId) {
+        return marketListingRepository.existsByMemberIdAndStatus(memberId, MarketListingStatus.SELLING);
+    }
+
+    /**
      * 마켓 상품 전체 조회 V1
      */
     @Transactional(readOnly = true)

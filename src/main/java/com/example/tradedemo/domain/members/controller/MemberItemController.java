@@ -1,5 +1,7 @@
 package com.example.tradedemo.domain.members.controller;
 
+import static com.example.tradedemo.auth.consts.AuthConst.SUCCESS_CODE;
+
 import com.example.tradedemo.auth.dto.PrincipalDetails;
 import com.example.tradedemo.common.dto.ApiResponse;
 import com.example.tradedemo.common.dto.PageResponse;
@@ -7,10 +9,8 @@ import com.example.tradedemo.domain.members.dto.GetAllMemberItemResponse;
 import com.example.tradedemo.domain.members.dto.GetMemberItemResponse;
 import com.example.tradedemo.domain.members.service.MemberItemService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,7 +35,7 @@ public class MemberItemController {
         Long memberId = principalDetails.getMember().getId();
 
         return ResponseEntity.ok(ApiResponse.success(
-                String.valueOf(HttpStatus.OK), memberItemService.getAllMemberItem(memberId, pageable)));
+                SUCCESS_CODE, memberItemService.getAllMemberItem(memberId, pageable)));
     }
 
     @GetMapping("/api/v2/me/items")
@@ -45,7 +45,7 @@ public class MemberItemController {
         Long memberId = principalDetails.getMember().getId();
 
         return ResponseEntity.ok(ApiResponse.success(
-                String.valueOf(HttpStatus.OK), memberItemService.getAllMemberItemV2(memberId, pageable)));
+                SUCCESS_CODE, memberItemService.getAllMemberItemV2(memberId, pageable)));
     }
 
     @GetMapping("/api/v3/me/items")
@@ -55,7 +55,7 @@ public class MemberItemController {
         Long memberId = principalDetails.getMember().getId();
 
         return ResponseEntity.ok(ApiResponse.success(
-                String.valueOf(HttpStatus.OK), memberItemService.getAllMemberItemV3(memberId, pageable)));
+                SUCCESS_CODE, memberItemService.getAllMemberItemV3(memberId, pageable)));
     }
 
     /**
@@ -67,7 +67,7 @@ public class MemberItemController {
         Long memberId = principalDetails.getMember().getId();
 
         return ResponseEntity.ok(ApiResponse.success(
-                String.valueOf(HttpStatus.OK), memberItemService.getMemberItem(memberId, memberItemId)));
+                SUCCESS_CODE, memberItemService.getMemberItem(memberId, memberItemId)));
     }
 
     @GetMapping("/api/v2/me/items/{memberItemId}")
@@ -76,7 +76,7 @@ public class MemberItemController {
         Long memberId = principalDetails.getMember().getId();
 
         return ResponseEntity.ok(ApiResponse.success(
-                String.valueOf(HttpStatus.OK), memberItemService.getMemberItemV2(memberId, memberItemId)));
+                SUCCESS_CODE, memberItemService.getMemberItemV2(memberId, memberItemId)));
     }
 
     @GetMapping("/api/v3/me/items/{memberItemId}")
@@ -85,6 +85,6 @@ public class MemberItemController {
         Long memberId = principalDetails.getMember().getId();
 
         return ResponseEntity.ok(ApiResponse.success(
-                String.valueOf(HttpStatus.OK), memberItemService.getMemberItemV3(memberId, memberItemId)));
+                SUCCESS_CODE, memberItemService.getMemberItemV3(memberId, memberItemId)));
     }
 }
