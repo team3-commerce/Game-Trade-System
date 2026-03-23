@@ -1,6 +1,14 @@
 spring:
+  profiles:
+    active: docker-builder
+
+  data:
+    redis:
+      host: localhost
+      port: 45000
+
   datasource: 
-    url: jdbc:mysql://localhost:42000/tradedb
+    url: jdbc:mysql://localhost:44000/tradedb
     username: root
     password: 1234
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -11,7 +19,3 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
     hibernate:
       ddl-auto: create
-
-jwt:
-  secret: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-  tokenValidityInSeconds: 999999999

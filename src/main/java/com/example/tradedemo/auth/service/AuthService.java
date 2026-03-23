@@ -1,5 +1,7 @@
 package com.example.tradedemo.auth.service;
 
+import static com.example.tradedemo.auth.consts.AuthConst.*;
+
 import com.example.tradedemo.auth.dto.*;
 import com.example.tradedemo.auth.provider.JwtTokenProvider;
 import com.example.tradedemo.common.exception.ErrorEnum;
@@ -18,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +37,7 @@ public class AuthService {
     private final CouponService couponService;
     private final WalletRepository walletRepository;
     private final CacheManager cacheManager;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     /**
      * 회원가입
@@ -85,7 +89,7 @@ public class AuthService {
         String accessToken = jwtTokenProvider.createAccessToken(
                 member.getEmail(), member.getRole().name());
 
-        String refreshToken = jwtTokenProvider.createRefreshToken();
+        String refreshToken = jwtTokenProvider.createRefreshToken(member.getEmail());
 
         member.updateRefreshToken(refreshToken);
         member.updateLastLoginAt();
@@ -130,10 +134,41 @@ public class AuthService {
         // 로그인 처리
         String accessToken = jwtTokenProvider.createAccessToken(
                 member.getEmail(), member.getRole().name());
-        String refreshToken = jwtTokenProvider.createRefreshToken();
+        String refreshToken = jwtTokenProvider.createRefreshToken(member.getEmail());
 
         // 캐시에 저장
         getRefreshCache().put(member.getEmail(), refreshToken);
+
+        member.updateLastLoginAt();
+
+        return new TokenAuthResponse(accessToken, refreshToken);
+    }
+
+    /**
+     * 로그인 V3
+     */
+    @Transactional
+    public TokenAuthResponse loginV3(LoginAuthRequest request) {
+        Member member = memberRepository
+                .findByEmail(request.email())
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
+
+        if (member.getPassword() == null) {
+            throw new ServiceException(ErrorEnum.ERR_AUTH_SOCIAL_ACCOUNT_ONLY);
+        }
+
+        if (!passwordEncoder.matches(request.password(), member.getPassword())) {
+            throw new ServiceException(ErrorEnum.ERR_AUTH_INVALID_PASSWORD);
+        }
+
+        handleMemberStatus(member);
+
+        String accessToken = jwtTokenProvider.createAccessToken(
+                member.getEmail(), member.getRole().name());
+        String refreshToken = jwtTokenProvider.createRefreshToken(member.getEmail());
+
+        // Redis 전용 캐시에 저장
+        redisTemplate.opsForValue().set(V3_REFRESH_TOKEN_PREFIX + member.getEmail(), refreshToken, V3_REFRESH_TOKEN_TTL);
 
         member.updateLastLoginAt();
 
@@ -153,6 +188,19 @@ public class AuthService {
         }
 
         member.updatePassword(passwordEncoder.encode(request.newPassword()));
+    }
+
+    @Transactional
+    @CacheEvict(value = "refreshTokens", key = "#email")
+    public void setPasswordV2(String email, SetPasswordRequest request) {
+        setPassword(email, request);
+    }
+
+    @Transactional
+    public void setPasswordV3(String email, SetPasswordRequest request) {
+        setPassword(email, request);
+        // Redis 리프레시 토큰 무효화
+        redisTemplate.delete(V3_REFRESH_TOKEN_PREFIX + email);
     }
 
     /**
@@ -178,6 +226,19 @@ public class AuthService {
 
         socialAccountRepository.deleteByMemberAndProvider(member, request.provider());
     }
+
+    @Transactional
+    @CacheEvict(value = "refreshTokens", key = "#email")
+    public void unlinkSocialV2(String email, UnlinkSocialRequest request) {
+        unlinkSocial(email, request);
+    }
+
+    @Transactional
+    public void unlinkSocialV3(String email, UnlinkSocialRequest request) {
+        unlinkSocial(email, request);
+        // Redis 리프레시 토큰 무효화
+        redisTemplate.delete(V3_REFRESH_TOKEN_PREFIX + email);
+    }
     
     /**
      * 로그아웃 V2
@@ -185,17 +246,66 @@ public class AuthService {
     @CacheEvict(value = "refreshTokens", key = "#email")
     public void logoutV2(String email, String accessToken) {
         // 블랙리스트 전용 캐시 조회
-        Cache blacklistCache = cacheManager.getCache("blacklistedTokens");
+        Cache blacklistCache = cacheManager.getCache(BLACKLIST_CACHE_NAME);
         if (blacklistCache != null) {
             blacklistCache.put(accessToken, "logout");
         }
     }
 
     /**
+     * 로그아웃 V3
+     */
+    @CacheEvict(value = "refreshTokens", key = "#email")
+    public void logoutV3(String email, String accessToken) {
+        // Redis 리프레시 토큰 삭제
+        redisTemplate.delete(V3_REFRESH_TOKEN_PREFIX + email);
+        
+        // 블랙리스트 등록
+        redisTemplate.opsForValue().set(V3_BLACKLIST_TOKEN_PREFIX + accessToken, "logout", V3_BLACKLIST_TOKEN_TTL);
+    }
+
+    /**
+     * 토큰 재발급 V1
+     */
+    @Transactional
+    public TokenAuthResponse reissue(String refreshToken) {
+        // 토큰 유효성 검증
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new ServiceException(ErrorEnum.ERR_AUTH_EXPIRED_TOKEN);
+        }
+        String email = jwtTokenProvider.getUserEmail(refreshToken);
+
+        // 사용자 확인
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
+
+        // DB에 저장된 토큰과 비교
+        if (member.getRefreshToken() == null || !member.getRefreshToken().equals(refreshToken)) {
+            throw new ServiceException(ErrorEnum.ERR_AUTH_INVALID_TOKEN);
+        }
+
+        // 새 토큰 생성
+        String newAccessToken = jwtTokenProvider.createAccessToken(
+                member.getEmail(), member.getRole().name());
+        String newRefreshToken = jwtTokenProvider.createRefreshToken(member.getEmail());
+
+        // DB 업데이트
+        member.updateRefreshToken(newRefreshToken);
+
+        return new TokenAuthResponse(newAccessToken, newRefreshToken);
+    }
+
+    /**
      * 토큰 재발급 V2
      */
     @Transactional
-    public TokenAuthResponse reissueV2(String email, String refreshToken) {
+    public TokenAuthResponse reissueV2(String refreshToken) {
+        // 토큰 유효성 검증 및 이메일 추출
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new ServiceException(ErrorEnum.ERR_AUTH_EXPIRED_TOKEN);
+        }
+        String email = jwtTokenProvider.getUserEmail(refreshToken);
+
         // 캐시에서 리프레시 토큰 조회
         Cache cache = getRefreshCache();
 
@@ -206,11 +316,6 @@ public class AuthService {
             throw new ServiceException(ErrorEnum.ERR_AUTH_INVALID_TOKEN);
         }
 
-        // 토큰 유효성 검증
-        if (!jwtTokenProvider.validateToken(refreshToken)) {
-            throw new ServiceException(ErrorEnum.ERR_AUTH_EXPIRED_TOKEN);
-        }
-
         Member member = memberRepository
                 .findByEmail(email)
                 .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
@@ -218,10 +323,42 @@ public class AuthService {
         // 새 토큰 생성
         String newAccessToken = jwtTokenProvider.createAccessToken(
                 member.getEmail(), member.getRole().name());
-        String newRefreshToken = jwtTokenProvider.createRefreshToken();
+        String newRefreshToken = jwtTokenProvider.createRefreshToken(member.getEmail());
 
         // 캐시 업데이트
         cache.put(member.getEmail(), newRefreshToken);
+
+        return new TokenAuthResponse(newAccessToken, newRefreshToken);
+    }
+
+    /**
+     * 토큰 재발급 V3
+     */
+    @Transactional
+    public TokenAuthResponse reissueV3(String refreshToken) {
+        // 토큰 유효성 검증 및 이메일 추출
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new ServiceException(ErrorEnum.ERR_AUTH_EXPIRED_TOKEN);
+        }
+        String email = jwtTokenProvider.getUserEmail(refreshToken);
+
+        // Redis에서 리프레시 토큰 조회
+        String cachedToken = (String) redisTemplate.opsForValue().get(V3_REFRESH_TOKEN_PREFIX + email);
+
+        if (cachedToken == null || !cachedToken.equals(refreshToken)) {
+            throw new ServiceException(ErrorEnum.ERR_AUTH_INVALID_TOKEN);
+        }
+
+        Member member = memberRepository
+                .findByEmail(email)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND));
+
+        String newAccessToken = jwtTokenProvider.createAccessToken(
+                member.getEmail(), member.getRole().name());
+        String newRefreshToken = jwtTokenProvider.createRefreshToken(member.getEmail());
+
+        // Redis 캐시 업데이트
+        redisTemplate.opsForValue().set(V3_REFRESH_TOKEN_PREFIX + member.getEmail(), newRefreshToken, V3_REFRESH_TOKEN_TTL);
 
         return new TokenAuthResponse(newAccessToken, newRefreshToken);
     }

@@ -1,6 +1,7 @@
 package com.example.tradedemo.common.aspect;
 
 import com.example.tradedemo.common.annotation.RedissonLock;
+import com.example.tradedemo.common.consts.AopConsts;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +20,7 @@ import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
-@Order(1)
+@Order(AopConsts.LOCK_ASPECT_ORDER)
 @RequiredArgsConstructor
 @Slf4j
 public class RedissonLockAspect {

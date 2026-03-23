@@ -11,6 +11,7 @@ public final class MarketListingConsts {
     public static final String TRENDING_SEARCH = "trending:search:";
     public static final String TRENDING_PREFIX_KEYWORD = "trending:prefix:";
     public static final String FIRST_PAGE = "page:first";
+    public static final String MARKET_LISTING_ITEM_PREFIX = "marketListing:item:";
 
 
     // config
@@ -23,4 +24,5 @@ public final class MarketListingConsts {
 
     public static final int TRENDING_SEARCH_LIMIT = 5;
     public static final DateTimeFormatter TRENDING_SEARCH_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
+
 }

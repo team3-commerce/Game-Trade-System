@@ -39,5 +39,5 @@ out/
 ### Spring Boot Settings ###
 application-local.yml
 application-local.properties
-
-
+참고자료.txt
+.env

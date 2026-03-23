@@ -1,12 +1,57 @@
-version: "3.8"
-
 services:
+  mysql:
+    image: mysql:8.0
+    container_name: trade-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: trade_demo
+      TZ: Asia/Seoul
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - trade-network
+    restart: always
+
   redis:
     image: redis
-    container_name: redis
-    ports:
-      - "6379:6379"
+    container_name: trade-redis
     command: >
       redis-server
       --maxmemory 1gb
       --maxmemory-policy allkeys-lru
+    networks:
+      - trade-network
+    restart: always
+
+  app:
+    image: ${DOCKERHUB_USERNAME}/trade-app:${IMAGE_TAG}
+    container_name: trade-app
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:mysql://mysql:3306/trade_demo?serverTimezone=Asia/Seoul&useSSL=false&allowPublicKeyRetrieval=true
+      DB_USERNAME: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - trade-network
+    restart: always
+
+volumes:
+  mysql_data:
+
+networks:
+  trade-network:
+    driver: bridge

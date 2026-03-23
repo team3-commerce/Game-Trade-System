@@ -24,7 +24,6 @@ public class BuildModule {
     // ==========================================
     // 일을 마친후 청소해야 할것들
     // ==========================================
-    private String dbContainerId;
     private String alpineContainerId;
 
     private String dockerVolume;
@@ -48,35 +47,13 @@ public class BuildModule {
 
         dockerClient.createVolumeCmd().withName(this.dockerVolume).exec();
 
-        System.out.println("========================");
-        System.out.println("PULLING IMAGE");
-        System.out.println("========================");
+        BuilderUtil.dockerComposeDown();
 
-        BuilderUtil.pullDockerImage(dockerClient, TradeDockerBuilder.DB_IMAGE_NAME);
-
-        System.out.println("========================");
-        System.out.println("STARTING CONTAINER");
-        System.out.println("========================");
-
-        var hostConfig = HostConfig.newHostConfig()
-                .withPortBindings(new PortBinding(
-                        Ports.Binding.bindPort(TradeDockerBuilder.DB_PORT), // host port -- 내가 접속할 포트
-                        ExposedPort.tcp(3306))) // container port -- container가 쓸 포트
-                .withBinds(new Bind(this.dockerVolume, new Volume("/var/lib/mysql")));
-
-        var container = dockerClient
-                .createContainerCmd(TradeDockerBuilder.DB_IMAGE_NAME)
-                .withEnv(
-                        "MYSQL_ROOT_PASSWORD=%s".formatted(TradeDockerBuilder.DB_PASSWORD),
-                        "MYSQL_DATABASE=%s".formatted(TradeDockerBuilder.DB_NAME)
-                )
-                .withHostConfig(hostConfig)
-                .withName("mysql-test-" + UUID.randomUUID())
-                .exec();
-
-        this.dbContainerId = container.getId();
-
-        dockerClient.startContainerCmd(this.dbContainerId).exec();
+        BuilderUtil.dockerComposeUp(
+                TradeDockerBuilder.DB_PORT,
+                TradeDockerBuilder.REDIS_PORT,
+                this.dockerVolume
+        );
 
         System.out.println("========================================");
         System.out.println("WAITING DOCKER IMAGE TO START (10s)");
@@ -85,7 +62,7 @@ public class BuildModule {
         Thread.sleep(10000);
 
         argsToPass.add(
-                0, "--spring.config.additional-location=file:.\\\\./src/tool/resources/docker-builder-application.yml");
+                0, "--spring.config.additional-location=file:./misc/application-docker-builder.yml");
 
         this.springContext = SpringApplication.run(TradeDockerBuilder.class, argsToPass.toArray(new String[0]));
 
@@ -103,7 +80,7 @@ public class BuildModule {
 
         this.springContext.close();
 
-        dockerClient.stopContainerCmd(container.getId()).exec();
+        BuilderUtil.dockerComposeDown();
 
         System.out.println("========================================");
         System.out.println("EXPORTING DOCKER IMAGE TO TAR");
@@ -192,14 +169,6 @@ public class BuildModule {
     }
 
     public void cleanUp() {
-        if (dbContainerId != null) {
-            try {
-                dockerClient.removeContainerCmd(dbContainerId).withForce(true).exec();
-            } catch (Exception e) {
-                System.out.println(e);
-            }
-        }
-
         if (alpineContainerId != null) {
             try {
                 dockerClient
@@ -209,6 +178,12 @@ public class BuildModule {
             } catch (Exception e) {
                 System.out.println(e);
             }
+        }
+
+        try {
+            BuilderUtil.dockerComposeDown();
+        } catch (Exception e) {
+            System.out.println(e);
         }
 
         if (dockerVolume != null) {

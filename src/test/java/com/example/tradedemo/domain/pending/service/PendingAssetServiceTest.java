@@ -1,6 +1,5 @@
 package com.example.tradedemo.domain.pending.service;
 
-import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.item.entity.Item;
 import com.example.tradedemo.domain.item.enums.ItemType;
 import com.example.tradedemo.domain.item.repository.ItemRepository;
@@ -24,8 +23,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -36,85 +33,60 @@ import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * 자산 수령하기 동시성 테스트
+ * 대상:
+ *  - PendingAssetService.claimPendingAssetV2 (@RedisLock + @CacheEvict)
+ *  - PendingAssetService.claimPendingAssetV3 (@RedissonLock + Redis 캐시 삭제)
+ */
 @SpringBootTest
 class PendingAssetServiceTest {
 
     @Autowired private PendingAssetService pendingAssetService;
+
+    @Autowired private MemberRepository memberRepository;
+    @Autowired private MemberItemRepository memberItemRepository;
+    @Autowired private ItemRepository itemRepository;
+    @Autowired private MarketListingRepository marketListingRepository;
     @Autowired private PendingAssetRepository pendingAssetRepository;
     @Autowired private WalletRepository walletRepository;
-    @Autowired private MemberRepository memberRepository;
-    @Autowired private ItemRepository itemRepository;
-    @Autowired private MemberItemRepository memberItemRepository;
-    @Autowired private MarketListingRepository marketListingRepository;
-    @Autowired private PlatformTransactionManager transactionManager;
     @Autowired private WalletHistoryRepository walletHistoryRepository;
 
-    private PendingAsset pendingAsset;
-    private Member buyer;
+    private Member seller;
+    private Item item;
+    private MemberItem sellerItem;
+    private MarketListing listing;
 
     @BeforeEach
     void setUp() {
-        // 혹시 남은 데이터 먼저 정리
         tearDown();
 
-        // 1. buyer
-        buyer = Member.create(
-                "buyer@test.com",
-                "1234",
-                "buyer",
-                MemberRole.USER
-        );
-        memberRepository.save(buyer);
-        walletRepository.save(Wallet.create(buyer, BigDecimal.ZERO));
-
-        // 2. seller
-        Member seller = Member.create(
-                "seller@test.com",
-                "1234",
-                "seller",
-                MemberRole.USER
-        );
-        memberRepository.save(seller);
-
-        // 3. Item
-        Item item = Item.create("검", ItemType.EQUIPMENT);
+        item = Item.create("전설의 검", ItemType.EQUIPMENT);
         itemRepository.save(item);
 
-        // 4. MemberItem (seller 소유)
-        MemberItem sellerItem = MemberItem.create(seller, item, LocalDateTime.now(), 10L);
+        seller = Member.create("seller@test.com", "pw", "seller", MemberRole.USER);
+        memberRepository.save(seller);
+
+        // 판매자 지갑 (초기 잔액 0)
+        walletRepository.save(Wallet.create(seller, BigDecimal.ZERO));
+
+        sellerItem = MemberItem.create(seller, item, LocalDateTime.now(), 10L);
         memberItemRepository.save(sellerItem);
 
-        // 5. MarketListing
-        MarketListing marketListing = MarketListing.create(
+        listing = MarketListing.create(
                 item.getName(),
-                BigDecimal.valueOf(100),
-                BigDecimal.valueOf(100),
+                BigDecimal.valueOf(300),
+                BigDecimal.valueOf(300),
                 1L,
                 Duration.ofDays(7),
                 sellerItem,
-                seller
-        );
-        marketListingRepository.save(marketListing);
-
-        // 6. PendingAsset
-        pendingAsset = PendingAsset.create(
-                PendingType.PURCHASE_SUCCESS,
-                Type.MONEY,
-                BigDecimal.valueOf(100),
-                0L,
-                false,
-                null,
-                LocalDateTime.now().plusDays(1),
-                marketListing,
-                null,
-                buyer
-        );
-        pendingAssetRepository.save(pendingAsset);
+                seller);
+        marketListingRepository.save(listing);
     }
 
     @AfterEach
     void tearDown() {
-        walletHistoryRepository.deleteAll();  // ← 추가
+        walletHistoryRepository.deleteAll();
         pendingAssetRepository.deleteAll();
         marketListingRepository.deleteAll();
         memberItemRepository.deleteAll();
@@ -124,90 +96,108 @@ class PendingAssetServiceTest {
     }
 
     @Test
-    @DisplayName("V1 비관적 락 - 수령하기 동시 2번 클릭")
-    void 수령하기_비관적락_V1() throws InterruptedException {
+    @DisplayName("V2 RedisLock + CacheEvict — 동시 2번 클릭 시 중복 수령 방지")
+    void 수령하기_RedisLock_V2_중복수령방지() throws InterruptedException {
+        // given
+        PendingAsset pending = PendingAsset.create(
+                PendingType.SALE_SUCCESS,
+                Type.MONEY,
+                BigDecimal.valueOf(300),
+                0L,
+                false,
+                null,
+                LocalDateTime.now().plusDays(1),
+                listing,
+                null,
+                seller
+        );
+        pendingAssetRepository.save(pending);
+
+        // when
         int threadCount = 2;
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
 
-        Runnable task = () -> {
-            try {
-                TransactionTemplate txTemplate = new TransactionTemplate(transactionManager);
-                txTemplate.executeWithoutResult(status -> {
-                    pendingAssetService.claimPendingAssetV2(buyer.getId(), pendingAsset.getId());
-                });
-            } catch (Exception e) {
-                System.out.println("Exception caught: " + e.getMessage());
-            } finally {
-                latch.countDown();
-            }
-        };
-
         for (int i = 0; i < threadCount; i++) {
-            executor.submit(task);
+            executor.submit(() -> {
+                try {
+                    pendingAssetService.claimPendingAssetV2(seller.getId(), pending.getId());
+                } catch (Exception e) {
+                    System.out.println("Exception caught: " + e.getMessage());
+                } finally {
+                    latch.countDown();
+                }
+            });
         }
-
         latch.await();
         executor.shutdown();
 
-        PendingAsset assetFromDb = pendingAssetRepository.findById(pendingAsset.getId())
-                .orElseThrow();
-        assertTrue(assetFromDb.getIsClaimed(), "PendingAsset은 반드시 수령 처리되어야 함");
+        // then
+        PendingAsset assetAfter = pendingAssetRepository.findById(pending.getId()).orElseThrow();
+        assertTrue(assetAfter.getIsClaimed(), "PendingAsset은 수령 처리되어야 한다");
 
-        Wallet walletFromDb = walletRepository.findByMemberId(buyer.getId())
-                .orElseThrow();
-        assertEquals(0, BigDecimal.valueOf(100).compareTo(walletFromDb.getBalance()),
-                "Wallet 잔액은 100이어야 함 (중복 수령 방지)");
+        Wallet walletAfter = walletRepository.findByMemberId(seller.getId()).orElseThrow();
+        assertEquals(0, BigDecimal.valueOf(300).compareTo(walletAfter.getBalance()),
+                "지갑 잔액은 300이어야 한다 (중복 수령 방지)");
+
+        System.out.println("========================================");
+        System.out.println("수령하기 V2 RedisLock + CacheEvict");
+        System.out.println("동시 요청 수: " + threadCount + " (300원 수령 2번 클릭)");
+        System.out.println("최종 잔액:    " + walletAfter.getBalance());
+        System.out.println("예상 잔액:    300");
+        System.out.println("========================================");
     }
-    /*
-    ========================================
-    비관적 락
-    동시 요청 수: 2(100원 수령하기 2번 누름)
-    최종 잔액:    100.00
-    예상 잔액:    100
-    ========================================
-    */
 
     @Test
-    @DisplayName("V2 Redis 분산락 - 수령하기 동시 2번 클릭")
-    void 수령하기_Redis_분산락_V2() throws InterruptedException {
+    @DisplayName("V3 RedissonLock + Redis 캐시 삭제 — 동시 2번 클릭 시 중복 수령 방지")
+    void 수령하기_RedissonLock_V3_중복수령방지() throws InterruptedException {
+        // given
+        PendingAsset pending = PendingAsset.create(
+                PendingType.SALE_SUCCESS,
+                Type.MONEY,
+                BigDecimal.valueOf(300),
+                0L,
+                false,
+                null,
+                LocalDateTime.now().plusDays(1),
+                listing,
+                null,
+                seller
+        );
+        pendingAssetRepository.save(pending);
+
+        // when
         int threadCount = 2;
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
 
-        Runnable task = () -> {
-            try {
-                // V2는 내부에서 트랜잭션 처리하므로 TransactionTemplate 불필요
-                pendingAssetService.claimPendingAssetV2(buyer.getId(), pendingAsset.getId());
-            } catch (Exception e) {
-                System.out.println("Exception caught: " + e.getMessage());
-            } finally {
-                latch.countDown();
-            }
-        };
-
         for (int i = 0; i < threadCount; i++) {
-            executor.submit(task);
+            executor.submit(() -> {
+                try {
+                    pendingAssetService.claimPendingAssetV3(seller.getId(), pending.getId());
+                } catch (Exception e) {
+                    System.out.println("Exception caught: " + e.getMessage());
+                } finally {
+                    latch.countDown();
+                }
+            });
         }
-
         latch.await();
         executor.shutdown();
 
-        PendingAsset assetFromDb = pendingAssetRepository.findById(pendingAsset.getId())
-                .orElseThrow();
-        assertTrue(assetFromDb.getIsClaimed(), "PendingAsset은 반드시 수령 처리되어야 함");
+        // then
+        PendingAsset assetAfter = pendingAssetRepository.findById(pending.getId()).orElseThrow();
+        assertTrue(assetAfter.getIsClaimed(), "PendingAsset은 수령 처리되어야 한다");
 
-        Wallet walletFromDb = walletRepository.findByMemberId(buyer.getId())
-                .orElseThrow();
-        assertEquals(0, BigDecimal.valueOf(100).compareTo(walletFromDb.getBalance()),
-                "Wallet 잔액은 100이어야 함 (중복 수령 방지)");
+        Wallet walletAfter = walletRepository.findByMemberId(seller.getId()).orElseThrow();
+        assertEquals(0, BigDecimal.valueOf(300).compareTo(walletAfter.getBalance()),
+                "지갑 잔액은 300이어야 한다 (중복 수령 방지)");
+
+        System.out.println("========================================");
+        System.out.println("수령하기 V3 RedissonLock + Redis 캐시 삭제");
+        System.out.println("동시 요청 수: " + threadCount + " (300원 수령 2번 클릭)");
+        System.out.println("최종 잔액:    " + walletAfter.getBalance());
+        System.out.println("예상 잔액:    300");
+        System.out.println("========================================");
     }
-    /*
-    ========================================
-    Redis 분산 락
-    동시 요청 수: 2(100원 수령하기 2번 누름)
-    최종 잔액:    100.00
-    예상 잔액:    100
-    ========================================
-    */
 }

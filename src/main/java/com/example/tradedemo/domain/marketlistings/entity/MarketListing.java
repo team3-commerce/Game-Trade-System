@@ -73,6 +73,7 @@ public class MarketListing extends Base {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
     /**
+     * MarketListing = 거래소
      * 아이템 이름, 총 가격, 낱개 가격, 수량, 상품 만료일, 사용자아이템 ID, 판매자 ID
      */
     public static MarketListing create(

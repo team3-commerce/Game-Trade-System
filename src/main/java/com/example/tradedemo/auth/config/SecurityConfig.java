@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -51,7 +52,8 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(
             HttpSecurity http, 
             JwtTokenProvider jwtTokenProvider, 
-            CacheManager cacheManager) throws Exception {
+            CacheManager cacheManager,
+            RedisTemplate<String, Object> redisTemplate) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .formLogin(AbstractHttpConfigurer::disable)
@@ -61,6 +63,7 @@ public class SecurityConfig {
                         auth -> auth.requestMatchers(
                                         "/api/v1/auth/**",
                                         "/api/v2/auth/**",
+                                        "/api/v3/auth/**",
                                         "/api/v2/auth/oauth-success",
                                         "/login/oauth2/**",
                                         "/oauth2/**",
@@ -78,7 +81,7 @@ public class SecurityConfig {
                         .successHandler(oAuth2AuthenticationSuccessHandler)
                 )
                 .addFilterBefore(
-                        new JwtAuthenticationFilter(jwtTokenProvider, cacheManager),
+                        new JwtAuthenticationFilter(jwtTokenProvider, cacheManager, redisTemplate),
                         UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(
                         exception -> exception

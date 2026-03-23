@@ -90,8 +90,15 @@ dependencies {
     // Quartz
     implementation 'org.springframework.boot:spring-boot-starter-quartz'
 
+    // datafaker
+    implementation 'net.datafaker:datafaker:2.0.2'
+
+    // H2
+    testImplementation 'com.h2database:h2'
+
     // WebSocket
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
 }
 
 tasks.named('test') {
@@ -123,4 +130,16 @@ dependencies {
     toolImplementation 'com.github.docker-java:docker-java:3.7.0'
     toolImplementation 'com.github.docker-java:docker-java-transport-httpclient5:3.7.0'
     toolImplementation 'net.datafaker:datafaker:2.5.4'
+}
+
+tasks.register('testAll') {
+    dependsOn test
+}
+
+gradle.taskGraph.whenReady { graph ->
+    if (graph.hasTask(':testAll')) {
+        tasks.named('test').configure {
+            systemProperty 'spring.config.additional-location', 'file:./misc/application-test-all.yml'
+        }
+    }
 }

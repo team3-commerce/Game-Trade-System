@@ -25,7 +25,10 @@ public class MarketListingController {
 
 
     /**
-     * 상품 등록
+     * 상품 등록 V1
+     * @param details
+     * @param request
+     * @return
      */
     @PostMapping("/api/v1/market-listings")
     public ResponseEntity<ApiResponse<GetMarketListingResponse>> createMarketListing(
@@ -35,7 +38,12 @@ public class MarketListingController {
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), res));
     }
-
+    /**
+     * 상품 등록 V2
+     * @param details
+     * @param request
+     * @return
+     */
     @PostMapping("/api/v2/market-listings")
     public ResponseEntity<ApiResponse<GetMarketListingResponse>> createMarketListingV2(
             @AuthenticationPrincipal PrincipalDetails details, @RequestBody CreateMarketListingRequest request) {
@@ -44,7 +52,12 @@ public class MarketListingController {
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), res));
     }
-
+    /**
+     * 상품 등록 V3
+     * @param details
+     * @param request
+     * @return
+     */
     @PostMapping("/api/v3/market-listings")
     public ResponseEntity<ApiResponse<GetMarketListingResponse>> createMarketListingV3(
             @AuthenticationPrincipal PrincipalDetails details, @RequestBody CreateMarketListingRequest request) {
@@ -52,6 +65,96 @@ public class MarketListingController {
                 marketListingService.createV3(details.getMember().getId(), request);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), res));
+    }
+
+    /**
+     * 상품 등록 V4
+     * @param details
+     * @param request
+     * @return
+     */
+    @PostMapping("/api/v4/market-listings")
+    public ResponseEntity<ApiResponse<GetMarketListingResponse>> createMarketListingV4(
+            @AuthenticationPrincipal PrincipalDetails details, @RequestBody CreateMarketListingRequest request) {
+        GetMarketListingResponse res =
+                marketListingService.createV3(details.getMember().getId(), request);
+
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), res));
+    }
+    /**
+     * 상품 등록 최종버전(Redis Redisson + @RedissonLock AOP + Redis Cache)
+     * RedissonLock
+     * @param details
+     * @param request
+     * @return
+     */
+    @PostMapping("/api/v5/market-listings")
+    public ResponseEntity<ApiResponse<GetMarketListingResponse>> createMarketListingV5(
+            @AuthenticationPrincipal PrincipalDetails details,
+            @RequestBody CreateMarketListingRequest request) {
+        GetMarketListingResponse res =
+                marketListingService.createV5(details.getMember().getId(), request);
+
+        return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), res));
+    }
+
+    /**
+     *  마켓 상품 전체 조회
+     *  sortTotalPrice, sortSaleEndAt 값을 asc/desc 로 전달하여 정렬 조건 추가 가능
+     *  asc/desc 가 아닌 값 전달 시 정렬 조건에서 무시 (예외 처리 x)
+     */
+    @GetMapping("/api/v1/market-listings")
+    public ResponseEntity<ApiResponse<PageResponse<SearchAllMarketListingResponse>>> getAllMarketListing(
+            @AuthenticationPrincipal PrincipalDetails details,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String sortTotalPrice,
+            @RequestParam(required = false) String sortSaleEndAt,
+            @RequestParam(defaultValue = "0") int page) {
+
+        Pageable pageable = PageRequest.of(page, 10);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                String.valueOf(HttpStatus.OK.value()),
+                marketListingService.getAllMarketListing(
+                        details.getMember().getId(), keyword, sortTotalPrice, sortSaleEndAt, pageable)));
+    }
+    @GetMapping("/api/v2/market-listings")
+    public ResponseEntity<ApiResponse<PageResponse<SearchAllMarketListingResponse>>> getAllMarketListingV2(
+            @AuthenticationPrincipal PrincipalDetails details,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String sortTotalPrice,
+            @RequestParam(required = false) String sortSaleEndAt,
+            @RequestParam(defaultValue = "0") int page) {
+        Pageable pageable = PageRequest.of(page, 10);
+        return ResponseEntity.ok(ApiResponse.success(
+                String.valueOf(HttpStatus.OK.value()),
+                marketListingService.getAllMarketListingV2(
+                        details.getMember().getId(), keyword, sortTotalPrice, sortSaleEndAt, pageable)));
+    }
+    /**
+     * 마켓 상품(거래소) 전체 조회 V3
+     * 최종버전(Redis Cache)
+     * @param details
+     * @param keyword
+     * @param sortTotalPrice
+     * @param sortSaleEndAt
+     * @param page
+     * @return
+     */
+    @GetMapping("/api/v3/market-listings")
+    public ResponseEntity<ApiResponse<PageResponse<SearchAllMarketListingResponse>>> getAllMarketListingV3(
+            @AuthenticationPrincipal PrincipalDetails details,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String sortTotalPrice,
+            @RequestParam(required = false) String sortSaleEndAt,
+            @RequestParam(defaultValue = "0") int page) {
+
+        Pageable pageable = PageRequest.of(page, 10);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                String.valueOf(HttpStatus.OK.value()),
+                marketListingService.getAllMarketListingV3(
+                        details.getMember().getId(), keyword, sortTotalPrice, sortSaleEndAt, pageable)));
     }
 
     /**
@@ -75,58 +178,6 @@ public class MarketListingController {
                         details.getMember().getId(), keyword, sortTotalPrice, sortSaleEndAt, pageable)));
     }
 
-    /**
-     *  마켓 상품 전체 조회
-     *  sortTotalPrice, sortSaleEndAt 값을 asc/desc 로 전달하여 정렬 조건 추가 가능
-     *  asc/desc 가 아닌 값 전달 시 정렬 조건에서 무시 (예외 처리 x)
-     */
-    @GetMapping("/api/v1/market-listings")
-    public ResponseEntity<ApiResponse<PageResponse<SearchAllMarketListingResponse>>> getAllMarketListing(
-            @AuthenticationPrincipal PrincipalDetails details,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String sortTotalPrice,
-            @RequestParam(required = false) String sortSaleEndAt,
-            @RequestParam(defaultValue = "0") int page) {
-
-        Pageable pageable = PageRequest.of(page, 10);
-
-        return ResponseEntity.ok(ApiResponse.success(
-                String.valueOf(HttpStatus.OK.value()),
-                marketListingService.getAllMarketListing(
-                        details.getMember().getId(), keyword, sortTotalPrice, sortSaleEndAt, pageable)));
-    }
-
-    @GetMapping("/api/v2/market-listings")
-    public ResponseEntity<ApiResponse<PageResponse<SearchAllMarketListingResponse>>> getAllMarketListingV2(
-            @AuthenticationPrincipal PrincipalDetails details,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String sortTotalPrice,
-            @RequestParam(required = false) String sortSaleEndAt,
-            @RequestParam(defaultValue = "0") int page) {
-
-        Pageable pageable = PageRequest.of(page, 10);
-
-        return ResponseEntity.ok(ApiResponse.success(
-                String.valueOf(HttpStatus.OK.value()),
-                marketListingService.getAllMarketListingV2(
-                        details.getMember().getId(), keyword, sortTotalPrice, sortSaleEndAt, pageable)));
-    }
-
-    @GetMapping("/api/v3/market-listings")
-    public ResponseEntity<ApiResponse<PageResponse<SearchAllMarketListingResponse>>> getAllMarketListingV3(
-            @AuthenticationPrincipal PrincipalDetails details,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String sortTotalPrice,
-            @RequestParam(required = false) String sortSaleEndAt,
-            @RequestParam(defaultValue = "0") int page) {
-
-        Pageable pageable = PageRequest.of(page, 10);
-
-        return ResponseEntity.ok(ApiResponse.success(
-                String.valueOf(HttpStatus.OK.value()),
-                marketListingService.getAllMarketListingV3(
-                        details.getMember().getId(), keyword, sortTotalPrice, sortSaleEndAt, pageable)));
-    }
 
     /**
      * 마켓 상품 단건 조회
@@ -144,7 +195,12 @@ public class MarketListingController {
         return ResponseEntity.ok(ApiResponse.success(
                 String.valueOf(HttpStatus.OK), marketListingService.getMarketListingV2(marketListingId)));
     }
-
+    /**
+     * 거래소 상품 단건 조회 V3
+     * 최종버전(Redis Cache)
+     * @param marketListingId
+     * @return
+     */
     @GetMapping("/api/v3/market-listings/{marketListingId}")
     public ResponseEntity<ApiResponse<SearchMarketListingResponse>> getMarketListingV3(
             @PathVariable Long marketListingId) {
@@ -166,7 +222,7 @@ public class MarketListingController {
     }
 
     /**
-     * 마켓 상품 등록 취소
+     * 마켓 상품(거래소) 등록 취소 V1
      */
     @PatchMapping("/api/v1/market-listings/{marketListingId}")
     public ResponseEntity<ApiResponse<SearchMarketListingResponse>> cancelMarketListing(
@@ -176,6 +232,12 @@ public class MarketListingController {
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK), res));
     }
 
+    /**
+     * 마켓 상품(거래소) 등록 취소 V2 - 로컬 캐시
+     * @param details
+     * @param marketListingId
+     * @return
+     */
     @PatchMapping("/api/v2/market-listings/{marketListingId}")
     public ResponseEntity<ApiResponse<SearchMarketListingResponse>> cancelMarketListingV2(
             @AuthenticationPrincipal PrincipalDetails details, @PathVariable Long marketListingId) {

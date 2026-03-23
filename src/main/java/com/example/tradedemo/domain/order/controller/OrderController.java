@@ -47,7 +47,6 @@ public class OrderController {
                 ApiResponse.success(String.valueOf(HttpStatus.OK), orderFacade.purchaseV3(memberId, marketListingId)));
     }
 
-
     /**
      * 내 구매 내역 조회
      */
