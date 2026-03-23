@@ -13,6 +13,23 @@ public final class MarketListingConsts {
     public static final String FIRST_PAGE = "page:first";
     public static final String MARKET_LISTING_ITEM_PREFIX = "marketListing:item:";
 
+    // 캐시 이름
+    public static final String MARKET_LISTINGS_FIRST_PAGE_CACHE_NAME = "marketListingsFirstPage";
+    public static final String MARKET_LISTING_ITEM_CACHE_NAME = "marketListingItem";
+
+    // 락 프리픽스
+    public static final String MARKET_LISTING_LOCK_PREFIX = "lock:market-listing:member:";
+    public static final String MARKET_LISTING_MEMBER_LOCK_PREFIX = "market-listing:member:";
+    public static final String MARKET_LISTING_ID_LOCK_PREFIX = "lock:market-listing:";
+
+    // 키 세그먼트 및 구분자
+    public static final String COLON_SEPARATOR = ":";
+    public static final String LEX_RANGE_END = "\uffff";
+
+    // 정규식
+    public static final String WHITESPACE_REGEX = "\\s+";
+    public static final String SINGLE_SPACE = " ";
+
 
     // config
     public static Duration MARKET_LISTING_CANCEL_PENDING_ASSET_DURATION = Duration.ofDays(3);

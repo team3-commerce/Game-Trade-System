@@ -14,8 +14,16 @@ public final class AuthConst {
     public static final long ACCESS_TOKEN_VALIDITY = 1000L * 60 * 30; // 30분
     public static final long REFRESH_TOKEN_VALIDITY = 1000L * 60 * 60 * 24 * 7; // 7일
 
-    // 캐시 이름 (Caffeine)
+    // 캐시 이름
     public static final String BLACKLIST_CACHE_NAME = "blacklistedTokens";
+    public static final String REFRESH_TOKEN_CACHE_NAME = "refreshTokens";
+
+    // 공통 값
+    public static final String LOGOUT_VALUE = "logout";
+    public static final String SUCCESS_CODE = "200";
+
+    // 에러 메시지
+    public static final String CACHE_MISSING_ERROR_MESSAGE = "CacheConfig에 %s 캐시 설정이 누락";
 
     // V3 Redis 캐시 설정
     public static final String V3_REFRESH_TOKEN_PREFIX = "v3_refreshTokens:";

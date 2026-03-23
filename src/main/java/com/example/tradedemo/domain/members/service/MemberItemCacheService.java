@@ -76,10 +76,10 @@ public class MemberItemCacheService {
     }
 
     public String getInventoryListKey(Long memberId, Pageable pageable) {
-        return MemberItemConst.MEMBER_INVENTORY + memberId + ":page:" + pageable.getPageNumber();
+        return MemberItemConst.MEMBER_INVENTORY + memberId + MemberItemConst.PAGE_SEGMENT + pageable.getPageNumber();
     }
 
     public String getInventoryItemKey(Long memberId, Long memberItemId) {
-        return MemberItemConst.MEMBER_INVENTORY_ITEM + "member:" + memberId + ":item:" + memberItemId;
+        return MemberItemConst.MEMBER_INVENTORY_ITEM + MemberItemConst.MEMBER_SEGMENT + memberId + MemberItemConst.ITEM_SEGMENT + memberItemId;
     }
 }

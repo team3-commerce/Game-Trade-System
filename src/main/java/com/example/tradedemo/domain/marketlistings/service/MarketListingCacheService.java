@@ -1,5 +1,7 @@
 package com.example.tradedemo.domain.marketlistings.service;
 
+import static com.example.tradedemo.domain.marketlistings.consts.MarketListingConsts.*;
+
 import com.example.tradedemo.common.dto.PageResponse;
 import com.example.tradedemo.domain.marketlistings.consts.MarketListingConsts;
 import com.example.tradedemo.domain.marketlistings.dto.SearchAllMarketListingResponse;
@@ -51,7 +53,7 @@ public class MarketListingCacheService {
          * 키워드 안에 공백문자가 연속으로 있으면 1개로 줄임
          * 언어 종류에 영향을 받지 않도록 locale 지정
          */
-        String normalizedKeyword = keyword.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
+        String normalizedKeyword = keyword.trim().replaceAll(WHITESPACE_REGEX, SINGLE_SPACE).toLowerCase(Locale.ROOT);
 
         /**
          * 동일 유저가 동일 검색어 중복 검색하는 경우 제외
@@ -111,12 +113,12 @@ public class MarketListingCacheService {
         String prefixKey = getPrefixKey();
 
         String normalizedPrefixKeyword =
-                prefixKeyword.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
+                prefixKeyword.trim().replaceAll(WHITESPACE_REGEX, SINGLE_SPACE).toLowerCase(Locale.ROOT);
 
         // 해당 키워드로 시작하는 단어 모두 검색
         Set<String> prefixedKeywords = redisTemplate
                 .opsForZSet()
-                .rangeByLex(prefixKey, Range.closed(normalizedPrefixKeyword, normalizedPrefixKeyword + "\uffff"));
+                .rangeByLex(prefixKey, Range.closed(normalizedPrefixKeyword, normalizedPrefixKeyword + LEX_RANGE_END));
 
         // 검색한 단어들 중 검색횟수가 가장 높은 일부 데이터만 반환
         return prefixedKeywords.stream()
@@ -232,7 +234,7 @@ public class MarketListingCacheService {
     }
 
     private boolean isDupCheck(Long memberId, String normalizedKeyword){
-        String dupCheckKey = MarketListingConsts.MARKET_LISTING + memberId + ":" + normalizedKeyword;
+        String dupCheckKey = MarketListingConsts.MARKET_LISTING + memberId + COLON_SEPARATOR + normalizedKeyword;
         Boolean firstSearch = redisTemplate
                 .opsForValue()
                 .setIfAbsent(

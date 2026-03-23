@@ -1,6 +1,8 @@
 package com.example.tradedemo.domain.order.facade;
 
 
+import static com.example.tradedemo.domain.marketlistings.consts.MarketListingConsts.*;
+
 import com.example.tradedemo.common.annotation.RedissonLock;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
@@ -73,8 +75,8 @@ public class OrderFacade {
      */
     @Transactional
     @Caching(evict = {
-            @CacheEvict(cacheNames = "marketListingsFirstPage", allEntries = true),
-            @CacheEvict(cacheNames = "marketListingItem", key = "'listing:' + #marketListingId")
+            @CacheEvict(cacheNames = MARKET_LISTINGS_FIRST_PAGE_CACHE_NAME, allEntries = true),
+            @CacheEvict(cacheNames = MARKET_LISTING_ITEM_CACHE_NAME, key = "'listing:' + #marketListingId")
     })
     public CreateOrderResponse purchaseV2(Long buyerId, Long marketListingId) {
 
@@ -102,7 +104,7 @@ public class OrderFacade {
      * @param marketListingId
      * @return
      */
-    @RedissonLock(key = "'lock:market-listing:' + #marketListingId")
+    @RedissonLock(key = "'" + MARKET_LISTING_ID_LOCK_PREFIX + "' + #marketListingId")
     @Transactional
     public CreateOrderResponse purchaseV3(Long buyerId, Long marketListingId) {
 

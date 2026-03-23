@@ -1,5 +1,6 @@
 package com.example.tradedemo.domain.members.service;
 
+import static com.example.tradedemo.auth.consts.AuthConst.REFRESH_TOKEN_CACHE_NAME;
 import static com.example.tradedemo.auth.consts.AuthConst.V3_REFRESH_TOKEN_PREFIX;
 import static com.example.tradedemo.domain.members.consts.MemberConst.*;
 
@@ -51,7 +52,7 @@ public class MemberService {
     }
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    @Cacheable(value = "members", key = "#email")
+    @Cacheable(value = MEMBERS_CACHE_NAME, key = "#email")
     public GetMyInfoResponse getMyInfoV2(String email) {
         Member member = memberRepository
                 .findByEmail(email)
@@ -119,7 +120,9 @@ public class MemberService {
 
     @Transactional
     @Caching(
-            evict = {@CacheEvict(value = "members", key = "#email"), @CacheEvict(value = "memberAuths", key = "#email")
+            evict = {
+                @CacheEvict(value = MEMBERS_CACHE_NAME, key = "#email"),
+                @CacheEvict(value = MEMBER_AUTHS_CACHE_NAME, key = "#email")
             })
     public void updateNicknameV2(String email, UpdateNicknameRequest request) {
         Member member = memberRepository
@@ -137,7 +140,9 @@ public class MemberService {
 
     @Transactional
     @Caching(
-            evict = {@CacheEvict(value = "members", key = "#email"), @CacheEvict(value = "memberAuths", key = "#email")
+            evict = {
+                @CacheEvict(value = MEMBERS_CACHE_NAME, key = "#email"),
+                @CacheEvict(value = MEMBER_AUTHS_CACHE_NAME, key = "#email")
             })
     public void updateNicknameV3(String email, UpdateNicknameRequest request) {
         Member member = memberRepository
@@ -174,7 +179,9 @@ public class MemberService {
 
     @Transactional
     @Caching(
-            evict = {@CacheEvict(value = "members", key = "#email"), @CacheEvict(value = "memberAuths", key = "#email")
+            evict = {
+                @CacheEvict(value = MEMBERS_CACHE_NAME, key = "#email"),
+                @CacheEvict(value = MEMBER_AUTHS_CACHE_NAME, key = "#email")
             })
     public void updatePasswordV2(String email, UpdatePasswordRequest request) {
         Member member = memberRepository
@@ -192,7 +199,9 @@ public class MemberService {
 
     @Transactional
     @Caching(
-            evict = {@CacheEvict(value = "members", key = "#email"), @CacheEvict(value = "memberAuths", key = "#email")
+            evict = {
+                @CacheEvict(value = MEMBERS_CACHE_NAME, key = "#email"),
+                @CacheEvict(value = MEMBER_AUTHS_CACHE_NAME, key = "#email")
             })
     public void updatePasswordV3(String email, UpdatePasswordRequest request) {
         Member member = memberRepository
@@ -235,9 +244,9 @@ public class MemberService {
     @Transactional
     @Caching(
             evict = {
-                @CacheEvict(value = "members", key = "#email"),
-                @CacheEvict(value = "memberAuths", key = "#email"),
-                @CacheEvict(value = "refreshTokens", key = "#email")
+                @CacheEvict(value = MEMBERS_CACHE_NAME, key = "#email"),
+                @CacheEvict(value = MEMBER_AUTHS_CACHE_NAME, key = "#email"),
+                @CacheEvict(value = REFRESH_TOKEN_CACHE_NAME, key = "#email")
             })
     public void withdrawV2(String email) {
         Member member = memberRepository
@@ -261,9 +270,9 @@ public class MemberService {
     @Transactional
     @Caching(
             evict = {
-                @CacheEvict(value = "members", key = "#email"),
-                @CacheEvict(value = "memberAuths", key = "#email"),
-                @CacheEvict(value = "refreshTokens", key = "#email")
+                @CacheEvict(value = MEMBERS_CACHE_NAME, key = "#email"),
+                @CacheEvict(value = MEMBER_AUTHS_CACHE_NAME, key = "#email"),
+                @CacheEvict(value = REFRESH_TOKEN_CACHE_NAME, key = "#email")
             })
     public void withdrawV3(String email) {
         Member member = memberRepository
@@ -305,8 +314,8 @@ public class MemberService {
     @Transactional
     @Caching(
             evict = {
-                @CacheEvict(value = "members", key = "#request.email()"),
-                @CacheEvict(value = "memberAuths", key = "#request.email()")
+                @CacheEvict(value = MEMBERS_CACHE_NAME, key = "#request.email()"),
+                @CacheEvict(value = MEMBER_AUTHS_CACHE_NAME, key = "#request.email()")
             })
     public void suspendMemberV2(SuspendMemberRequest request) {
         Member member = memberRepository
@@ -323,8 +332,8 @@ public class MemberService {
     @Transactional
     @Caching(
             evict = {
-                @CacheEvict(value = "members", key = "#request.email()"),
-                @CacheEvict(value = "memberAuths", key = "#request.email()")
+                @CacheEvict(value = MEMBERS_CACHE_NAME, key = "#request.email()"),
+                @CacheEvict(value = MEMBER_AUTHS_CACHE_NAME, key = "#request.email()")
             })
     public void suspendMemberV3(SuspendMemberRequest request) {
         Member member = memberRepository

@@ -1,5 +1,8 @@
 package com.example.tradedemo.domain.pending.service;
 
+import static com.example.tradedemo.domain.members.consts.MemberItemConst.INVENTORY_LIST_CACHE_NAME;
+import static com.example.tradedemo.domain.pending.consts.PendingAssetConst.*;
+
 import com.example.tradedemo.common.annotation.RedisLock;
 import com.example.tradedemo.common.annotation.RedissonLock;
 import com.example.tradedemo.common.exception.ErrorEnum;
@@ -162,9 +165,9 @@ public class PendingAssetService {
      * @RedisLock : RedisLockAspect가 자동으로 락 획득 → 트랜잭션 → 락 해제 순서 보장
      * @Transactional : 락 안에서 트랜잭션 실행 (@Order(1)로 락이 먼저 실행됨)
      */
-    @RedisLock(key = "'pending-asset:' + #pendingAssetId")
+    @RedisLock(key = "'" + PENDING_ASSET_MEMBER_LOCK_PREFIX + "' + #pendingAssetId")
     @Transactional
-    @CacheEvict(cacheNames = "inventoryList", allEntries = true)
+    @CacheEvict(cacheNames = INVENTORY_LIST_CACHE_NAME, allEntries = true)
     public void claimPendingAssetV2(Long memberId, Long pendingAssetId) {
         /**
          * 개별수령조회
@@ -225,9 +228,9 @@ public class PendingAssetService {
                 memberItemRepository.save(memberItem);
             }
 
-            Cache cache = cacheManager.getCache("인벤토리 아이템");
+            Cache cache = cacheManager.getCache(INVENTORY_ITEM_CACHE_NAME);
             if (cache != null) {
-                String key = "사용자:" + memberId + ":인벤토리:" + memberItem.getId();
+                String key = USER_INVENTORY_KEY_PREFIX + memberId + INVENTORY_KEY_SUFFIX + memberItem.getId();
                 cache.evict(key);
             }
 
@@ -248,7 +251,7 @@ public class PendingAssetService {
      * @param memberId
      * @param pendingAssetId
      */
-    @RedissonLock(key = "'lock:pending-asset:' + #pendingAssetId")
+    @RedissonLock(key = "'" + PENDING_ASSET_LOCK_PREFIX + "' + #pendingAssetId")
     @Transactional
     public void claimPendingAssetV3(Long memberId, Long pendingAssetId) {
         PendingAsset asset = pendingAssetRepository

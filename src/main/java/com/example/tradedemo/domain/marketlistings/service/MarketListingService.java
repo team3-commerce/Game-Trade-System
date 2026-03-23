@@ -1,5 +1,9 @@
 package com.example.tradedemo.domain.marketlistings.service;
 
+import static com.example.tradedemo.domain.marketlistings.consts.MarketListingConsts.*;
+import static com.example.tradedemo.domain.members.consts.MemberItemConst.INVENTORY_ITEM_CACHE_NAME;
+import static com.example.tradedemo.domain.members.consts.MemberItemConst.INVENTORY_LIST_CACHE_NAME;
+
 import com.example.tradedemo.auth.dto.PrincipalDetails;
 import com.example.tradedemo.common.annotation.RedisLock;
 import com.example.tradedemo.common.annotation.RedissonLock;
@@ -15,7 +19,6 @@ import com.example.tradedemo.domain.marketlistings.dto.SearchTrendingKeywordResp
 import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepository;
-import com.example.tradedemo.domain.members.consts.MemberItemConst;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.entity.MemberItem;
 import com.example.tradedemo.domain.members.enums.MemberRole;
@@ -26,8 +29,6 @@ import com.example.tradedemo.domain.pending.entity.PendingAsset;
 import com.example.tradedemo.domain.pending.enums.PendingType;
 import com.example.tradedemo.domain.pending.enums.Type;
 import com.example.tradedemo.domain.pending.repository.PendingAssetRepository;
-import com.example.tradedemo.domain.wallet.repository.WalletHistoryRepository;
-import com.example.tradedemo.domain.wallet.repository.WalletRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
@@ -36,7 +37,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -117,9 +117,9 @@ public class MarketListingService {
     @Transactional
     @Caching(
             evict = {
-                @CacheEvict(cacheNames = "inventoryList", allEntries = true),
+                @CacheEvict(cacheNames = INVENTORY_LIST_CACHE_NAME, allEntries = true),
                 @CacheEvict(
-                        cacheNames = "inventoryItem",
+                        cacheNames = INVENTORY_ITEM_CACHE_NAME,
                         key = "'member:' + #memberId + ':item:' + #request.getMemberItemId()")
             })
     public GetMarketListingResponse createV2(Long memberId, CreateMarketListingRequest request) {
@@ -210,7 +210,7 @@ public class MarketListingService {
      * @Transactional : 락 안에서 트랜잭션 실행
      * 사용자ID와 인벤토리 ID(인벤토리에저장된도감번호)
      */
-    @RedisLock(key = "'market-listing:member:' + #memberId + ':item:' + #request.getMemberItemId()")
+    @RedisLock(key = "'" + MARKET_LISTING_MEMBER_LOCK_PREFIX + "' + #memberId + ':item:' + #request.getMemberItemId()")
     @Transactional
     public GetMarketListingResponse createV4(Long memberId, CreateMarketListingRequest request) {
         Member member = memberRepository
@@ -267,7 +267,7 @@ public class MarketListingService {
      * @param request
      * @return
      */
-    @RedissonLock(key = "'lock:market-listing:member:' + #memberId + ':item:' + #request.getMemberItemId()")
+    @RedissonLock(key = "'" + MARKET_LISTING_LOCK_PREFIX + "' + #memberId + ':item:' + #request.getMemberItemId()")
     @Transactional
     public GetMarketListingResponse createV5(Long memberId, CreateMarketListingRequest request) {
         Member member = memberRepository
@@ -342,7 +342,7 @@ public class MarketListingService {
      */
     @Transactional(readOnly = true)
     @Cacheable(
-            cacheNames = "marketListingsFirstPage",
+            cacheNames = MARKET_LISTINGS_FIRST_PAGE_CACHE_NAME,
             key = "'first'",
             condition = "#pageable.pageNumber == 0 "
                     + "&& (#keyword == null || #keyword.isBlank()) "
@@ -430,7 +430,7 @@ public class MarketListingService {
      * @return
      */
     @Transactional(readOnly = true)
-    @Cacheable(cacheNames = "marketListingItem", key = "'listing:' + #marketListingId")
+    @Cacheable(cacheNames = MARKET_LISTING_ITEM_CACHE_NAME, key = "'listing:' + #marketListingId")
     public SearchMarketListingResponse getMarketListingV2(Long marketListingId) {
 
         MarketListing marketListing = marketListingRepository.findById(marketListingId)
@@ -559,8 +559,8 @@ public class MarketListingService {
      */
     @Transactional
     @Caching(evict = {
-            @CacheEvict(cacheNames = "marketListingsFirstPage", allEntries = true),
-            @CacheEvict(cacheNames = "marketListingItem", key = "'listing:' + #marketListingId")
+            @CacheEvict(cacheNames = MARKET_LISTINGS_FIRST_PAGE_CACHE_NAME, allEntries = true),
+            @CacheEvict(cacheNames = MARKET_LISTING_ITEM_CACHE_NAME, key = "'listing:' + #marketListingId")
     })
     public SearchMarketListingResponse cancelMarketListingV2(PrincipalDetails details, Long marketListingId) {
         return cancelMarketListingImpl(details, false, marketListingId);

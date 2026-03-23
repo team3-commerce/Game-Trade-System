@@ -191,7 +191,7 @@ public class AuthService {
     }
 
     @Transactional
-    @CacheEvict(value = "refreshTokens", key = "#email")
+    @CacheEvict(value = REFRESH_TOKEN_CACHE_NAME, key = "#email")
     public void setPasswordV2(String email, SetPasswordRequest request) {
         setPassword(email, request);
     }
@@ -228,7 +228,7 @@ public class AuthService {
     }
 
     @Transactional
-    @CacheEvict(value = "refreshTokens", key = "#email")
+    @CacheEvict(value = REFRESH_TOKEN_CACHE_NAME, key = "#email")
     public void unlinkSocialV2(String email, UnlinkSocialRequest request) {
         unlinkSocial(email, request);
     }
@@ -243,25 +243,25 @@ public class AuthService {
     /**
      * 로그아웃 V2
      */
-    @CacheEvict(value = "refreshTokens", key = "#email")
+    @CacheEvict(value = REFRESH_TOKEN_CACHE_NAME, key = "#email")
     public void logoutV2(String email, String accessToken) {
         // 블랙리스트 전용 캐시 조회
         Cache blacklistCache = cacheManager.getCache(BLACKLIST_CACHE_NAME);
         if (blacklistCache != null) {
-            blacklistCache.put(accessToken, "logout");
+            blacklistCache.put(accessToken, LOGOUT_VALUE);
         }
     }
 
     /**
      * 로그아웃 V3
      */
-    @CacheEvict(value = "refreshTokens", key = "#email")
+    @CacheEvict(value = REFRESH_TOKEN_CACHE_NAME, key = "#email")
     public void logoutV3(String email, String accessToken) {
         // Redis 리프레시 토큰 삭제
         redisTemplate.delete(V3_REFRESH_TOKEN_PREFIX + email);
         
         // 블랙리스트 등록
-        redisTemplate.opsForValue().set(V3_BLACKLIST_TOKEN_PREFIX + accessToken, "logout", V3_BLACKLIST_TOKEN_TTL);
+        redisTemplate.opsForValue().set(V3_BLACKLIST_TOKEN_PREFIX + accessToken, LOGOUT_VALUE, V3_BLACKLIST_TOKEN_TTL);
     }
 
     /**
@@ -380,6 +380,7 @@ public class AuthService {
      * Refresh Token 전용 캐시 저장소를 가져오는 로직
      */
     private Cache getRefreshCache() {
-        return Objects.requireNonNull(cacheManager.getCache("refreshTokens"), "CacheConfig에 refreshTokens 캐시 설정이 누락");
+        return Objects.requireNonNull(cacheManager.getCache(REFRESH_TOKEN_CACHE_NAME),
+                String.format(CACHE_MISSING_ERROR_MESSAGE, REFRESH_TOKEN_CACHE_NAME));
     }
 }

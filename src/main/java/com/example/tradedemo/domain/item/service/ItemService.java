@@ -1,5 +1,7 @@
 package com.example.tradedemo.domain.item.service;
 
+import static com.example.tradedemo.domain.item.consts.ItemConst.*;
+
 import com.example.tradedemo.domain.item.dto.GetItemResponse;
 import com.example.tradedemo.domain.item.dto.SearchItemRequest;
 import com.example.tradedemo.domain.item.entity.Item;
@@ -37,7 +39,7 @@ public class ItemService {
     }
 
     @Cacheable(
-        value =  "items", 
+        value =  ITEM_CACHE_NAME, 
         key = "@itemCacheService.getItemIdCacheKey(#itemId)"
     )
     @Transactional(readOnly = true)
@@ -50,7 +52,7 @@ public class ItemService {
     }
 
     @Cacheable(
-        value =  "itemsSearches",
+        value =  ITEM_SEARCH_CACHE_NAME,
         key = "@itemCacheService.getSearchItemRequestCacheKey(#req)",
         condition = "@itemCacheService.shouldCacheSearchItemRequest(#req)"
     )
