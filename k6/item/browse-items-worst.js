@@ -6,6 +6,14 @@ import { SharedArray } from 'k6/data';
 import { randomString, randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 import { scenario } from 'k6/execution';
 
+/*
+이 테스트는 
+
+gradlew runDockerBuilder --args="--run-db=ItemBuilder"
+
+에 의존합니다
+*/
+
 const tokenCount = 100;
 
 const browseDeeper = true
@@ -32,13 +40,13 @@ export function setup () {
     let jwtTokens = [];
 
     for (let i=0; i<tokenCount; i++) {
-        let loginInfo = signup();
+        let loginInfo = signup(null, 'v1');
 
         if (loginInfo == null) {
             fail("회원가입 실패");
         }
 
-        let jwt = login(loginInfo)
+        let jwt = login(loginInfo, 'v3')
 
         if (jwt == null) {
             fail("로그인 실패");

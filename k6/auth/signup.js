@@ -23,6 +23,6 @@ export const options = {
 // 유저가 로그인을 한다
 
 export default function () {
-  signup();
+  signup(null, 'v1');
 }
 

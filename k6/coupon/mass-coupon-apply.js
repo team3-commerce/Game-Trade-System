@@ -42,7 +42,7 @@ const scenarios = {
     fixed: {
          coupon_stampede: {
             executor: 'per-vu-iterations',
-            vus: 10000,
+            vus: 2000,
             iterations: 10,
             maxDuration: '30s',
             exec: 'stampedePhase',
@@ -65,13 +65,15 @@ export function setup () {
     // ===============================
     // 쿠폰 발급
     // ===============================
-    let loginInfo = signup('ADMIN')
+    let loginInfo = signup({
+        role : 'ADMIN'
+    }, 'v1')
 
     if (loginInfo == null) {
         fail("관리자 회원가입 실패");
     }
 
-    let jwt = login(loginInfo)
+    let jwt = login(loginInfo, 'v3')
     
     if (jwt == null) {
         fail("관리자 로그인 실패");
@@ -97,7 +99,7 @@ export function setup () {
         let jwt = login({
             email : `user${i}@test.com`,
             password : '1234567890'
-        })
+        }, 'v3')
 
         if (jwt == null) {
             fail(`사용자 ${i} 로그인 실패`);
@@ -119,7 +121,7 @@ export function setup () {
 export function stampedePhase (data) {
     const token = data.jwtTokens[exec.scenario.iterationInTest % data.jwtTokens.length]
 
-    if (applyForCoupon(token, data.couponId, 'v3-3')) {
+    if (applyForCoupon(token, data.couponId, 'v3-2')) {
         couponsClaimed.add(1)
     }
 }

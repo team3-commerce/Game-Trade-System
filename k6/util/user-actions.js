@@ -4,37 +4,46 @@ import { randomString } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 import { URL } from 'https://jslib.k6.io/url/1.0.0/index.js';
 
 /**
- * 회원가입을 합니다.
- * 
- * 반환:
- *
- * 실패시 null
- *
- * 성공시
- *
- * {
- *     email
- *     password
- *     nickname
- *     role
- * }
- *
- * 을 반환합니다
- */
-export function signup (role = 'USER') {
-    const randomEmail = `${randomString(8)}@gmail.com`;
-    const randomPassword = randomString(20);
-    const randomNickname = randomString(20);
+* 입력:
+*     req:
+*     null 혹은 object
+*     {
+*         email: null일 경우 random
+*         password: null일 경우 random
+*         nickname: null일 경우 random
+*         role: null일 경웅 USER
+*     }
+* 
+*     version:
+*     api version 정보
+* 
+* 반환:
+* 
+*     성공시 reqest를 돌려줍니다, 실패시 null
+*
+*/
+export function signup (req, version) {
+    if (req === null || req == undefined) {
+        req = {}
+    }
+
+    if (req.email === null || req.email === undefined) {
+        req.email = `${randomString(8)}@gmail.com`;
+    }
+    if (req.password === null || req.password === undefined) {
+        req.password = randomString(20);
+    }
+    if (req.nickname === null || req.nickname === undefined) {
+        req.nickname = randomString(20);
+    }
+    if (req.role === null || req.role === undefined ) {
+        req.role = 'USER'
+    }
 
     // define URL and request body
-    const url = 'http://localhost:8080/api/v1/auth/signup';
+    const url = `http://localhost:8080/api/${version}/auth/signup`;
 
-    const payload = JSON.stringify({
-        email: randomEmail,
-        password: randomPassword,
-        nickname: randomNickname,
-        role: role
-    });
+    const payload = JSON.stringify(req);
 
     const params = {
         headers: {
@@ -54,31 +63,27 @@ export function signup (role = 'USER') {
         return null;
     }
 
-    return {
-        email : randomEmail,
-        password : randomPassword,
-        nickname : randomNickname,
-        role : role
-    }
+    return req;
 }
 
 /**
  * 로그인을 합니다
  *
  * 입력:
- * 
- * {
- *     email
- *     password
- * }
+ *     {
+ *         email
+ *         password
+ *     }
+ *
+ *     version:
+ *     api version 정보
  *
  * 반환:
- *
- * 실패시 null, 성공시 jwt token
+ *     실패시 null, 성공시 jwt token
  */
-export function login(req) {
+export function login(req, version) {
     // define URL and request body
-    const url = 'http://localhost:8080/api/v2/auth/login';
+    const url = `http://localhost:8080/api/${version}/auth/login`;
 
     const payload = JSON.stringify({
         email: req.email,
@@ -107,20 +112,20 @@ export function login(req) {
 
 /**
  *
- * 입력
- * req:
- * {
- *     page : 숫자, null일 수 있음
- *     keyword : 검색어, null일 수 있음,
- *     itemType : EQUIPMENT, CONSUMABLE 둘중 하나, null일 수 있음,
- *     sortCreatedAt : ASC, DSC, null 일 수 있음
- * }
+ * 입력:
+ *     req:
+ *     {
+ *         page : 숫자, null일 수 있음
+ *         keyword : 검색어, null일 수 있음,
+ *         itemType : EQUIPMENT, CONSUMABLE 둘중 하나, null일 수 있음,
+ *         sortCreatedAt : ASC, DSC, null 일 수 있음
+ *     }
  *
- * version:
- * api version 정보
+ *     version:
+ *     api version 정보
  * 
- * 출력
- * body, 실패시 null
+ * 반환:
+ *     body, 실패시 null
  *
  */
 export function getManyItem(token, req, version) {
