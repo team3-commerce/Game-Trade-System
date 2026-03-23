@@ -11,3 +11,8 @@ spring:
 app:
   security:
     enabled: true
+
+jwt:
+  header: Authorization
+  secret: ${JWT_SECRET:v1-trade-demo-project-secret-key-for-jwt-token-generation-2026}
+  token-validity-in-seconds: 3600
