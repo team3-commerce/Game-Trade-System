@@ -7,7 +7,7 @@ spring:
   data:
     redis:
       ssl:
-        enabled: true
+        enabled: false
 
   cache:
     type: redis
