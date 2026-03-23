@@ -15,15 +15,11 @@ public class RedissonConfig {
     @Value("${spring.data.redis.port}")
     private int redisPort;
 
-    @Value("${spring.data.redis.ssl.enabled:false}")
-    private boolean sslEnabled;
-
     @Bean
     public RedissonClient redissonClient() {
         Config config = new Config();
-        String protocol = sslEnabled ? "rediss://" : "redis://";
         config.useSingleServer()
-                .setAddress(protocol + redisHost + ":" + redisPort);
+                .setAddress("rediss://" + redisHost + ":" + redisPort);
         return Redisson.create(config);
     }
 }

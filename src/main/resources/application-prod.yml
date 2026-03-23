@@ -4,10 +4,8 @@ spring:
     properties:
       hibernate:
         format_sql: false
-  data:
-    redis:
-      ssl:
-        enabled: false
+
+
 
   cache:
     type: redis
