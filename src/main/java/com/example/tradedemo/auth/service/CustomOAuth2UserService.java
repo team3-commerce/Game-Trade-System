@@ -2,6 +2,7 @@ package com.example.tradedemo.auth.service;
 
 import com.example.tradedemo.auth.dto.*;
 import com.example.tradedemo.common.exception.ErrorEnum;
+import com.example.tradedemo.domain.coupon.service.CouponService;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.entity.SocialAccount;
 import com.example.tradedemo.domain.members.enums.MemberRole;
@@ -9,6 +10,9 @@ import com.example.tradedemo.domain.members.enums.MemberStatus;
 import com.example.tradedemo.domain.members.enums.SocialProvider;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
 import com.example.tradedemo.domain.members.repository.SocialAccountRepository;
+import com.example.tradedemo.domain.wallet.entity.Wallet;
+import com.example.tradedemo.domain.wallet.repository.WalletRepository;
+import java.math.BigDecimal;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +30,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final MemberRepository memberRepository;
     private final SocialAccountRepository socialAccountRepository;
+    private final WalletRepository walletRepository;
+    private final CouponService couponService;
 
     @Override
     @Transactional
@@ -100,6 +106,14 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }
 
         Member member = Member.createSocial(email, nickname, MemberRole.USER);
-        return memberRepository.save(member);
+        memberRepository.save(member);
+
+        // 지갑 생성
+        walletRepository.save(Wallet.create(member, BigDecimal.ZERO));
+
+        // 회원가입 쿠폰 자동 발급
+        couponService.autoSignupCoupon(member);
+
+        return member;
     }
 }
