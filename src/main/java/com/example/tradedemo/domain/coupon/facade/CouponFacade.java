@@ -1,5 +1,7 @@
 package com.example.tradedemo.domain.coupon.facade;
 
+import com.example.tradedemo.common.exception.ErrorEnum;
+import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.coupon.entity.CouponHistory;
 import com.example.tradedemo.domain.coupon.exception.CouponExpiredException;
 import com.example.tradedemo.domain.coupon.service.CouponCacheService;
@@ -50,6 +52,14 @@ public class CouponFacade {
 
         // 지갑 잔액 추가 + 지갑 히스토리 저장
         walletService.addCouponBalance(wallet, couponHistory, member);
+    }
+
+    public void issueFirstComeCouponV3_3(Long couponPolicyId, Member member) {
+        if (couponCacheService.checkIfCouponRanOut(couponPolicyId)) {
+            throw new ServiceException(ErrorEnum.ERR_COUPON_POLICY_SOLD_OUT);
+        }
+
+        couponService.issueFirstComeCouponV3_2(couponPolicyId, member);
     }
 
     @Transactional(noRollbackFor = CouponExpiredException.class)

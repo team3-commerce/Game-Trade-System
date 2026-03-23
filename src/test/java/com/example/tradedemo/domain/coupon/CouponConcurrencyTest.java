@@ -5,6 +5,7 @@ import com.example.tradedemo.domain.coupon.enums.IssueType;
 import com.example.tradedemo.domain.coupon.repository.CouponPolicyRepository;
 import com.example.tradedemo.domain.coupon.repository.MemberCouponRepository;
 import com.example.tradedemo.domain.coupon.service.CouponService;
+import com.example.tradedemo.domain.coupon.facade.CouponFacade;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.enums.MemberRole;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
@@ -24,6 +25,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 public class CouponConcurrencyTest {
+    @Autowired
+    private CouponFacade couponFacade;
 
     @Autowired
     private CouponService couponService;
@@ -257,6 +260,55 @@ public class CouponConcurrencyTest {
                 try {
                     barrier.await();
                     couponService.issueFirstComeCouponV3_2(couponPolicy.getId(), member);
+                } catch (Exception ignored) {
+                }
+            });
+        }
+
+        executor.shutdown();
+        executor.awaitTermination(100, TimeUnit.SECONDS);
+
+        // then
+        long issuedCount = memberCouponRepository.count();
+        CouponPolicy updatedPolicy = couponPolicyRepository.findById(couponPolicy.getId()).orElseThrow();
+
+        System.out.println("========================================");
+        System.out.println("쿠폰 총 수량:        " + TOTAL_QUANTITY);
+        System.out.println("동시 요청 수:        " + THREAD_COUNT);
+        System.out.println("실제 DB 발급 수:      " + issuedCount);
+        System.out.println("expendQuantity:    " + updatedPolicy.getExpendQuantity());
+        System.out.println("========================================");
+
+        // 선착순 100개, 150명 요청 시 100명 성공
+        // 발급받은 사람 수와 쿠폰 정책이 발급된 수량이 일치해야함
+        assertThat(issuedCount).isEqualTo(updatedPolicy.getExpendQuantity());
+        assertThat(issuedCount).isEqualTo(TOTAL_QUANTITY);
+    }
+
+    /**
+     * V3_3 테스트 결과
+     *  ========================================
+     *  쿠폰 총 수량:        100
+     *  동시 요청 수:        150
+     *  실제 DB 발급 수:      100
+     *  expendQuantity:    100
+     *  ========================================
+     */
+    @Test
+    @DisplayName("V3_3 Redisson 분산락 + AOP 적용 - 선착순 쿠폰 발급 동시성 테스트 + 쿠폰 다 떨어짐 cache")
+    void 선착순쿠폰_동시발급_V3_3() throws InterruptedException {
+
+        // given
+        ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
+        CyclicBarrier barrier = new CyclicBarrier(THREAD_COUNT);
+
+        // when
+        for (int i = 0; i < THREAD_COUNT; i++) {
+            final Member member = members.get(i);
+            executor.submit(() -> {
+                try {
+                    barrier.await();
+                    couponFacade.issueFirstComeCouponV3_3(couponPolicy.getId(), member);
                 } catch (Exception ignored) {
                 }
             });

@@ -134,4 +134,22 @@ public class CouponCacheService {
         }
     }
 
+    public String couponRanOutKey(Long couponId) {
+        return CouponCacheConst.RAN_OUT_PREFIX + couponId;
+    }
+
+    public void cacheCouponHasRanOut(Long couponId) {
+        redisTemplate.opsForValue().set(
+                couponRanOutKey(couponId), 
+                Boolean.TRUE, 
+                CouponCacheConst.COUPON_POLICIES_TTL_MINUTES, 
+                TimeUnit.MINUTES
+        );
+    }
+
+    public boolean checkIfCouponRanOut(Long couponId) {
+        Object value = redisTemplate.opsForValue().get(couponRanOutKey(couponId));
+        if (value == null) return false;
+        return true;
+    }
 }
