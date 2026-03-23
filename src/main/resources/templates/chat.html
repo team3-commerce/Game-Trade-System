@@ -202,6 +202,7 @@
     let stomp=null, curSub=null, curRoom=null;
     let curNav='market', curChatTab='all', curListingId=null, curSellerEmail=null;
     let curNextCursor=null; // 커서: 더 불러오기 시 사용할 lastMessageId
+    let curRoomChatDisabled=false; // 현재 채팅방 채팅 불가 상태 여부
     let lastReceivedId=null; // 재연결 복구용 마지막 수신 메시지 ID
     let rooms=[], mktItems=[];
 
@@ -387,24 +388,22 @@
     </div>`).join('');
     }
 
-    // 퇴장 메시지 전송 헬퍼
-    function sendLeave(roomId){
-        if(stomp && stomp.connected && roomId){
-            stomp.send('/pub/chat.leave', {}, JSON.stringify({roomId, content:''}));
-        }
-    }
-
     async function selectRoom(roomId, roomName){
         sendLeave(curRoom); // 이전 채팅방 퇴장
         if(curSub){curSub.unsubscribe();curSub=null;}
         curRoom=roomId;
         curNextCursor=null; lastReceivedId=null; // 커서 초기화
+        curRoomChatDisabled=false; // 채팅방 전환 시 상태 초기화
         document.getElementById('cTitle').textContent=roomName;
         document.getElementById('cSub').textContent=`채팅방 #${roomId}`;
         document.getElementById('msgInput').disabled=false;
         document.getElementById('sendBtn').disabled=false;
+        document.getElementById('msgInput').placeholder='메시지를 입력하세요...';
         renderRooms(); clearMsgs();
         await loadHistory(roomId, null); // 최초 로드: lastMessageId=null
+        // 채팅방 입장 시 상품 상태 확인 → SELLING이 아니면 입력창 비활성화
+        const isChatDisabled = await checkListingStatus(roomId);
+        curRoomChatDisabled = isChatDisabled; // 전역 저장 → sendLeave에서 참조
         if(stomp&&stomp.connected){
             curSub=stomp.subscribe(`/sub/chat/${roomId}`,msg=>{
                 const data=JSON.parse(msg.body);
@@ -412,7 +411,50 @@
                 if(data.messageId) lastReceivedId=Math.max(lastReceivedId||0, data.messageId)||null;
                 showMsg(data);
             });
-            stomp.send('/pub/chat.enter',{},JSON.stringify({roomId,content:''}));
+            // SELLING이 아닌 채팅방에는 입장/퇴장 시스템 메시지 전송 안 함
+            if(!isChatDisabled){
+                stomp.send('/pub/chat.enter',{},JSON.stringify({roomId,content:''}));
+            }
+        }
+    }
+
+    // 채팅방 입장 시 상품 판매 상태 확인
+    // SELLING이 아니면 입력창 비활성화 + 안내 메시지 표시
+    async function checkListingStatus(roomId){
+        try{
+            const r=await fetch(`${API}/api/chat/rooms/${roomId}/listing-status`,{
+                headers:{Authorization:`Bearer ${jwt}`}
+            });
+            if(!r.ok) return;
+            const res=await r.json();
+            const status=res.data;
+
+            const statusMessages={
+                'SOLD':      '이 상품은 판매 완료된 상품입니다.',
+                'CLAIMED':   '이 상품은 거래 완료된 상품입니다.',
+                'CANCELLED': '이 상품은 취소된 상품입니다.',
+                'EXPIRED':   '이 상품은 판매 기간이 만료된 상품입니다.',
+            };
+
+            if(status && status !== 'SELLING'){
+                // 입력창 비활성화
+                document.getElementById('msgInput').disabled=true;
+                document.getElementById('sendBtn').disabled=true;
+                document.getElementById('msgInput').placeholder='채팅을 이용할 수 없는 상태입니다.';
+                // 안내 메시지 표시
+                const msg=statusMessages[status]??'이 상품은 더 이상 채팅을 이용할 수 없는 상태입니다.';
+                showSystemNotice(`⚠️ ${msg}`);
+                return true; // 채팅 불가 상태
+            }
+            return false; // 정상 판매 중
+        }catch(e){console.warn('상품 상태 확인 실패:', e); return false;}
+    }
+
+    // 퇴장 메시지 전송 헬퍼
+    // 채팅 불가 상태(SELLING 아닌) 채팅방에서는 퇴장 메시지 전송 안 함
+    function sendLeave(roomId){
+        if(stomp && stomp.connected && roomId && !curRoomChatDisabled){
+            stomp.send('/pub/chat.leave', {}, JSON.stringify({roomId, content:''}));
         }
     }
 
@@ -586,7 +628,6 @@
 
     function esc(t){const d=document.createElement('div');d.textContent=t??'';return d.innerHTML;}
 
-    // 창 닫기 / 새로고침 시 퇴장 메시지 전송
     window.addEventListener('beforeunload', () => { sendLeave(curRoom); });
 </script>
 </body>

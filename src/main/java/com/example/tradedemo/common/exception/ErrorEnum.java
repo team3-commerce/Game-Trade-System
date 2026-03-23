@@ -73,7 +73,8 @@ public enum ErrorEnum {
     ERR_LOCK_ACQUIRE_FAILED(HttpStatus.CONFLICT, ErrorMessage.MSG_LOCK_ACQUIRE_FAILED),
 
     // Chat
-    ERR_CHAT_ROOM_LISTING_ALREADY_EXISTS(HttpStatus.CONFLICT, ErrorMessage.MSG_CHAT_ROOM_LISTING_ALREADY_EXISTS);
+    ERR_CHAT_ROOM_LISTING_ALREADY_EXISTS(HttpStatus.CONFLICT, ErrorMessage.MSG_CHAT_ROOM_LISTING_ALREADY_EXISTS),
+    ERR_CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, ErrorMessage.MSG_CHAT_ROOM_NOT_FOUND);
 
     private final HttpStatus httpStatus;
     private final String errorMessage;

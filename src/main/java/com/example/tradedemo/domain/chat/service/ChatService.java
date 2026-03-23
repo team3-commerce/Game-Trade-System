@@ -12,6 +12,7 @@ import com.example.tradedemo.domain.chat.repository.ChatMessageRepository;
 import com.example.tradedemo.domain.chat.repository.ChatRoomMemberRepository;
 import com.example.tradedemo.domain.chat.repository.ChatRoomRepository;
 import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
+import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import com.example.tradedemo.domain.marketlistings.repository.MarketListingRepository;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
@@ -25,7 +26,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ChatRoomService {
+public class ChatService {
 
     private final ChatRoomRepository chatRoomRepository;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
@@ -122,6 +123,23 @@ public class ChatRoomService {
     public List<ChatMessageResponse> getMessagesByRoom(Long roomId, Long lastMessageId, int size) {
 
         return chatMessageRepository.findByRoomWithCursor(roomId, lastMessageId, size);
+    }
+
+    /**
+     * 채팅방의 상품 상태 조회
+     * 반환값으로 입력창 활성/비활성 결정
+     * 시스템 메시지 전송은 이 메서드가 아닌 ChatMessageController.send()에서 처리
+     */
+    @Transactional(readOnly = true)
+    public MarketListingStatus getListingStatus(Long roomId) {
+        ChatRoom room = chatRoomRepository.findByIdWithListing(roomId)
+                .orElseThrow(() -> new ServiceException(ErrorEnum.ERR_CHAT_ROOM_NOT_FOUND));
+
+        if (room.getMarketListing() == null) {
+            throw new ServiceException(ErrorEnum.ERR_MARKET_LISTING_NOT_FOUND);
+        }
+
+        return room.getMarketListing().getStatus();
     }
 
 }

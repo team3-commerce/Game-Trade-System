@@ -8,6 +8,7 @@ import com.example.tradedemo.domain.chat.entity.ChatMessage;
 import com.example.tradedemo.domain.chat.entity.ChatRoom;
 import com.example.tradedemo.domain.chat.repository.ChatMessageRepository;
 import com.example.tradedemo.domain.chat.repository.ChatRoomRepository;
+import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import com.example.tradedemo.domain.members.entity.Member;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -32,8 +33,28 @@ public class ChatMessageController {
         Member sender = ((PrincipalDetails) principal).getMember();
 
         ChatRoom room = chatRoomRepository
-                .findById(request.getRoomId())
+                .findByIdWithListing(request.getRoomId())
                 .orElseThrow();
+
+        // 메시지 전송 시마다 상품 상태 검증
+        if (room.getMarketListing() != null) {
+            MarketListingStatus status = room.getMarketListing().getStatus();
+            if (status != MarketListingStatus.SELLING) {
+                String statusMessage = switch (status) {
+                    case SOLD      -> "이 상품은 판매 완료된 상품입니다.";
+                    case CLAIMED   -> "이 상품은 거래 완료된 상품입니다.";
+                    case CANCELLED -> "이 상품은 취소된 상품입니다.";
+                    case EXPIRED   -> "이 상품은 판매 기간이 만료된 상품입니다.";
+                    default        -> "이 상품은 더 이상 채팅을 이용할 수 없는 상태입니다.";
+                };
+
+                RedisChatMessageRequest notice = new RedisChatMessageRequest(
+                        room.getId(), null, "SYSTEM", statusMessage
+                );
+                chatRedisPublisher.publish(room.getId(), notice);
+                return;
+            }
+        }
 
         ChatMessage message = ChatMessage.create(sender, room, request.getContent());
         chatMessageRepository.save(message);
