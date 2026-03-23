@@ -2,13 +2,19 @@ package com.example.tradedemo.auth.service;
 
 import com.example.tradedemo.auth.dto.*;
 import com.example.tradedemo.common.exception.ErrorEnum;
+import com.example.tradedemo.domain.item.repository.ItemRepository;
 import com.example.tradedemo.domain.members.entity.Member;
+import com.example.tradedemo.domain.members.entity.MemberItem;
 import com.example.tradedemo.domain.members.entity.SocialAccount;
 import com.example.tradedemo.domain.members.enums.MemberRole;
 import com.example.tradedemo.domain.members.enums.MemberStatus;
 import com.example.tradedemo.domain.members.enums.SocialProvider;
+import com.example.tradedemo.domain.members.repository.MemberItemRepository;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
 import com.example.tradedemo.domain.members.repository.SocialAccountRepository;
+
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +32,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final MemberRepository memberRepository;
     private final SocialAccountRepository socialAccountRepository;
+
+    private final ItemRepository itemRepository;
+    private final MemberItemRepository memberItemRepository;
+    private static final List<String> DEFAULT_ITEM_NAMES = List.of("검", "갑옷");
 
     @Override
     @Transactional
@@ -100,6 +110,22 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }
 
         Member member = Member.createSocial(email, nickname, MemberRole.USER);
-        return memberRepository.save(member);
+        memberRepository.save(member);
+
+        // 회원가입 시 아이템 추가
+        giveDefaultItems(member);
+
+        return member;
+    }
+
+    // 회원가입 시 아이템 추가
+    private void giveDefaultItems(Member member) {
+        for (String itemName : DEFAULT_ITEM_NAMES) {
+            itemRepository.findByName(itemName).ifPresent(item ->
+                memberItemRepository.save(
+                    MemberItem.create(member, item, LocalDateTime.now(), 1L)
+                )
+            );
+        }
     }
 }
