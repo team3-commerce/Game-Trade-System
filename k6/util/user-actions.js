@@ -168,6 +168,29 @@ export function getManyItem(token, req, version) {
     return JSON.parse(res.body)
 }
 
+export function getAllMemberItem(token, page, version) {
+    token = toBearerToken(token)
+
+    const url = `http://localhost:8080/api/${version}/me/items?page=${page}`;
+
+    const params = {
+        headers: {
+            'Authorization' : token
+        },
+    };
+
+    const res = http.get(url, params);
+    const success = check(res, {
+        'successfully got member items': (res) => res.status == 200,
+    });
+
+    if (!success) {
+        return null;
+    }
+
+    return JSON.parse(res.body)
+}
+
 function toBearerToken(token) {
     return "Bearer " + token;
 }
@@ -247,4 +270,90 @@ export function applyForCoupon(token, couponId, version) {
     }
 
     return true
+}
+
+
+/**
+ * 입력:
+ *     token: jwt token
+ *     req : 
+ *     {
+ *         memberItemId,
+ *         totalPrice,
+ *         quantity,
+ *         salesDuration
+ *     }
+ *     version: api version 정보
+ * 반환:
+ *     body, 실패시 null
+ *
+ */
+export function createMarketListing(token, req, version) {
+    token = toBearerToken(token)
+
+    const url = `http://localhost:8080/api/${version}/market-listings`;
+
+    const payload = JSON.stringify(req);
+
+    const params = {
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization' : token
+        },
+    };
+
+    const res = http.post(url, payload, params);
+    const success = check(res, {
+        'created market listings': (res) => res.status == 200,
+    });
+
+    if (!success) {
+        return null;
+    }
+
+    return JSON.parse(res.body)
+}
+
+/**
+ * 입력:
+ *     token: jwt token
+ *     marketListingId: 구매할 marketlisting id
+ *     version: api version 정보
+ * 반환:
+ *     body, 실패시 null
+ *
+ */
+export function purchase(token, marketListingId, version) {
+    token = toBearerToken(token)
+
+    const url = `http://localhost:8080/api/${version}/market-listings/${marketListingId}`;
+
+    const params = {
+        headers: {
+            'Authorization' : token
+        },
+    };
+
+    const res = http.post(url, null, params);
+    const success = check(res, {
+        'successfully purchased market listing': (res) => res.status == 200,
+    });
+
+    if (!success) {
+        try {
+            const body = JSON.parse(res.body)
+
+            const code = body.code;
+            const error = body.error;
+
+            console.error(`FAIL: ${url} - ${code}:${error}`)
+        }catch(err) {
+        }
+    }
+
+    if (!success) {
+        return null;
+    }
+
+    return JSON.parse(res.body)
 }
