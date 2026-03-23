@@ -5,7 +5,7 @@ import com.example.tradedemo.common.dto.ApiResponse;
 import com.example.tradedemo.domain.chat.dto.ChatMessageResponse;
 import com.example.tradedemo.domain.chat.dto.ChatRoomResponse;
 import com.example.tradedemo.domain.chat.dto.CreateRoomRequest;
-import com.example.tradedemo.domain.chat.service.ChatRoomService;
+import com.example.tradedemo.domain.chat.service.ChatService;
 import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,14 +20,14 @@ import java.util.List;
 @RequestMapping("/api/chat")
 public class ChatController {
 
-    private final ChatRoomService chatRoomService;
+    private final ChatService chatService;
 
     /** 전체 채팅방 목록 */
     @GetMapping("/rooms")
     public ResponseEntity<ApiResponse<List<ChatRoomResponse>>> getMyRooms(
             @AuthenticationPrincipal PrincipalDetails principalDetails) {
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()),
-                chatRoomService.getMyRooms(principalDetails.getEmail())));
+                chatService.getMyRooms(principalDetails.getEmail())));
     }
 
     /** 내가 BUYER인 채팅방 조회 */
@@ -35,7 +35,7 @@ public class ChatController {
     public ResponseEntity<ApiResponse<List<ChatRoomResponse>>> getMyBuyerRooms(
             @AuthenticationPrincipal PrincipalDetails principalDetails) {
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()),
-                chatRoomService.getMyBuyerRooms(principalDetails.getEmail())));
+                chatService.getMyBuyerRooms(principalDetails.getEmail())));
     }
 
     /** 내가 SELLER인 채팅방 조회 */
@@ -43,7 +43,7 @@ public class ChatController {
     public ResponseEntity<ApiResponse<List<ChatRoomResponse>>> getMySellerRooms(
             @AuthenticationPrincipal PrincipalDetails principalDetails) {
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()),
-                chatRoomService.getMySellerRooms(principalDetails.getEmail())));
+                chatService.getMySellerRooms(principalDetails.getEmail())));
     }
 
     /** 채팅방 생성 */
@@ -53,7 +53,7 @@ public class ChatController {
             @AuthenticationPrincipal PrincipalDetails principalDetails) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
                 String.valueOf(HttpStatus.CREATED.value()),
-                chatRoomService.createRoom(request, principalDetails.getEmail())));
+                chatService.createRoom(request, principalDetails.getEmail())));
     }
 
     /**
@@ -67,7 +67,7 @@ public class ChatController {
             @RequestParam(required = false) Long lastMessageId,
             @RequestParam(defaultValue = "50") int size) {
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()),
-                chatRoomService.getMessagesByRoom(roomId, lastMessageId, size)));
+                chatService.getMessagesByRoom(roomId, lastMessageId, size)));
     }
 
     /**
@@ -78,7 +78,7 @@ public class ChatController {
     public ResponseEntity<ApiResponse<MarketListingStatus>> getListingStatus(
             @PathVariable Long roomId) {
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()),
-                chatRoomService.getListingStatus(roomId)));
+                chatService.getListingStatus(roomId)));
     }
 
 
