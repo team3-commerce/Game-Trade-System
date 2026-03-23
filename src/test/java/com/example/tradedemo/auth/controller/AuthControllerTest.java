@@ -10,7 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.example.tradedemo.auth.dto.*;
-import com.example.tradedemo.auth.service.AuthService;
+import com.example.tradedemo.auth.facade.AuthFacade;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.enums.MemberRole;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,7 +37,7 @@ class AuthControllerTest {
     private MockMvc mockMvc;
 
     @Mock
-    private AuthService authService;
+    private AuthFacade authFacade;
 
     @InjectMocks
     private AuthController authController;
@@ -102,7 +102,7 @@ class AuthControllerTest {
     void login_v1_api_success() throws Exception {
         LoginAuthRequest request = new LoginAuthRequest("test@example.com", "password123");
         TokenAuthResponse response = new TokenAuthResponse("at-v1", "rt-v1");
-        given(authService.login(any(LoginAuthRequest.class))).willReturn(response);
+        given(authFacade.login(any(LoginAuthRequest.class))).willReturn(response);
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -117,7 +117,7 @@ class AuthControllerTest {
     void login_v2_api_success() throws Exception {
         LoginAuthRequest request = new LoginAuthRequest("test@example.com", "password123");
         TokenAuthResponse response = new TokenAuthResponse("at-v2", "rt-v2");
-        given(authService.loginV2(any(LoginAuthRequest.class))).willReturn(response);
+        given(authFacade.loginV2(any(LoginAuthRequest.class))).willReturn(response);
 
         mockMvc.perform(post("/api/v2/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -132,7 +132,7 @@ class AuthControllerTest {
     void login_v3_api_success() throws Exception {
         LoginAuthRequest request = new LoginAuthRequest("test@example.com", "password123");
         TokenAuthResponse response = new TokenAuthResponse("at-v3", "rt-v3");
-        given(authService.loginV3(any(LoginAuthRequest.class))).willReturn(response);
+        given(authFacade.loginV3(any(LoginAuthRequest.class))).willReturn(response);
 
         mockMvc.perform(post("/api/v3/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -174,7 +174,7 @@ class AuthControllerTest {
     void reissue_v1_api_success() throws Exception {
         TokenReissueRequest request = new TokenReissueRequest("refreshToken");
         TokenAuthResponse response = new TokenAuthResponse("new-at", "new-rt");
-        given(authService.reissue(anyString())).willReturn(response);
+        given(authFacade.reissue(anyString())).willReturn(response);
 
         mockMvc.perform(post("/api/v1/auth/reissue")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -189,7 +189,7 @@ class AuthControllerTest {
     void reissue_v2_api_success() throws Exception {
         TokenReissueRequest request = new TokenReissueRequest("refreshToken");
         TokenAuthResponse response = new TokenAuthResponse("new-at-v2", "new-rt-v2");
-        given(authService.reissueV2(anyString())).willReturn(response);
+        given(authFacade.reissueV2(anyString())).willReturn(response);
 
         mockMvc.perform(post("/api/v2/auth/reissue")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -204,7 +204,7 @@ class AuthControllerTest {
     void reissue_v3_api_success() throws Exception {
         TokenReissueRequest request = new TokenReissueRequest("refreshToken");
         TokenAuthResponse response = new TokenAuthResponse("new-at-v3", "new-rt-v3");
-        given(authService.reissueV3(anyString())).willReturn(response);
+        given(authFacade.reissueV3(anyString())).willReturn(response);
 
         mockMvc.perform(post("/api/v3/auth/reissue")
                         .contentType(MediaType.APPLICATION_JSON)

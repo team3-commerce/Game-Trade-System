@@ -12,6 +12,7 @@ import com.example.tradedemo.domain.wallet.entity.WalletHistories;
 import com.example.tradedemo.domain.wallet.enums.WalletStatus;
 import com.example.tradedemo.domain.wallet.repository.WalletHistoryRepository;
 import com.example.tradedemo.domain.wallet.repository.WalletRepository;
+import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,11 @@ public class WalletService {
 
     private final WalletRepository walletRepository;
     private final WalletHistoryRepository walletHistoryRepository;
+
+    @Transactional
+    public void createWallet(Member member, BigDecimal initialBalance) {
+        walletRepository.save(Wallet.create(member, initialBalance));
+    }
 
     /**
      * 내 지갑 조회

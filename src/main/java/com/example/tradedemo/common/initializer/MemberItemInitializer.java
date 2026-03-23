@@ -1,6 +1,7 @@
 package com.example.tradedemo.common.initializer;
 
 import com.example.tradedemo.auth.dto.SignupAuthRequest;
+import com.example.tradedemo.auth.facade.AuthFacade;
 import com.example.tradedemo.auth.service.AuthService;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
@@ -28,9 +29,9 @@ import org.springframework.stereotype.Component;
 public class MemberItemInitializer implements ApplicationRunner {
 
     private final ItemRepository itemRepository;
-    private final AuthService authService;
     private final MemberRepository memberRepository;
     private final DebugService debugService;
+    private final AuthFacade authFacade;
 
     @Override
     @Transactional
@@ -40,7 +41,7 @@ public class MemberItemInitializer implements ApplicationRunner {
         Item wand = itemRepository.save(Item.create("마법 지팡이", ItemType.EQUIPMENT));
 
         // 모모라는 test member 생성
-        authService.signup(new SignupAuthRequest("momo@gmail.com", "1234qwer", "모모", MemberRole.USER));
+        authFacade.signup(new SignupAuthRequest("momo@gmail.com", "1234qwer", "모모", MemberRole.USER));
 
         Member momo = memberRepository.findByEmail("momo@gmail.com").orElseThrow(()->
             new ServiceException(ErrorEnum.ERR_AUTH_MEMBER_NOT_FOUND)

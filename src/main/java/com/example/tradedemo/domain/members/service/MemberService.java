@@ -13,11 +13,13 @@ import com.example.tradedemo.domain.members.dto.SuspendMemberRequest;
 import com.example.tradedemo.domain.members.dto.UpdateNicknameRequest;
 import com.example.tradedemo.domain.members.dto.UpdatePasswordRequest;
 import com.example.tradedemo.domain.members.entity.Member;
+import com.example.tradedemo.domain.members.enums.MemberRole;
 import com.example.tradedemo.domain.members.enums.MemberStatus;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
 import com.example.tradedemo.domain.pending.repository.PendingAssetRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -40,6 +42,42 @@ public class MemberService {
     private final PendingAssetRepository pendingAssetRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
+
+    /**
+     * 회원 생성
+     */
+    @Transactional
+    public Member createMember(String email, String password, String nickname, MemberRole role) {
+        // 중복 체크
+        if (memberRepository.findByEmail(email).isPresent()) {
+            throw new ServiceException(ErrorEnum.ERR_AUTH_DUPLICATE_EMAIL);
+        }
+
+        if (memberRepository.existsByNickname(nickname)) {
+            throw new ServiceException(ErrorEnum.ERR_AUTH_DUPLICATE_NICKNAME);
+        }
+
+        Member member = Member.create(email, password, nickname, role);
+        return memberRepository.save(member);
+    }
+
+    public Optional<Member> findByEmail(String email) {
+        return memberRepository.findByEmail(email);
+    }
+
+    /**
+     * 멤버 상태 처리 로직
+     */
+    @Transactional
+    public void handleMemberStatus(Member member) {
+        switch (member.getStatus()) {
+            case WITHDRAWN -> throw new ServiceException(ErrorEnum.ERR_AUTH_WITHDRAWN_MEMBER);
+            case INACTIVE_SUSPENDED -> throw new ServiceException(
+                    ErrorEnum.ERR_AUTH_SUSPENDED_MEMBER, member.getStatusReason());
+            case INACTIVE_DORMANT -> member.activate();
+            case ACTIVE -> {}
+        }
+    }
 
     /**
      * 내 정보 조회
