@@ -4,6 +4,7 @@ import com.example.tradedemo.auth.dto.*;
 import com.example.tradedemo.auth.service.AuthService;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
+import com.example.tradedemo.domain.coupon.service.CouponService;
 import com.example.tradedemo.domain.members.entity.Member;
 import com.example.tradedemo.domain.members.service.MemberService;
 import com.example.tradedemo.domain.wallet.facade.WalletFacade;
@@ -19,6 +20,7 @@ public class AuthFacade {
     private final AuthService authService;
     private final MemberService memberService;
     private final WalletFacade walletFacade;
+    private final CouponService couponService;
 
     /**
      * 회원 가입 및 지갑 생성 (V1)
@@ -35,6 +37,9 @@ public class AuthFacade {
 
         // 초기 잔액 0원인 지갑 생성
         walletFacade.createWallet(member, BigDecimal.ZERO);
+
+        // 회원가입 쿠폰 자동 발급
+        couponService.autoSignupCoupon(member);
     }
 
     /**
