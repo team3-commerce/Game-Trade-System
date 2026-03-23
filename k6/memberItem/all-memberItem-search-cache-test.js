@@ -3,7 +3,7 @@ import { sleep } from 'k6';
 
 export const options = {
     duration: '30s',
-    vus: 50
+    vus: 200
 };
 
 export function setup() {
@@ -17,14 +17,21 @@ export function setup() {
         users.push({ email, password });
 
         const res = http.post(
-            'http://localhost:8080/api/v3/auth/login',
+            'http://host.docker.internal:8080/api/v3/auth/login',
             JSON.stringify({email, password}),
             {
                 headers: {'Content-Type': 'application/json'},
             }
         );
 
-        tokens.push(res.json('data.accessToken'))
+        const token = res.json('data.accessToken');
+        tokens.push(token);
+
+        http.get('http://host.docker.internal:8080/api/v3/me/items', {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
     }
     return {users, tokens};
 }
@@ -41,5 +48,7 @@ export default function (data) {
         },
     };
 
-    http.get('http://localhost:8080/api/v3/me/items', params)
+    http.get('http://host.docker.internal:8080/api/v3/me/items', params)
+
+    sleep(0.5 + Math.random())
 }
