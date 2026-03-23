@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trade Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+        :root{--bg:#0d1117;--surface:#161b22;--surface2:#21262d;--border:#30363d;--text:#e6edf3;--muted:#7d8590;--blue:#388bfd;--blue-dim:#1f4068;--green:#3fb950;--red:#f85149;--orange:#db6d28;}
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;}
+
+        /* LOGIN */
+        .login-overlay{position:fixed;inset:0;background:rgba(13,17,23,.96);display:flex;align-items:center;justify-content:center;z-index:999;}
+        .login-overlay.hidden{display:none;}
+        .login-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:36px;width:340px;}
+        .login-card h2{font-size:20px;font-weight:700;margin-bottom:6px;}
+        .login-card p{font-size:13px;color:var(--muted);margin-bottom:24px;}
+        .field{margin-bottom:14px;}
+        .field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:600;margin-bottom:5px;}
+        .field input{width:100%;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:14px;font-family:inherit;}
+        .field input:focus{outline:none;border-color:var(--blue);}
+        .btn-p{width:100%;padding:12px;background:var(--blue);border:none;border-radius:7px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;}
+        .btn-p:hover{background:#1f6feb;}
+        .err{color:var(--red);font-size:13px;margin-top:10px;text-align:center;min-height:18px;}
+
+        /* APP */
+        .app{display:grid;grid-template-columns:60px 1fr;height:100vh;}
+        .nav{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:4px;}
+        .nav-btn{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:10px;cursor:pointer;border:none;background:none;color:var(--muted);font-size:20px;}
+        .nav-btn:hover{background:var(--surface2);color:var(--text);}
+        .nav-btn.on{background:var(--blue-dim);color:var(--blue);}
+        .nav .sp{flex:1;}
+        .nav-u{width:32px;height:32px;background:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;cursor:pointer;border:none;margin:6px 0;}
+
+        .main{display:grid;grid-template-columns:280px 1fr;height:100vh;}
+        .sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+        .sb-head{padding:16px;border-bottom:1px solid var(--border);}
+        .sb-head h2{font-size:16px;font-weight:700;}
+        .sb-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+
+        /* TABS */
+        .tab-bar{display:flex;border-bottom:1px solid var(--border);}
+        .tab{flex:1;padding:10px 6px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;}
+        .tab.on{color:var(--blue);border-bottom-color:var(--blue);}
+
+        /* LIST */
+        .list{flex:1;overflow-y:auto;padding:8px;}
+        .mkt-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px;cursor:pointer;}
+        .mkt-item:hover{border-color:var(--blue);}
+        .mkt-name{font-size:14px;font-weight:600;margin-bottom:4px;}
+        .mkt-meta{display:flex;gap:10px;font-size:12px;color:var(--muted);}
+        .price{color:var(--green);font-weight:600;}
+        .badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;}
+        .b-sell{background:rgba(63,185,80,.15);color:var(--green);}
+        .b-no{background:rgba(248,81,73,.15);color:var(--red);}
+
+        .room-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
+        .room-item:hover{border-color:var(--blue);}
+        .room-item.on{border-color:var(--blue);background:rgba(56,139,253,.1);}
+        .room-item h4{font-size:14px;font-weight:600;margin-bottom:2px;}
+        .room-id{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+
+
+        /* VIEW */
+        .view{display:flex;flex-direction:column;background:var(--bg);height:100vh;}
+        .v-head{padding:18px 24px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;justify-content:space-between;align-items:center;}
+        .v-head h2{font-size:17px;font-weight:700;}
+        .v-head p{font-size:12px;color:var(--muted);}
+        .v-body{flex:1;overflow-y:auto;padding:24px;}
+
+        /* PRODUCT */
+        .pd-name{font-size:22px;font-weight:700;margin-bottom:14px;}
+        .pd-info{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:16px;}
+        .info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;}
+        .info-row:last-child{border-bottom:none;}
+        .info-row .lbl{color:var(--muted);}
+        .info-row .val{font-weight:600;}
+        .btn-chat{padding:12px 28px;background:var(--green);border:none;border-radius:8px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;}
+        .btn-chat:hover{background:#2ea043;}
+        .btn-back{padding:7px 14px;background:transparent;border:1px solid var(--border);border-radius:7px;color:var(--muted);font-size:13px;cursor:pointer;}
+        .btn-back:hover{border-color:var(--text);color:var(--text);}
+
+        /* CHAT */
+        .c-msgs{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:14px;}
+        .load-more{padding:7px 18px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-size:12px;cursor:pointer;align-self:center;margin-bottom:4px;}
+        .load-more:hover{border-color:var(--blue);color:var(--text);}
+        .msg{display:flex;flex-direction:column;gap:4px;max-width:62%;align-self:flex-start;align-items:flex-start;}
+        .msg.me{align-self:flex-end;align-items:flex-end;}
+        .msg-sender{font-size:11px;font-weight:600;color:var(--muted);padding-left:4px;}
+        .msg-bubble{background:var(--surface2);border:1px solid var(--border);border-radius:16px 16px 16px 4px;padding:10px 14px;font-size:14px;line-height:1.5;}
+        .msg.me .msg-bubble{background:var(--blue);border-color:var(--blue);color:#fff;border-radius:16px 16px 4px 16px;}
+        .msg-time{font-size:10px;color:var(--muted);padding:0 4px;}
+        .sys{text-align:center;font-size:12px;color:var(--muted);font-style:italic;padding:4px 0;}
+        .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--muted);}
+        .empty .ico{font-size:40px;}
+        .empty h3{font-size:16px;color:var(--text);}
+        .c-input{padding:16px 24px;border-top:1px solid var(--border);background:var(--surface);}
+        .ws-st{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-bottom:8px;}
+        .ws-dot{width:7px;height:7px;border-radius:50%;background:var(--red);}
+        .ws-dot.on{background:var(--green);}
+        .c-form{display:flex;gap:10px;}
+        .c-form input{flex:1;padding:12px 16px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:inherit;}
+        .c-form input:focus{outline:none;border-color:var(--blue);}
+        .c-form button{padding:12px 20px;background:var(--blue);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;}
+
+        /* MODAL */
+        .m-list{overflow-y:auto;max-height:240px;display:flex;flex-direction:column;gap:6px;}
+        .m-nick{font-size:14px;font-weight:600;}
+        .m-email{font-size:11px;color:var(--muted);}
+        .m-actions{display:flex;gap:8px;}
+        .btn-cancel{flex:1;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;}
+        .btn-ok{flex:1;padding:10px;background:var(--blue);border:none;border-radius:7px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;}
+
+        ::-webkit-scrollbar{width:5px;}
+        ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+    </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-overlay" id="loginOverlay">
+    <div class="login-card">
+        <h2>🛒 Trade Demo</h2>
+        <p>로그인하여 시작하세요</p>
+        <div class="field"><label>이메일</label><input type="email" id="loginEmail" placeholder="user@example.com"/></div>
+        <div class="field"><label>비밀번호</label><input type="password" id="loginPassword" placeholder="비밀번호"/></div>
+        <button class="btn-p" onclick="login()">로그인</button>
+        <div class="err" id="loginErr"></div>
+    </div>
+</div>
+
+<!-- APP -->
+<div class="app">
+    <!-- NAV -->
+    <div class="nav">
+        <button class="nav-btn on" id="nMkt" onclick="switchNav('market')" title="상품">🛍️</button>
+        <button class="nav-btn"    id="nChat" onclick="switchNav('chat')"  title="채팅">💬</button>
+        <div class="sp"></div>
+        <button class="nav-u" id="navUser" onclick="logout()" title="로그아웃">?</button>
+    </div>
+
+    <div class="main">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="sb-head">
+                <h2 id="sbTitle">상품</h2>
+                <div class="sb-sub" id="sbSub">마켓 전체 상품</div>
+            </div>
+
+            <!-- 상품 사이드바 -->
+            <div id="mktSB" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+                <div class="list" id="mktList"></div>
+            </div>
+
+            <!-- 채팅 사이드바 -->
+            <div id="chatSB" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+                <div class="tab-bar">
+                    <div class="tab on" id="tAll"    onclick="switchChatTab('all')">전체</div>
+                    <div class="tab"    id="tBuyer"  onclick="switchChatTab('buyer')">구매</div>
+                    <div class="tab"    id="tSeller" onclick="switchChatTab('seller')">판매</div>
+                </div>
+                <div class="list" id="roomList"></div>
+            </div>
+        </div>
+
+        <!-- 상품 뷰 -->
+        <div class="view" id="mktView">
+            <div class="v-head">
+                <div><h2 id="mktVTitle">상품을 선택해주세요</h2><p id="mktVSub">왼쪽 목록에서 상품을 클릭하세요</p></div>
+                <div id="mktVActions"></div>
+            </div>
+            <div class="v-body" id="mktVBody">
+                <div class="empty"><div class="ico">🛍️</div><h3>상품을 선택해주세요</h3><p>상품을 클릭하면 상세정보가 표시됩니다</p></div>
+            </div>
+        </div>
+
+        <!-- 채팅 뷰 -->
+        <div class="view" id="chatView" style="display:none;">
+            <div class="v-head">
+                <div><h2 id="cTitle">채팅방을 선택해주세요</h2><p id="cSub">왼쪽에서 채팅방을 선택하세요</p></div>
+                <div class="ws-st"><div class="ws-dot" id="wsDot"></div><span id="wsText">연결 대기중</span></div>
+            </div>
+            <div class="c-msgs" id="cMsgs">
+                <div class="empty"><div class="ico">💬</div><h3>채팅방을 선택해주세요</h3></div>
+            </div>
+            <div class="c-input">
+                <form class="c-form" onsubmit="sendMsg(event)">
+                    <input type="text" id="msgInput" placeholder="메시지를 입력하세요..." disabled/>
+                    <button type="submit" id="sendBtn" disabled>전송</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API='http://localhost:8080', WS_URL='http://localhost:8080/ws';
+    let jwt=null, myEmail=null, myNickname=null;
+    let stomp=null, curSub=null, curRoom=null;
+    let curNav='market', curChatTab='all', curListingId=null, curSellerEmail=null;
+    let curNextCursor=null; // 커서: 더 불러오기 시 사용할 lastMessageId
+    let lastReceivedId=null; // 재연결 복구용 마지막 수신 메시지 ID
+    let rooms=[], mktItems=[];
+
+    // ── LOGIN ────────────────────────────────────
+    async function login() {
+        const email=document.getElementById('loginEmail').value.trim();
+        const pw=document.getElementById('loginPassword').value;
+        const err=document.getElementById('loginErr');
+        err.textContent='';
+        if(!email||!pw){err.textContent='이메일과 비밀번호를 입력해주세요.';return;}
+        try{
+            const r=await fetch(`${API}/api/v1/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pw})});
+            if(!r.ok){err.textContent='이메일 또는 비밀번호가 올바르지 않습니다.';return;}
+            const d=await r.json(), p=d.data??d;
+            jwt=p.accessToken??p.token;
+            if(!jwt){err.textContent='토큰을 받지 못했습니다.';return;}
+            const mr=await fetch(`${API}/api/v1/me`,{headers:{Authorization:`Bearer ${jwt}`}});
+            const md=await mr.json(), mp=md.data??md;
+            myEmail=mp.email??email; myNickname=mp.nickname;
+            document.getElementById('loginOverlay').classList.add('hidden');
+            document.getElementById('navUser').textContent=(myNickname||'?')[0].toUpperCase();
+            connectWS(); loadMkt();
+        }catch(e){err.textContent='로그인 중 오류가 발생했습니다.';}
+    }
+    document.getElementById('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+    function logout(){
+        sendLeave(curRoom); // 현재 채팅방 퇴장
+        if(stomp)stomp.disconnect();
+        jwt=myEmail=myNickname=null;
+        document.getElementById('loginOverlay').classList.remove('hidden');
+    }
+
+    // ── NAV ──────────────────────────────────────
+    function switchNav(nav){
+        curNav=nav;
+        document.getElementById('nMkt').classList.toggle('on',nav==='market');
+        document.getElementById('nChat').classList.toggle('on',nav==='chat');
+        document.getElementById('mktSB').style.display  =nav==='market'?'flex':'none';
+        document.getElementById('chatSB').style.display =nav==='chat'  ?'flex':'none';
+        document.getElementById('mktView').style.display =nav==='market'?'flex':'none';
+        document.getElementById('chatView').style.display=nav==='chat'  ?'flex':'none';
+        if(nav==='market'){
+            document.getElementById('sbTitle').textContent='상품';
+            document.getElementById('sbSub').textContent='마켓 전체 상품';
+            if(!mktItems.length)loadMkt();
+        }else{
+            document.getElementById('sbTitle').textContent='채팅';
+            document.getElementById('sbSub').textContent='내 채팅방 목록';
+            loadRooms(curChatTab);
+        }
+    }
+
+    // ── MARKET ───────────────────────────────────
+    async function loadMkt(){
+        try{
+            const r=await fetch(`${API}/api/v1/market-listings`,{headers:{Authorization:`Bearer ${jwt}`}});
+            console.log('📦 상품 API 응답 상태:', r.status);
+            if(!r.ok){
+                const errTxt=await r.text();
+                console.error('❌ 상품 목록 API 실패:', r.status, errTxt);
+                document.getElementById('mktList').innerHTML=`<div style="padding:20px;text-align:center;color:var(--red);font-size:13px;">상품 로드 실패 (${r.status})</div>`;
+                return;
+            }
+            const d=await r.json();
+            console.log('📦 상품 API 응답 전체:', JSON.stringify(d).substring(0,300));
+            // ApiResponse<PageResponse<...>> 구조: { status, data: { content: [...], totalPages, ... } }
+            const pageData = d.data ?? d;
+            console.log('📦 pageData keys:', Object.keys(pageData));
+            mktItems = Array.isArray(pageData) ? pageData : (pageData.content ?? []);
+            console.log('📦 mktItems 개수:', mktItems.length);
+            renderMkt();
+        }catch(e){console.error('상품 목록 실패:',e);}
+    }
+    function renderMkt(){
+        const el=document.getElementById('mktList');
+        if(!mktItems.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">등록된 상품이 없습니다</div>';return;}
+        el.innerHTML=mktItems.map(item=>{
+            const bc=item.status==='SELLING'?'b-sell':'b-no';
+            const bt=item.status==='SELLING'?'판매중':item.status;
+            return `<div class="mkt-item" onclick="showDetail(${item.marketListingId})">
+      <div class="mkt-name">${esc(item.itemName)}</div>
+      <div class="mkt-meta"><span class="price">₩${Number(item.totalPrice).toLocaleString()}</span><span>수량 ${item.quantity}</span><span class="badge ${bc}">${bt}</span></div>
+    </div>`;
+        }).join('');
+    }
+
+    async function showDetail(id){
+        curListingId=id;
+        try{
+            const r=await fetch(`${API}/api/v1/market-listings/${id}`,{headers:{Authorization:`Bearer ${jwt}`}});
+            if(!r.ok)return;
+            const d=await r.json(), item=d.data??d;
+            document.getElementById('mktVTitle').textContent=item.itemName??item.item?.name??'상품 상세';
+            document.getElementById('mktVSub').textContent=`상품 ID: ${id}`;
+            document.getElementById('mktVActions').innerHTML=`<button class="btn-back" onclick="clearDetail()">← 목록</button>`;
+            const endAt=item.saleEndAt?new Date(item.saleEndAt).toLocaleDateString('ko-KR'):'-';
+            // sellerEmail을 전역 상태로 저정 → 버튼 onclick에 이메일 직접 삽입 불필요
+            curSellerEmail=item.sellerEmail??item.member?.email??null;
+            const sellerNickname=item.sellerNickname??'판매자';
+            const isMine=curSellerEmail&&curSellerEmail===myEmail;
+            document.getElementById('mktVBody').innerHTML=`
+      <div style="max-width:540px;">
+        <div class="pd-name">${esc(item.itemName??item.item?.name??'')}</div>
+        <div class="pd-info">
+          <div class="info-row"><span class="lbl">총 가격</span><span class="val" style="color:var(--green)">₩${Number(item.totalPrice).toLocaleString()}</span></div>
+          <div class="info-row"><span class="lbl">개당 가격</span><span class="val">₩${Number(item.unitPrice??0).toLocaleString()}</span></div>
+          <div class="info-row"><span class="lbl">수량</span><span class="val">${item.quantity}</span></div>
+          <div class="info-row"><span class="lbl">상태</span><span class="val">${item.marketListingStatus??item.status??'-'}</span></div>
+          <div class="info-row"><span class="lbl">만료일</span><span class="val">${endAt}</span></div>
+          ${curSellerEmail?`<div class="info-row"><span class="lbl">판매자</span><span class="val">${esc(sellerNickname)}</span></div>`:''}
+        </div>
+        ${!isMine
+                ?`<button class="btn-chat" onclick="chatWithSeller()">💬 판매자와 채팅하기</button>`
+                :`<div style="font-size:13px;color:var(--muted);">내가 등록한 상품입니다</div>`}
+      </div>`;
+        }catch(e){console.error('상품 상세 실패:',e);}
+    }
+
+    function clearDetail(){
+        curListingId=null; curSellerEmail=null; // 상태 초기화
+        document.getElementById('mktVTitle').textContent='상품을 선택해주세요';
+        document.getElementById('mktVSub').textContent='왼쪽 목록에서 상품을 클릭하세요';
+        document.getElementById('mktVActions').innerHTML='';
+        document.getElementById('mktVBody').innerHTML='<div class="empty"><div class="ico">🛍️</div><h3>상품을 선택해주세요</h3><p>상품을 클릭하면 상세정보가 표시됩니다</p></div>';
+    }
+
+    async function chatWithSeller(){
+        if(!curSellerEmail||!curListingId){alert('상품 정보를 불러올 수 없습니다.');return;}
+        try{
+            const r=await fetch(`${API}/api/chat/rooms`,{
+                method:'POST',
+                headers:{Authorization:`Bearer ${jwt}`,'Content-Type':'application/json'},
+                body:JSON.stringify({sellerEmail:curSellerEmail,listingId:curListingId})
+            });
+            if(!r.ok){
+                let msg='채팅방 생성에 실패했습니다.';
+                try{
+                    const ej=JSON.parse(await r.text());
+                    msg=ej.customMessage??ej.message??ej.error??msg;
+                }catch(_){}
+                alert(msg);
+                // 이미 방이 있으면 채팅 탭 구매 탭으로 이동해서 기존 방 확인 유도
+                switchNav('chat');
+                switchChatTab('buyer');
+                return;
+            }
+            const rd=await r.json(), room=rd.data; // ApiResponse<ChatRoomResponse> → .data
+            // 구매자로 채팅 시작 → 구매 탭으로 이동
+            switchNav('chat');
+            switchChatTab('buyer');
+            await loadRooms('buyer');
+            selectRoom(room.id, room.displayName??room.name);
+        }catch(e){alert('네트워크 오류가 발생했습니다.');}
+    }
+
+    // ── CHAT TABS ─────────────────────────────────
+    function switchChatTab(tab){
+        curChatTab=tab;
+        ['all','buyer','seller'].forEach(t=>{
+            const id='t'+t.charAt(0).toUpperCase()+t.slice(1);
+            document.getElementById(id).classList.toggle('on',t===tab);
+        });
+        loadRooms(tab);
+    }
+
+    async function loadRooms(tab='all'){
+        const url=tab==='buyer'?`${API}/api/chat/rooms/buyer`:tab==='seller'?`${API}/api/chat/rooms/seller`:`${API}/api/chat/rooms`;
+        try{
+            const r=await fetch(url,{headers:{Authorization:`Bearer ${jwt}`}});
+            if(!r.ok)return;
+            const res=await r.json();
+            rooms=res.data??res; // ApiResponse<List> → .data 꺼내기
+            renderRooms();
+        }catch(e){console.error('채팅방 목록 실패:',e);}
+    }
+
+    function renderRooms(){
+        const el=document.getElementById('roomList');
+        if(!rooms.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">채팅방이 없습니다</div>';return;}
+        el.innerHTML=rooms.map(room=>`
+    <div class="room-item ${curRoom===room.id?'on':''}" onclick="selectRoom(${room.id},'${esc(room.displayName??room.name)}')">
+      <div><h4>${esc(room.displayName??room.name)}</h4>${room.listingName?`<div style="font-size:11px;color:var(--blue);margin-top:2px;">📦 ${esc(room.listingName)}</div>`:''}<div class="room-id">${room.myRole==='BUYER'?'구매':room.myRole==='SELLER'?'판매':''}</div></div>
+    </div>`).join('');
+    }
+
+    // 퇴장 메시지 전송 헬퍼
+    function sendLeave(roomId){
+        if(stomp && stomp.connected && roomId){
+            stomp.send('/pub/chat.leave', {}, JSON.stringify({roomId, content:''}));
+        }
+    }
+
+    async function selectRoom(roomId, roomName){
+        sendLeave(curRoom); // 이전 채팅방 퇴장
+        if(curSub){curSub.unsubscribe();curSub=null;}
+        curRoom=roomId;
+        curNextCursor=null; lastReceivedId=null; // 커서 초기화
+        document.getElementById('cTitle').textContent=roomName;
+        document.getElementById('cSub').textContent=`채팅방 #${roomId}`;
+        document.getElementById('msgInput').disabled=false;
+        document.getElementById('sendBtn').disabled=false;
+        renderRooms(); clearMsgs();
+        await loadHistory(roomId, null); // 최초 로드: lastMessageId=null
+        if(stomp&&stomp.connected){
+            curSub=stomp.subscribe(`/sub/chat/${roomId}`,msg=>{
+                const data=JSON.parse(msg.body);
+                // 수신한 메시지 ID 추적 (재연결 복구에 활용)
+                if(data.messageId) lastReceivedId=Math.max(lastReceivedId||0, data.messageId)||null;
+                showMsg(data);
+            });
+            stomp.send('/pub/chat.enter',{},JSON.stringify({roomId,content:''}));
+        }
+    }
+
+    // ── WEBSOCKET ─────────────────────────────────
+    function connectWS(){
+        const sock=new SockJS(WS_URL);
+        stomp=Stomp.over(sock);
+        stomp.debug=()=>{};
+        stomp.connect({Authorization:`Bearer ${jwt}`},
+            async ()=>{
+                setWS(true);
+                // 재연결 시 현재 채팅방이 있으면 누락 메시지 복구
+                // lastReceivedId=null → 최신 메시지를 새로 로드해 누락 보완
+                if(curRoom){
+                    await recoverMissedMessages(curRoom);
+                    // 구독 재등록
+                    if(curSub){try{curSub.unsubscribe();}catch(e){}}
+                    curSub=stomp.subscribe(`/sub/chat/${curRoom}`,msg=>{
+                        const data=JSON.parse(msg.body);
+                        if(data.senderId) lastReceivedId=Math.max(lastReceivedId||0, data.messageId||0)||null;
+                        showMsg(data);
+                    });
+                }
+            },
+            ()=>{setWS(false);setTimeout(connectWS,5000);}
+        );
+    }
+
+    /**
+     * 재연결 복구: 끊긴 동안 놓친 메시지를 lastReceivedId 이후부터 다시 로드
+     * lastReceivedId가 없으면 최신 페이지를 새로 로드
+     */
+    async function recoverMissedMessages(roomId){
+        try{
+            // 최신 메시지를 다시 로드해서 화면에 추가 (중복 방지: messageId 체크)
+            const r=await fetch(`${API}/api/chat/rooms/${roomId}/messages?size=30`,{
+                headers:{Authorization:`Bearer ${jwt}`}
+            });
+            if(!r.ok)return;
+            const result=await r.json();
+            // ChatController가 ApiResponse<List<ChatMessageResponse>> 반환
+            const msgs=result.data??[];
+            const existingIds=new Set([...document.querySelectorAll('[data-msg-id]')].map(el=>Number(el.dataset.msgId)));
+            const newMsgs=msgs.filter(m=>!existingIds.has(m.messageId));
+            if(newMsgs.length>0){
+                newMsgs.forEach(showPast);
+                const c=document.getElementById('cMsgs'); c.scrollTop=c.scrollHeight;
+                showSystemNotice(`🔄 ${newMsgs.length}개의 누락 메시지를 복구했습니다.`);
+            }
+        }catch(e){console.warn('재연결 복구 실패:',e);}
+    }
+    function setWS(on){
+        document.getElementById('wsDot').className='ws-dot'+(on?' on':'');
+        document.getElementById('wsText').textContent=on?`${myNickname} 연결됨`:'연결 끊김';
+    }
+
+    // ── MESSAGES ──────────────────────────────────
+    /**
+     * 커서 기반 메시지 로드
+     * @param roomId - 채팅방 ID
+     * @param lastMessageId - null: 최신부터, 값 있음: 해당 ID 이전 메시지 (더 불러오기)
+     * @param prepend - true: 화면 위쪽에 추가 (더 불러오기), false: 아래에 추가 (최초)
+     */
+    async function loadHistory(roomId, lastMessageId, prepend=false){
+        try{
+            const PAGE_SIZE=30;
+            const params=new URLSearchParams({size:PAGE_SIZE});
+            if(lastMessageId) params.append('lastMessageId', lastMessageId);
+            const r=await fetch(`${API}/api/chat/rooms/${roomId}/messages?${params}`,{
+                headers:{Authorization:`Bearer ${jwt}`}
+            });
+            if(!r.ok)return;
+            // ChatController가 ApiResponse<List<ChatMessageResponse>> 반환
+            const msgs=(await r.json()).data??[];
+
+            // 커서 갱신
+            // msgs는 오름차순(ASC) 정렬 — 첫 번째 요소가 가장 오래된 메시지
+            // 더 불러오기 시 첫 번째 messageId를 nextCursor로 사용
+            if(msgs.length>0){
+                curNextCursor=msgs[0].messageId; // 가장 오래된 ID → 다음 더 보기 기준
+            }
+            // 반환된 메시지 수가 PAGE_SIZE이면 더 이전 메시지가 있을 수 있음
+            const mayHaveMore=(msgs.length===PAGE_SIZE);
+
+            const c=document.getElementById('cMsgs');
+            const prevScrollH=c.scrollHeight;
+
+            if(prepend){
+                // 더 불러오기: 위쪽에 삽입
+                c.querySelector('.load-more')?.remove();
+                const frag=document.createDocumentFragment();
+                msgs.forEach(m=>{ const el=makeMsgEl(m,true); frag.appendChild(el); });
+                c.insertBefore(frag, c.firstChild);
+                // 스크롤 위치 유지 (새로 추가된 높이만큼 보정)
+                c.scrollTop=c.scrollHeight-prevScrollH;
+            } else {
+                // 최초 로드: 아래에 추가
+                c.querySelector('.empty')?.remove();
+                msgs.forEach(m=>showPast(m));
+                c.scrollTop=c.scrollHeight;
+            }
+
+            // 더 이전 메시지가 있을 수 있으면 "더 불러오기" 버튼 표시
+            renderLoadMoreBtn(roomId, mayHaveMore);
+        }catch(e){console.error('메시지 로드 실패:',e);}
+    }
+
+    function renderLoadMoreBtn(roomId, show){
+        const c=document.getElementById('cMsgs');
+        c.querySelector('.load-more')?.remove();
+        if(show && curNextCursor){
+            const btn=document.createElement('button');
+            btn.className='load-more';
+            btn.textContent='이전 메시지 불러오기';
+            btn.onclick=()=>loadHistory(roomId, curNextCursor, true);
+            c.insertBefore(btn, c.firstChild);
+        }
+    }
+
+    function sendMsg(e){
+        e.preventDefault();
+        const inp=document.getElementById('msgInput'), txt=inp.value.trim();
+        if(!txt||!curRoom)return;
+        stomp.send('/pub/chat.send',{},JSON.stringify({roomId:curRoom,content:txt}));
+        inp.value='';
+    }
+
+    function showMsg(data){
+        const c=document.getElementById('cMsgs');
+        c.querySelector('.empty')?.remove();
+        if(data.senderNickname==='SYSTEM'){
+            const d=document.createElement('div'); d.className='sys'; d.textContent=data.content;
+            c.appendChild(d); c.scrollTop=c.scrollHeight; return;
+        }
+        c.appendChild(makeMsgEl(data,false));
+        c.scrollTop=c.scrollHeight;
+    }
+
+    // makeMsgEl: DOM 요소 생성 헬퍼 (showPast, 더 불러오기 공용)
+    function makeMsgEl(data, isPast=true){
+        const el=document.createElement('div');
+        if(data.messageId) el.dataset.msgId=data.messageId;
+        const isMe=data.senderNickname===myNickname;
+        const t=isPast&&data.createdAt
+            ?new Date(data.createdAt).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})
+            :new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+        el.className=`msg ${isMe?'me':''}`;
+        el.innerHTML=(!isMe?`<div class="msg-sender">${esc(data.senderNickname??'')}</div>`:'')
+            +`<div class="msg-bubble">${esc(data.content)}</div>`
+            +`<div class="msg-time">${t}</div>`;
+        return el;
+    }
+
+    function showPast(data){
+        const c=document.getElementById('cMsgs');
+        c.querySelector('.empty')?.remove();
+        c.appendChild(makeMsgEl(data,true));
+    }
+
+    function showSystemNotice(text){
+        const c=document.getElementById('cMsgs');
+        const d=document.createElement('div');
+        d.style.cssText='text-align:center;font-size:11px;color:var(--muted);padding:4px 0;font-style:italic;';
+        d.textContent=text;
+        c.appendChild(d); c.scrollTop=c.scrollHeight;
+    }
+
+    function clearMsgs(){
+        document.getElementById('cMsgs').innerHTML='<div class="empty"><div class="ico">💬</div><h3>메시지가 없습니다</h3><p>첫 메시지를 보내보세요!</p></div>';
+    }
+
+    function esc(t){const d=document.createElement('div');d.textContent=t??'';return d.innerHTML;}
+
+    // 창 닫기 / 새로고침 시 퇴장 메시지 전송
+    window.addEventListener('beforeunload', () => { sendLeave(curRoom); });
+</script>
+</body>
+</html>

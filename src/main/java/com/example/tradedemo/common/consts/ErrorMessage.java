@@ -62,6 +62,7 @@ public final class ErrorMessage {
     public static final String MSG_LOCK_INTERRUPTED = "Redis 락을 얻는 도중 작업이 중단되었습니다";
     public static final String MSG_LOCK_ACQUIRE_FAILED = "Redis 락 획득에 실패하였습니다.";
 
-
+    // Chat
+    public static final String MSG_CHAT_ROOM_LISTING_ALREADY_EXISTS = "이 상품에 대한 채팅방이 이미 존재합니다.";
 
 }
