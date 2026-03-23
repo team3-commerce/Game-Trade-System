@@ -96,8 +96,12 @@ public class DummyDataService {
             VALUES (?, ?)
             """;
 
+        String[] tiers = {"S", "A", "B", "C", "D"};
+
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+
         for (int i = 0; i < totalItemCount; i++) {
-            String name = faker.minecraft().itemName() + "_" + i;
+            String name = tiers[random.nextInt(tiers.length)] + "_" + faker.minecraft().itemName() + "_" + i;
             ItemType itemType = ItemType.EQUIPMENT;
 
             batchItems.add(Item.create(name, itemType));
@@ -205,7 +209,7 @@ public class DummyDataService {
         for(int i = 0 ; i < totalMarketListingCount; i++){
             MemberItemDto memberItem = memberItemList.get(i);
 
-            String itemName = memberItem.itemName;
+            String itemName = memberItem.itemName.toLowerCase();
             BigDecimal unitPrice = BigDecimal.valueOf(random.nextInt(1000, 5001));
             Long quantity = memberItem.quantity;
             BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(quantity));
