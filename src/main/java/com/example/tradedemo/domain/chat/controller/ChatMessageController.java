@@ -63,4 +63,20 @@ public class ChatMessageController {
 
         chatRedisPublisher.publish(request.getRoomId(), systemMessage);
     }
+
+    // 채팅방 퇴장 시스템 메시지
+    // 다른 채팅방 선택 / 로그아웃 / 창 닫기 시 호출
+    @MessageMapping("/chat.leave")
+    public void leave(ChatMessageRequest request, Principal principal) {
+        Member member = ((PrincipalDetails) principal).getMember();
+
+        RedisChatMessageRequest systemMessage = new RedisChatMessageRequest(
+                request.getRoomId(),
+                null,
+                "SYSTEM",
+                member.getNickname() + "님이 퇴장했습니다."
+        );
+
+        chatRedisPublisher.publish(request.getRoomId(), systemMessage);
+    }
 }

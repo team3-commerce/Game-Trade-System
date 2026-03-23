@@ -228,6 +228,7 @@
     }
     document.getElementById('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
     function logout(){
+        sendLeave(curRoom); // 현재 채팅방 퇴장
         if(stomp)stomp.disconnect();
         jwt=myEmail=myNickname=null;
         document.getElementById('loginOverlay').classList.remove('hidden');
@@ -386,7 +387,15 @@
     </div>`).join('');
     }
 
+    // 퇴장 메시지 전송 헬퍼
+    function sendLeave(roomId){
+        if(stomp && stomp.connected && roomId){
+            stomp.send('/pub/chat.leave', {}, JSON.stringify({roomId, content:''}));
+        }
+    }
+
     async function selectRoom(roomId, roomName){
+        sendLeave(curRoom); // 이전 채팅방 퇴장
         if(curSub){curSub.unsubscribe();curSub=null;}
         curRoom=roomId;
         curNextCursor=null; lastReceivedId=null; // 커서 초기화
@@ -576,6 +585,9 @@
     }
 
     function esc(t){const d=document.createElement('div');d.textContent=t??'';return d.innerHTML;}
+
+    // 창 닫기 / 새로고침 시 퇴장 메시지 전송
+    window.addEventListener('beforeunload', () => { sendLeave(curRoom); });
 </script>
 </body>
 </html>
