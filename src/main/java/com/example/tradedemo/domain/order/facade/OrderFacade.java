@@ -2,8 +2,6 @@ package com.example.tradedemo.domain.order.facade;
 
 
 import com.example.tradedemo.common.annotation.RedissonLock;
-import com.example.tradedemo.common.exception.ErrorEnum;
-import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.marketlistings.entity.MarketListing;
 import com.example.tradedemo.domain.marketlistings.enums.MarketListingStatus;
 import com.example.tradedemo.domain.marketlistings.service.MarketListingCacheService;
