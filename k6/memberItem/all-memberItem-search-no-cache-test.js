@@ -3,7 +3,7 @@ import { sleep } from 'k6';
 
 export const options = {
     duration: '30s',
-    vus: 50
+    vus: 200
 };
 
 export function setup() {
@@ -17,7 +17,7 @@ export function setup() {
         users.push({ email, password });
 
         const res = http.post(
-            'http://localhost:8080/api/v1/auth/login',
+            'http://host.docker.internal:8080/api/v1/auth/login',
             JSON.stringify({email, password}),
             {
                 headers: {'Content-Type': 'application/json'},
@@ -41,5 +41,6 @@ export default function (data) {
         },
     };
 
-    http.get('http://localhost:8080/api/v1/me/items', params)
+    http.get('http://host.docker.internal:8080/api/v1/me/items', params)
+    sleep(0.5 + Math.random())
 }
