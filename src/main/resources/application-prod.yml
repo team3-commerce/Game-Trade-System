@@ -4,10 +4,20 @@ spring:
     properties:
       hibernate:
         format_sql: false
-
-  cache:
-    type: redis
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      ssl:
+        enabled: true
+  # cache:
+  #   type : redis 제거하면 Caffeine으로 돌아감
 
 app:
   security:
     enabled: true
+
+jwt:
+  header: Authorization
+  secret: ${JWT_SECRET:v1-trade-demo-project-secret-key-for-jwt-token-generation-2026}
+  token-validity-in-seconds: 3600

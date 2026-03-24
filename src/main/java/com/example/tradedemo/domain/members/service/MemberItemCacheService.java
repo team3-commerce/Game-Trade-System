@@ -14,8 +14,6 @@ import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 
-
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,8 +59,18 @@ public class MemberItemCacheService {
         String pattern = MemberItemConst.MEMBER_INVENTORY + memberId + ":*";
 
         // 해당 패턴으로 시작하는 키 집합 반환
-        Set<String> keys = redisTemplate.keys(pattern);
-
+        // Set<String> keys = redisTemplate.keys(pattern);
+        // 해당 패턴으로 시작하는 키 집합 변환기능 KEYS -> SCAN
+        List<String> keys = new ArrayList<>();
+        redisTemplate.execute((RedisConnection connection) -> {
+            try (Cursor<byte[]> cursor = connection.keyCommands().scan(
+                    ScanOptions.scanOptions().match(pattern).count(100).build())) {
+                while (cursor.hasNext()) {
+                    keys.add(new String(cursor.next(), StandardCharsets.UTF_8));
+                }
+            }
+            return null;
+        });
         // 해당 패턴으로 시작하는 키 삭제
         if(keys != null && !keys.isEmpty()) {
             redisTemplate.delete(keys);

@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table(name = "items")
+@Table(name = "items", uniqueConstraints = {@UniqueConstraint(columnNames = "name")}) // 아이템 중복 방지
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Item extends Base {
 

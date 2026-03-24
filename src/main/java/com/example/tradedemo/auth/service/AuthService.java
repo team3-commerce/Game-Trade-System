@@ -7,13 +7,17 @@ import com.example.tradedemo.auth.provider.JwtTokenProvider;
 import com.example.tradedemo.common.exception.ErrorEnum;
 import com.example.tradedemo.common.exception.ServiceException;
 import com.example.tradedemo.domain.coupon.service.CouponService;
+import com.example.tradedemo.domain.item.repository.ItemRepository;
 import com.example.tradedemo.domain.members.entity.Member;
+import com.example.tradedemo.domain.members.entity.MemberItem;
 import com.example.tradedemo.domain.members.entity.SocialAccount;
+import com.example.tradedemo.domain.members.repository.MemberItemRepository;
 import com.example.tradedemo.domain.members.repository.MemberRepository;
 import com.example.tradedemo.domain.members.repository.SocialAccountRepository;
 import com.example.tradedemo.domain.wallet.entity.Wallet;
 import com.example.tradedemo.domain.wallet.repository.WalletRepository;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +42,11 @@ public class AuthService {
     private final WalletRepository walletRepository;
     private final CacheManager cacheManager;
     private final RedisTemplate<String, Object> redisTemplate;
+
+    private final ItemRepository itemRepository;
+    private final MemberItemRepository memberItemRepository;
+    private static final List<String> DEFAULT_ITEM_NAMES = List.of("검", "갑옷");
+
 
     /**
      * 회원가입
@@ -65,6 +74,19 @@ public class AuthService {
 
         // 회원가입 쿠폰 자동 발급
         couponService.autoSignupCoupon(member);
+
+        // 회원가입 시 아이템 주는 코드
+        giveDefaultItems(member);
+    }
+    // 회원가입 시 아이템 증정하는 코드
+    private void giveDefaultItems(Member member) {
+        for (String itemName : DEFAULT_ITEM_NAMES) {
+            itemRepository.findByName(itemName).ifPresent(item ->
+                memberItemRepository.save(
+                    MemberItem.create(member, item, LocalDateTime.now(), 1L)
+                )
+            );
+        }
     }
 
     /**

@@ -9,10 +9,15 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -23,6 +28,23 @@ public class CouponCacheService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
 
+    // 공통 SCAN 삭제 메서드
+    private int evictByPattern(String pattern) {
+        List<String> keys = new ArrayList<>();
+        redisTemplate.execute((RedisConnection connection) -> {
+            try (Cursor<byte[]> cursor = connection.keyCommands().scan(
+                    ScanOptions.scanOptions().match(pattern).count(100).build())) {
+                while (cursor.hasNext()) {
+                    keys.add(new String(cursor.next(), StandardCharsets.UTF_8));
+                }
+            }
+            return null;
+        });
+        if (!keys.isEmpty()) {
+            redisTemplate.delete(keys);
+        }
+        return keys.size();
+    }
     // 쿠폰 정책 목록 캐시
     public String couponPoliciesKey(int page, String sortCreatedAt, String issueType) {
         return CouponCacheConst.POLICIES_PREFIX + "page:" + page + ":sort:" + sortCreatedAt + ":type:" + issueType;
@@ -43,12 +65,10 @@ public class CouponCacheService {
     }
 
     // 정책 생성 시 "coupon:policies:*" 패턴의 모든 키 삭제
+    // KEYS -> SCAN
     public void evictAllCouponPolicies() {
-        var keys = redisTemplate.keys(CouponCacheConst.POLICIES_PREFIX + "*");
-        if (keys != null && !keys.isEmpty()) {
-            redisTemplate.delete(keys);
-            log.debug("[CouponCache] 쿠폰 정책 목록 캐시 전체 삭제 - {}건", keys.size());
-        }
+        int count = evictByPattern(CouponCacheConst.POLICIES_PREFIX + "*");
+        log.debug("[CouponCache] 쿠폰 정책 목록 캐시 전체 삭제 - {}건", count);
     }
 
 
@@ -91,12 +111,10 @@ public class CouponCacheService {
     }
 
     // 쿠폰 발급/사용 시 "coupon:member:{memberId}:*" 패턴의 모든 키 삭제
+    // KEYS -> SCAN
     public void evictAllMemberCoupons(Long memberId) {
-        var keys = redisTemplate.keys(CouponCacheConst.COUPONS_PREFIX + memberId + ":*");
-        if (keys != null && !keys.isEmpty()) {
-            redisTemplate.delete(keys);
-            log.debug("[CouponCache] 회원 쿠폰 캐시 전체 삭제 - memberId: {}, {}건", memberId, keys.size());
-        }
+        int count = evictByPattern(CouponCacheConst.COUPONS_PREFIX + memberId + ":*");
+        log.debug("[CouponCache] 회원 쿠폰 캐시 전체 삭제 - memberId: {}, {}건", memberId, count);
     }
 
     public void evictMemberCouponItem(Long memberId, Long couponId) {
@@ -127,11 +145,8 @@ public class CouponCacheService {
 
     // 사용 시 호출 → "coupon:histories:member:{memberId}:*" 패턴의 모든 키 삭제
     public void evictAllCouponHistories(Long memberId) {
-        var keys = redisTemplate.keys(CouponCacheConst.HISTORIES_PREFIX + memberId + ":*");
-        if (keys != null && !keys.isEmpty()) {
-            redisTemplate.delete(keys);
-            log.debug("[CouponCache] 쿠폰 내역 캐시 전체 삭제 - memberId: {}, {}건", memberId, keys.size());
-        }
+        int count = evictByPattern(CouponCacheConst.HISTORIES_PREFIX + memberId + ":*");
+        log.debug("[CouponCache] 쿠폰 내역 캐시 전체 삭제 - memberId: {}, {}건", memberId, count);
     }
 
 }

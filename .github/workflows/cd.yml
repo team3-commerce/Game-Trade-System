@@ -2,7 +2,7 @@ name: CD
 
 on:
   push:
-    branches: ["main", "dev", "feat/CICD"]
+    branches: ["main", "dev", "feat/CICD-v2"]
   workflow_dispatch:
 
 concurrency:

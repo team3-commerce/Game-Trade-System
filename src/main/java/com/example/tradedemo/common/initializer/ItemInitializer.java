@@ -25,14 +25,18 @@ import org.springframework.stereotype.Component;
  * 로 설정되어 있을 경우 test item들을 추가해 줍니다.
  */
 @Component()
-@ConditionalOnProperty(name = "app.add-test-items", havingValue = "true", matchIfMissing = false)
-@Profile("!prod")
+// 시작 시 추가. prod = 프로파일 조건 해제
+// @ConditionalOnProperty(name = "app.add-test-items", havingValue = "true", matchIfMissing = false)
+// @Profile("!prod")
 @RequiredArgsConstructor
 public class ItemInitializer implements ApplicationRunner {
     private final ItemRepository itemRepository;
 
     @Transactional
     public void run(ApplicationArguments args) throws Exception {
+        // 이미 있으면 스킵
+        if (itemRepository.count() > 0) return;
+
         itemRepository.save(Item.create("검", ItemType.EQUIPMENT));
         itemRepository.save(Item.create("갑옷", ItemType.EQUIPMENT));
 
