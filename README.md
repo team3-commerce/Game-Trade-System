@@ -5,7 +5,8 @@
 이 프로젝트를 통해 저희는
 
 - 동시성 제어
-  - 비관적 락 및 RedissonLock 분산락 활용
+  - 비관적락 낙관적락, RedissonLock 분산락 활용
+  - 낙관적 락은 dev branch에 현재 없습니다, 구현을 보고싶다면 [feat/coupon-lock](https://github.com/team3-commerce/Game-Trade-System/tree/feat/coupon-lock)을 참고해주세요
 - caching
   - Caffeine Cache및 redis를 사용
 - 실시간 채팅
