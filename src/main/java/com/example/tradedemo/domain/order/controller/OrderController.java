@@ -25,10 +25,11 @@ public class OrderController {
      * 상품 등록
      */
     @PostMapping("/v1/market-listings/{marketListingId}")
-    public void purchase(
+    public ResponseEntity<ApiResponse<Void>> purchase(
             @PathVariable Long marketListingId, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         Long memberId = principalDetails.getMember().getId();
         orderFacade.purchase(memberId, marketListingId);
+        return ResponseEntity.ok(ApiResponse.success("200", null));
     }
 
     @PostMapping("/v2/market-listings/{marketListingId}")
