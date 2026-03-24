@@ -35,7 +35,7 @@ public class MarketListingCustomRepositoryImpl implements MarketListingCustomRep
          *  where절 검색 조건 설정
          */
         if (keyword != null && !keyword.isBlank()) {
-            builder.and(marketListing.itemName.startsWithIgnoreCase(keyword));
+            builder.and(marketListing.itemName.startsWith(keyword.toLowerCase()));
         }
 
         if (memberId != null) {

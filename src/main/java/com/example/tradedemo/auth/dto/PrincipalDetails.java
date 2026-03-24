@@ -1,6 +1,8 @@
 package com.example.tradedemo.auth.dto;
 
 import com.example.tradedemo.domain.members.entity.Member;
+
+import java.security.Principal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -11,7 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
 @Getter
-public class PrincipalDetails implements UserDetails, OAuth2User {
+public class PrincipalDetails implements UserDetails, OAuth2User, Principal {
     private final Member member;
     private Map<String, Object> attributes;
     private String nameAttributeKey;

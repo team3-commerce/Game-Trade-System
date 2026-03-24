@@ -96,6 +96,9 @@ dependencies {
     // H2
     testImplementation 'com.h2database:h2'
 
+    // WebSocket
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
 }
 
 tasks.named('test') {
@@ -139,4 +142,22 @@ gradle.taskGraph.whenReady { graph ->
             systemProperty 'spring.config.additional-location', 'file:./misc/application-test-all.yml'
         }
     }
+}
+def generated = 'src/main/generated'
+
+sourceSets {
+    main.java.srcDirs += [generated]
+    // 기존 tool sourceSet은 그대로 유지
+    tool {
+        java.srcDir 'src/main/java'
+        java.srcDir 'src/tool/java'
+    }
+}
+
+tasks.withType(JavaCompile) {
+    options.getGeneratedSourceOutputDirectory().set(file(generated))
+}
+
+clean.doLast {
+    file(generated).deleteDir()
 }
