@@ -20,8 +20,6 @@ public class RedisSubscriberConfig {
         container.addMessageListener(
                 subscriber,
                 new PatternTopic("chat-room:*")
-                // PatternTopic = 패턴은 너무 무거워 ElastiCache 가 안된다 함 : 분산구조라 Redis를 전체를 훑는 Patten은 안 됨.
-                // 그러니
         );
 
         return container;

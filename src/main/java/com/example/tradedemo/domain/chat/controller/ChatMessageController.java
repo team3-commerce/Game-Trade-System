@@ -54,8 +54,7 @@ public class ChatMessageController {
                         "SYSTEM",
                         statusMessage
                 );
-                // chatRedisPublisher.publish(room.getId(), notice);
-                chatRedisPublisher.publish(notice); // notice에 room.getId()가 있음
+                chatRedisPublisher.publish(room.getId(), notice);
                 return;
             }
         }
@@ -70,8 +69,7 @@ public class ChatMessageController {
                 message.getContent()
         );
 
-        // chatRedisPublisher.publish(room.getId(), redisMessage);
-        chatRedisPublisher.publish(redisMessage); // redisMessage 안에 message.getChatRoom().getId()가 있음
+        chatRedisPublisher.publish(room.getId(), redisMessage);
     }
 
     // 채팅방 입장 시스템 메시지
@@ -87,8 +85,7 @@ public class ChatMessageController {
                 member.getNickname() + "님이 입장했습니다."
         );
 
-        // chatRedisPublisher.publish(request.getRoomId(), systemMessage);
-        chatRedisPublisher.publish(systemMessage); // systemMessage 안에 ChatMessageRequest 의 RoomId() 가 있다. : 요청값 = 호출
+        chatRedisPublisher.publish(request.getRoomId(), systemMessage);
     }
 
     // 채팅방 퇴장 시스템 메시지
@@ -104,7 +101,6 @@ public class ChatMessageController {
                 member.getNickname() + "님이 퇴장했습니다."
         );
 
-        // chatRedisPublisher.publish(request.getRoomId(), systemMessage);
-        chatRedisPublisher.publish(systemMessage); // RedisChatMessageRequest에 서버에서 Redis에 전송하기 위한 RoomID가 있다.
+        chatRedisPublisher.publish(request.getRoomId(), systemMessage);
     }
 }
