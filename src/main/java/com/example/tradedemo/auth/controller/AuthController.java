@@ -134,7 +134,7 @@ public class AuthController {
     /**
      * 소셜 로그인 성공 후 토큰 확인용 임시 엔드포인트
      */
-    @GetMapping("/auth/oauth-success")
+    @GetMapping("/v2/auth/oauth-success")
     public ResponseEntity<ApiResponse<TokenAuthResponse>> oauthSuccess(
             @RequestParam String accessToken, @RequestParam String refreshToken) {
         return ResponseEntity.ok(ApiResponse.success("200", new TokenAuthResponse(accessToken, refreshToken)));
