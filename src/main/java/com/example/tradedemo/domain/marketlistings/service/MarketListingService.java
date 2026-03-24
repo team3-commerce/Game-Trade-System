@@ -95,7 +95,7 @@ public class MarketListingService {
                 .divide(BigDecimal.valueOf(request.getQuantity()), 0, RoundingMode.DOWN); // 0 방향으로 반내림
 
         MarketListing marketListing = MarketListing.create(
-                memberItem.getItem().getName(),
+                memberItem.getItem().getName().toLowerCase(),
                 request.getTotalPrice(),
                 unitPrice,
                 request.getQuantity(),
