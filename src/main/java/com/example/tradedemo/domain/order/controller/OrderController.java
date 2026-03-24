@@ -22,7 +22,7 @@ public class OrderController {
     private final OrderFacade orderFacade;
 
     /**
-     * 상품 구매
+     * 상품 등록
      */
     @PostMapping("/v1/market-listings/{marketListingId}")
     public void purchase(
