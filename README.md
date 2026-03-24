@@ -161,6 +161,14 @@ app:
       └───wallet -- 회원 지갑
 ```
 
+# AWS 배포 구조 및 개선 사항
+
+현재 저희는 AWS 한 EC2 인스턴스에 Redis, MySQL, Spring을 docker compose를 이용해 올리고 있습니다.
+
+미래에는 MySQL은 RDS를 통해 분리하고 Redis는 ElasticCache를 사용해 분리하면 좋을 거 같습니다.
+
+<img src="readme/aws-cd.png" height="500"/>
+
 ## 기여자분들 ❤️
  
 - [Perfect-Bee](https://github.com/Perfect-Bee)
