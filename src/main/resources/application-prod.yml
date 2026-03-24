@@ -10,8 +10,8 @@ spring:
       port: ${REDIS_PORT}
       ssl:
         enabled: true
-  cache:
-    type: redis
+  # cache:
+  #   type : redis 제거하면 Caffeine으로 돌아감
 
 app:
   security:
