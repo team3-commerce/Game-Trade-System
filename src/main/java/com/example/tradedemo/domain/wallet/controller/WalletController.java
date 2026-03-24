@@ -1,9 +1,11 @@
 package com.example.tradedemo.domain.wallet.controller;
 
 import com.example.tradedemo.auth.dto.PrincipalDetails;
+import com.example.tradedemo.common.dto.ApiResponse;
 import com.example.tradedemo.domain.wallet.dto.WalletResponse;
 import com.example.tradedemo.domain.wallet.service.WalletService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,8 +20,8 @@ public class WalletController {
      * 내 지갑 조회
      */
     @GetMapping("/wallet")
-    public WalletResponse getMyWallet(@AuthenticationPrincipal PrincipalDetails principalDetails) {
+    public ResponseEntity<ApiResponse<WalletResponse>> getMyWallet(@AuthenticationPrincipal PrincipalDetails principalDetails) {
         Long memberId = principalDetails.getMember().getId();
-        return walletService.getMyWallet(memberId);
+        return ResponseEntity.ok(ApiResponse.success("200", walletService.getMyWallet(memberId)));
     }
 }
