@@ -9,7 +9,7 @@ spring:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
       ssl:
-        enabled: true
+        enabled: false # SSL 비활성화
   # cache:
   #   type : redis 제거하면 Caffeine으로 돌아감
 

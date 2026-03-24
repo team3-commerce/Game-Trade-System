@@ -49,7 +49,10 @@ public class ChatMessageController {
                 };
 
                 RedisChatMessageRequest notice = new RedisChatMessageRequest(
-                        room.getId(), null, "SYSTEM", statusMessage
+                        room.getId(),
+                        null,
+                        "SYSTEM",
+                        statusMessage
                 );
                 chatRedisPublisher.publish(room.getId(), notice);
                 return;
