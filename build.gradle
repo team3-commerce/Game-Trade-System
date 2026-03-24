@@ -143,21 +143,3 @@ gradle.taskGraph.whenReady { graph ->
         }
     }
 }
-def generated = 'src/main/generated'
-
-sourceSets {
-    main.java.srcDirs += [generated]
-    // 기존 tool sourceSet은 그대로 유지
-    tool {
-        java.srcDir 'src/main/java'
-        java.srcDir 'src/tool/java'
-    }
-}
-
-tasks.withType(JavaCompile) {
-    options.getGeneratedSourceOutputDirectory().set(file(generated))
-}
-
-clean.doLast {
-    file(generated).deleteDir()
-}
