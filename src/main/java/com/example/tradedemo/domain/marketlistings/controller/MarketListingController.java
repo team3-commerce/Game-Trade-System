@@ -77,7 +77,7 @@ public class MarketListingController {
     public ResponseEntity<ApiResponse<GetMarketListingResponse>> createMarketListingV4(
             @AuthenticationPrincipal PrincipalDetails details, @RequestBody CreateMarketListingRequest request) {
         GetMarketListingResponse res =
-                marketListingService.createV3(details.getMember().getId(), request);
+                marketListingService.createV4(details.getMember().getId(), request);
 
         return ResponseEntity.ok(ApiResponse.success(String.valueOf(HttpStatus.OK.value()), res));
     }
