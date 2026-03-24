@@ -25,11 +25,15 @@
 
 자세한 비지니스 규칙은 [BUSINESS.md](BUSINESS.md) 파일을 참고해주세요.
 
-## 시스템 다이어그램
+## 아이템 거래 흐름도
 
 ![diagram](readme/diagram.png)
 
-## ERD
+# API 명세서
+
+API 명세서는 [API.md](API.md)를 참고해주세요.
+
+# ERD
 
 ![ERD](readme/ERD.png)
 
@@ -61,7 +65,7 @@ social login에 관한 설정은 https://docs.spring.io/spring-security/referenc
 - Kakao : Kakao Developers (https://developers.kakao.com/) - 애플리케이션 등록 후 'REST API 키' 사용
 - GitHub : GitHub Developer Settings (https://github.com/settings/developers) - New OAuth App 생성
 
-그리고 debugging을 위한 설정은 다음과 같습니다.
+### 디버깅/개발 설정
 
 ```
 # 아래 설정들은 프로파일이 prod가 아닐 경우에만 돌아갑니다.
