@@ -110,7 +110,6 @@ app:
   add-test-signup-coupon: true 
   # 초기 아이템, 회원, 회원 아이템을 등록합니다
   add-test-memberitems: true
-  # 초기 아이템, 회원, 회원 아이템을 등록합니다
 ```
 
 # 프로젝트 구조
