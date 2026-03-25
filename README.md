@@ -169,6 +169,10 @@ app:
 
 <img src="readme/aws-cd.png" height="500"/>
 
+# Trouble Shooting
+
+Trouble shooting과정은 [TROUBLE_SHOOTING.md](TROUBLE_SHOOTING.md)을 참고해 주세요.
+
 ## 기여자분들 ❤️
  
 - [Perfect-Bee](https://github.com/Perfect-Bee)
