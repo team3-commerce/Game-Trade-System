@@ -154,11 +154,11 @@ p(95) 가 76%로 감소한걸을 확인했습니다.
 
 ### InfluxDB와 Grafana Dashboard 끄기전
 
-![k6-before-grafana-influx](readme\k6-before-grafana-influx.png)
+![k6-before-grafana-influx](readme/k6-before-grafana-influx.png)
 
 ### InfluxDB와 Grafana Dashboard 끈후
 
-![k6-after-grafana-influx](readme\k6-after-grafana-influx.png)
+![k6-after-grafana-influx](readme/k6-after-grafana-influx.png)
 
 리소스 경쟁 환경에서는 테스트 데이터의 신뢰도가 떨어질 수 있다는 것을 확인했습니다.
 
