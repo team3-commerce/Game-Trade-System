@@ -71,7 +71,7 @@ build를 위해서는 jdk 17이 필요합니다.
 
 ### 인증인가 설정
 
-social login에 관한 설정은 https://docs.spring.io/spring-security/reference/servlet/oauth2/login/core.html을 참고해 주세요.
+social login에 관한 설정은 https://docs.spring.io/spring-security/reference/servlet/oauth2/login/core.html 을 참고해 주세요.
 
 소셜 서비스별 Client ID 발급처
 
