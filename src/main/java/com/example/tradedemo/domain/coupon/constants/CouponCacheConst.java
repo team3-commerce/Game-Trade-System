@@ -21,5 +21,8 @@ public final class CouponCacheConst {
     // 쿠폰 사용 내역 캐시 키
     public static final String HISTORIES_PREFIX = "coupon:histories:member:";
 
+    // 쿠폰 사용 내역 캐시 키
+    public static final String RAN_OUT_PREFIX = "coupon:ran_out:";
+
     private CouponCacheConst() {}
 }

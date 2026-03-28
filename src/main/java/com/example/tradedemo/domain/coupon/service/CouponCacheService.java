@@ -149,4 +149,22 @@ public class CouponCacheService {
         log.debug("[CouponCache] 쿠폰 내역 캐시 전체 삭제 - memberId: {}, {}건", memberId, count);
     }
 
+    public String couponRanOutKey(Long couponId) {
+        return CouponCacheConst.RAN_OUT_PREFIX + couponId;
+    }
+
+    public void cacheCouponHasRanOut(Long couponId) {
+        redisTemplate.opsForValue().set(
+                couponRanOutKey(couponId), 
+                Boolean.TRUE, 
+                CouponCacheConst.COUPON_POLICIES_TTL_MINUTES, 
+                TimeUnit.MINUTES
+        );
+    }
+
+    public boolean checkIfCouponRanOut(Long couponId) {
+        Object value = redisTemplate.opsForValue().get(couponRanOutKey(couponId));
+        if (value == null) return false;
+        return true;
+    }
 }

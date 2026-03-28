@@ -399,6 +399,7 @@ public class CouponService {
 
         // 발급 가능 여부 체크
         if (!couponPolicy.isIssuable()) {
+            couponCacheService.cacheCouponHasRanOut(couponPolicyId);
             throw new ServiceException(ErrorEnum.ERR_COUPON_POLICY_SOLD_OUT);
         }
 
