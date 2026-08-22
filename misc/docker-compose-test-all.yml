@@ -1,0 +1,18 @@
+services:
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "42000:6379"
+    command: >
+      redis-server
+      --maxmemory 1gb
+      --maxmemory-policy allkeys-lru
+
+  db:
+    image: mysql:8.4
+    ports:
+      - "43000:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: tradedb

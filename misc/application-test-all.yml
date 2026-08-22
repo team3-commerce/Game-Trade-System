@@ -1,0 +1,23 @@
+spring:
+  profiles:
+    active: test-all
+
+  data:
+    redis:
+      host: localhost
+      port: 42000
+
+  datasource: 
+    url: jdbc:mysql://localhost:43000/tradedb
+    username: root
+    password: 1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: create
+
+
